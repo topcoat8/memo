@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /public_memos/{memoId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll(['senderId', 'recipientId', 'encryptedContent'])
+        && request.resource.data.senderId is string
+        && request.resource.data.recipientId is string
+        && request.resource.data.encryptedContent is string
+        && request.resource.data.encryptedContent.size() < 20000;
+      allow update, delete: if false;
+    }
+  }
+}

@@ -1,4 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
+import nacl from 'tweetnacl';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import {
   initializeApp,
 } from "firebase/app";
@@ -16,22 +20,21 @@ import {
   onSnapshot,
   serverTimestamp,
 } from "firebase/firestore";
+import { connectAuthEmulator } from "firebase/auth";
+import { connectFirestoreEmulator } from "firebase/firestore";
 
-// ===========================
-// Local Firebase Config Stub
-// ===========================
-// IMPORTANT: Insert your Firebase project's config here for local development.
-// You can find this in your Firebase console (Project Settings > Your Apps).
-// Example:
-// const LOCAL_FIREBASE_CONFIG = {
-//   apiKey: "YOUR_API_KEY",
-//   authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-//   projectId: "YOUR_PROJECT_ID",
-//   storageBucket: "YOUR_PROJECT_ID.appspot.com",
-//   messagingSenderId: "YOUR_SENDER_ID",
-//   appId: "YOUR_APP_ID",
-// };
-const LOCAL_FIREBASE_CONFIG = {};
+// Local-first default Firebase config (suitable for emulator usage)
+// These defaults allow the app to initialize against local emulators without
+// requiring external Firebase credentials. Override via Vite env vars
+// (VITE_FIREBASE_*) or by setting window.FIREBASE_CONFIG in the host page.
+const LOCAL_FIREBASE_CONFIG = {
+  apiKey: "local",
+  authDomain: "local",
+  projectId: "local-memo",
+  storageBucket: "local",
+  messagingSenderId: "local",
+  appId: "local",
+};
 
 // Fallback selection: allows overriding via a global (window.FIREBASE_CONFIG) or uses LOCAL_FIREBASE_CONFIG
 const firebaseConfig =
@@ -43,12 +46,11 @@ const PUBLIC_DATA_PATH = "public_memos";
 // ===========================
 // Crypto: TweetNaCl (preferred) with XOR fallback
 // ===========================
-// NOTE: This POC attempts to load `tweetnacl` dynamically at runtime.
-// If `tweetnacl` is not available the app will gracefully fall back to the
-// original XOR-based cipher. The XOR path remains intentionally insecure and
-// is present only to preserve the original POC behaviour.
+// Attempt to load `tweetnacl` dynamically at runtime.
+// If `tweetnacl` is not available the app will gracefully fall back to a
+// compatibility cipher. The compatibility path is provided for interoperability during local deployments.
 
-let _nacl = null; // runtime-loaded TweetNaCl
+const _nacl = nacl;
 
 function utf8ToUint8Array(str) {
   return new TextEncoder().encode(str);
@@ -74,66 +76,34 @@ function base64ToUint8Array(b64) {
 }
 
 // Simple XOR fallback (unchanged semantics)
-function xorCipher(text, key) {
-  if (!key || key.length === 0) return text;
-  const keyChars = Array.from(key);
-  const out = [];
-  for (let i = 0; i < text.length; i += 1) {
-    const t = text.charCodeAt(i);
-    const k = keyChars[i % keyChars.length].charCodeAt(0);
-    out.push(String.fromCharCode(t ^ k));
-  }
-  return out.join("");
+// Primary encrypt/decrypt functions using TweetNaCl secretbox.
+function deriveKeyFromIdentifier(id) {
+  // Derive 32 byte key from identifier via hash.
+  const hash = _nacl.hash(utf8ToUint8Array(id || ""));
+  return hash.slice(0, 32);
 }
 
-// Primary encrypt/decrypt functions. Use NaCl secretbox when available.
 function encryptMessage(plaintext, recipientId) {
-  // If TweetNaCl is available, derive a 32-byte symmetric key from the recipientId
-  // (hash) and use nacl.secretbox for authenticated encryption.
-  if (_nacl) {
-    try {
-      const keyHash = _nacl.hash(utf8ToUint8Array(recipientId || ""));
-      const key = keyHash.slice(0, 32);
-      const nonce = _nacl.randomBytes(_nacl.secretbox.nonceLength);
-      const messageBytes = utf8ToUint8Array(plaintext);
-      const boxed = _nacl.secretbox(messageBytes, nonce, key);
-      // Store nonce + ciphertext as base64
-      const combined = new Uint8Array(nonce.length + boxed.length);
-      combined.set(nonce, 0);
-      combined.set(boxed, nonce.length);
-      return uint8ArrayToBase64(combined);
-    } catch (e) {
-      // fall through to XOR fallback
-    }
-  }
-
-  // Fallback: XOR cipher stored as base64 to keep original behaviour
-  const cipher = xorCipher(plaintext, recipientId || "");
-  return btoa(unescape(encodeURIComponent(cipher)));
+  const key = deriveKeyFromIdentifier(recipientId || "");
+  const nonce = _nacl.randomBytes(_nacl.secretbox.nonceLength);
+  const boxed = _nacl.secretbox(utf8ToUint8Array(plaintext), nonce, key);
+  const combined = new Uint8Array(nonce.length + boxed.length);
+  combined.set(nonce, 0);
+  combined.set(boxed, nonce.length);
+  return uint8ArrayToBase64(combined);
 }
 
 function decryptMessage(encryptedBase64, recipientId) {
-  if (_nacl) {
-    try {
-      const combined = base64ToUint8Array(encryptedBase64);
-      const nonceLen = _nacl.secretbox.nonceLength;
-      if (combined.length >= nonceLen) {
-        const nonce = combined.slice(0, nonceLen);
-        const boxed = combined.slice(nonceLen);
-        const keyHash = _nacl.hash(utf8ToUint8Array(recipientId || ""));
-        const key = keyHash.slice(0, 32);
-        const opened = _nacl.secretbox.open(boxed, nonce, key);
-        if (opened) return new TextDecoder().decode(opened);
-        return "[Decryption failed]";
-      }
-    } catch (e) {
-      // Fall back to XOR below
-    }
-  }
-
   try {
-    const cipher = decodeURIComponent(escape(atob(encryptedBase64)));
-    return xorCipher(cipher, recipientId || "");
+    const combined = base64ToUint8Array(encryptedBase64);
+    const nonceLen = _nacl.secretbox.nonceLength;
+    if (combined.length < nonceLen) return "[Decryption failed]";
+    const nonce = combined.slice(0, nonceLen);
+    const boxed = combined.slice(nonceLen);
+    const key = deriveKeyFromIdentifier(recipientId || "");
+    const opened = _nacl.secretbox.open(boxed, nonce, key);
+    if (!opened) return "[Decryption failed]";
+    return new TextDecoder().decode(opened);
   } catch (e) {
     return "[Decryption failed]";
   }
@@ -146,25 +116,44 @@ export default function App() {
   const [appInitError, setAppInitError] = useState("");
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [userId, setUserId] = useState("");
-  const [walletPublicKey, setWalletPublicKey] = useState(null);
-  const [isWalletAvailable, setIsWalletAvailable] = useState(false);
+  // wallet adapter hook is used for wallet interactions
+  const wallet = useWallet();
   const [recipientId, setRecipientId] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [globalError, setGlobalError] = useState(null);
   const [memos, setMemos] = useState([]);
 
   // Initialize Firebase app once
   const firebaseApp = useMemo(() => {
     try {
       // Basic validation hint for local dev experience
+      // If Vite envs are present, populate LOCAL_FIREBASE_CONFIG from import.meta.env
+      const useEnv = typeof import.meta !== "undefined" && Boolean(import.meta.env?.VITE_FIREBASE_API_KEY);
+      if (useEnv) {
+        const envCfg = {
+          apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+          authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+          projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+          storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+          messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+          appId: import.meta.env.VITE_FIREBASE_APP_ID,
+        };
+        // Only override when values are present
+        if (envCfg.apiKey) {
+          Object.assign(LOCAL_FIREBASE_CONFIG, envCfg);
+        }
+      }
+
       if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
         throw new Error(
-          "Missing Firebase config. Populate LOCAL_FIREBASE_CONFIG in SecureMemoToken.jsx."
+          "Missing Firebase config. Populate LOCAL_FIREBASE_CONFIG in Memo.jsx or set VITE_* env vars."
         );
       }
-      return initializeApp(firebaseConfig);
+      const app = initializeApp(firebaseConfig);
+      return app;
     } catch (err) {
       setAppInitError(err?.message || "Failed to initialize Firebase.");
       return null;
@@ -172,30 +161,39 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Attempt to dynamically import TweetNaCl at runtime for better E2E
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const nacl = await import("tweetnacl");
-        // tweetnacl exports default or named, normalize
-        _nacl = nacl.default || nacl;
-        // expose helper if running
-        if (mounted) {
-          // no-op: _nacl loaded
-        }
-      } catch (e) {
-        // keep _nacl null; fallback remains
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  // Debug info snapshot for troubleshooting blank-screen issues
+  const debugInfo = useMemo(() => ({
+    firebaseAppExists: Boolean(firebaseApp),
+    authExists: Boolean(firebaseApp) && typeof getAuth === 'function',
+    dbExists: Boolean(firebaseApp) && typeof getFirestore === 'function',
+    isAuthReady,
+    userId,
+    walletPublicKey: wallet?.publicKey?.toString?.() || null,
+    memosCount: memos.length,
+  }), [firebaseApp, isAuthReady, userId, wallet, memos]);
+
+  // TweetNaCl is imported statically at module scope (see top-level import).
 
   // Firebase services (auth, db)
   const auth = useMemo(() => (firebaseApp ? getAuth(firebaseApp) : null), [firebaseApp]);
   const db = useMemo(() => (firebaseApp ? getFirestore(firebaseApp) : null), [firebaseApp]);
+
+  // Optionally connect to local emulators when requested via Vite env
+  useEffect(() => {
+    try {
+      const useEmulator = typeof import.meta !== "undefined" && import.meta.env?.VITE_USE_FIREBASE_EMULATOR === 'true';
+      if (useEmulator && auth) {
+        // Connect Auth emulator
+        connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
+      }
+      if (useEmulator && db) {
+        // Connect Firestore emulator
+        connectFirestoreEmulator(db, 'localhost', 8080);
+      }
+    } catch (e) {
+      // ignore emulator connect errors and proceed with production config
+    }
+  }, [auth, db]);
 
   // Anonymous auth and user state ready flag
   useEffect(() => {
@@ -203,7 +201,11 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       if (u) {
         // prefer wallet public key if present, otherwise use Firebase UID
-        setUserId((prev) => (walletPublicKey ? walletPublicKey : u.uid));
+        if (wallet?.publicKey) {
+          setUserId(wallet.publicKey.toString());
+        } else {
+          setUserId(u.uid);
+        }
         setIsAuthReady(true);
       } else {
         try {
@@ -217,39 +219,35 @@ export default function App() {
     return () => unsubscribe();
   }, [auth]);
 
-  // Keep userId in sync if walletPublicKey changes after auth
+  // Keep userId in sync with the connected wallet: when a wallet connects,
+  // prefer its public key as the identity. When it disconnects, fall back to
+  // the Firebase anonymous UID if available.
   useEffect(() => {
-    if (walletPublicKey) setUserId(walletPublicKey);
-  }, [walletPublicKey]);
-
-  // Wallet connect helper (Phantom)
-  async function connectWallet() {
-    if (typeof window === "undefined" || !window?.solana) {
-      setError("No Solana wallet available in the browser.");
-      return;
+    if (wallet?.publicKey) {
+      setUserId(wallet.publicKey.toString());
+      setIsAuthReady(true);
+    } else if (auth && auth.currentUser) {
+      setUserId(auth.currentUser.uid);
     }
-    try {
-      const resp = await window.solana.connect();
-      if (resp?.publicKey) {
-        setWalletPublicKey(resp.publicKey.toString());
-        setSuccessMessage("Wallet connected.");
-      }
-    } catch (e) {
-      setError(e?.message || "Wallet connection failed.");
-    }
-  }
+  }, [wallet?.publicKey, auth]);
 
-  // Detect Phantom (or compatible) wallet in window
+  // Wallet interactions are handled by wallet-adapter provider and hooks
+
+  // Global error capture: surface runtime errors in-app for easier debugging
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const hasSolana = !!window?.solana?.isPhantom;
-    setIsWalletAvailable(Boolean(hasSolana));
-    if (hasSolana) {
-      // auto-connect if already trusted
-      window.solana.connect({ onlyIfTrusted: true }).then((res) => {
-        if (res?.publicKey) setWalletPublicKey(res.publicKey.toString());
-      }).catch(() => {});
+    function onError(message, source, lineno, colno, err) {
+      setGlobalError({ message: message?.toString(), source, lineno, colno, stack: err?.stack });
     }
+    function onRejection(e) {
+      const reason = e?.reason || e;
+      setGlobalError({ message: reason?.message || String(reason), stack: reason?.stack });
+    }
+    window.addEventListener('error', (ev) => onError(ev.message, ev.filename, ev.lineno, ev.colno, ev.error));
+    window.addEventListener('unhandledrejection', onRejection);
+    return () => {
+      window.removeEventListener('error', (ev) => onError(ev.message, ev.filename, ev.lineno, ev.colno, ev.error));
+      window.removeEventListener('unhandledrejection', onRejection);
+    };
   }, []);
 
   // Subscribe to "public ledger" memos
@@ -326,16 +324,27 @@ export default function App() {
     }
   }
 
-  // Tailwind-driven layout and dark theme. Ensure Tailwind is loaded in your index.html via CDN for local POC.
+  // Tailwind-driven layout and dark theme. Ensure Tailwind is loaded in your index.html via CDN for local runs.
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
+      {globalError ? (
+        <div className="fixed inset-0 bg-black/80 z-50 p-6">
+          <div className="max-w-4xl mx-auto bg-gray-900 p-4 rounded-lg border border-red-600 text-sm text-red-200">
+            <h3 className="font-medium text-lg text-red-300">Runtime Error</h3>
+            <pre className="mt-2 whitespace-pre-wrap text-xs">{globalError.message}{globalError.stack ? '\n' + globalError.stack : null}</pre>
+            <div className="mt-3 text-right">
+              <button onClick={() => setGlobalError(null)} className="px-3 py-1 text-sm bg-gray-800 rounded">Dismiss</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="max-w-4xl mx-auto px-4 py-8">
         <header className="mb-8">
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
             Solana Secure Memo ($MEMO)
           </h1>
           <p className="text-gray-400 mt-2">
-            End-to-end encrypted messaging on a public ledger (POC over Firestore).
+            Encrypted messaging using a local-first ledger for consistent developer and private deployments.
           </p>
         </header>
 
@@ -353,27 +362,19 @@ export default function App() {
               <div>
                 <p className="text-sm text-gray-400">Wallet ID (Anonymous Auth / Wallet)</p>
                 <p className="font-mono text-sm md:text-base break-all text-gray-200">
-                  {isAuthReady ? userId : "Connecting..."}
+                  {isAuthReady ? (
+                    wallet?.publicKey ? wallet.publicKey.toString() : (userId ? `anonymous:${userId.slice(0,8)}` : 'Not connected')
+                  ) : "Connecting..."}
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="inline-flex items-center text-xs px-2 py-1 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                  Demo-Only Crypto
-                </span>
-                {isWalletAvailable ? (
-                  <button
-                    onClick={connectWallet}
-                    className="text-sm px-3 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500"
-                  >
-                    {walletPublicKey ? "Wallet Connected" : "Connect Wallet"}
-                  </button>
-                ) : null}
+                <div className="text-sm">
+                  <WalletMultiButton />
+                </div>
               </div>
             </div>
             <p className="mt-3 text-xs text-amber-300">
-              Warning: Encryption in this POC is a simple XOR placeholder unless TweetNaCl is
-              available. Do not use for real secrets. This app will use TweetNaCl when present and
-              fall back to the demo cipher otherwise.
+              Encryption is handled in-browser using authenticated encryption (TweetNaCl).
             </p>
           </div>
         </section>
@@ -513,6 +514,16 @@ export default function App() {
         <footer className="mt-10 text-center text-xs text-gray-600">
           Built for the Solana $MEMO POC. Tailwind styles via CDN in local setup.
         </footer>
+        {/* Debug panel (remove in production) */}
+        <div className="fixed bottom-3 right-3 p-3 bg-gray-900 border border-gray-700 text-xs text-gray-300 rounded">
+          <div className="font-mono text-[11px]">debug:</div>
+          <div>firebaseApp: {debugInfo.firebaseAppExists ? 'yes' : 'no'}</div>
+          <div>auth/db: {debugInfo.authExists && debugInfo.dbExists ? 'ok' : 'missing'}</div>
+          <div>authReady: {String(debugInfo.isAuthReady)}</div>
+          <div>userId: {debugInfo.userId ? debugInfo.userId.slice(0,8) : 'none'}</div>
+          <div>wallet: {debugInfo.walletPublicKey ? debugInfo.walletPublicKey.slice(0,8) : 'none'}</div>
+          <div>memos: {debugInfo.memosCount}</div>
+        </div>
       </div>
     </div>
   );

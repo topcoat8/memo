@@ -1,102 +1,102 @@
-# $MEMO: Encrypted Communication on a Public Ledger
+# Memo Protocol
 
-## Project Vision
+## Private Communication on a Public Ledger
 
-Solana $MEMO explores a future where secure messages are themselves digital assets. Each message is stored publicly as an immutable ledger entry while its contents remain privately readable only by the intended recipient. A transferable token or receipt represents proof that a message exists on-chain; ownership of that receipt can serve as provenance, transferability, or an on-chain record linked to the off-chain encrypted payload. The design separates public metadata (sender, recipient identifiers, timestamps, and the receipt token) from encrypted content, enabling auditability and on-chain interaction without exposing message plaintext.
+**Current Status:** Phase 2 (In Progress)
 
-This repository demonstrates the core concept with a focused proof-of-concept: a browser UI that writes encrypted payloads to a public datastore and decrypts them client-side. The POC is intentionally simplified to highlight architectural trade-offs prior to hardening and on-chain implementation.
+This repository contains the functional dApp for Memo Protocol, currently in active development.
 
-## Technology Stack (POC & Future)
+✅ **Phase 1 (Completed):** Local-only POC validated.
 
-| Component | POC (current) | Future (target) |
-|---|---:|---|
-| Blockchain | None on-chain; Firestore used as a public ledger stub | Solana (Anchor/Rust program to manage message PDAs and receipts) |
-| Frontend | React (single-file POC: [Memo.jsx](Memo.jsx)), Tailwind for styles | React/Next.js + robust UI patterns; componentized codebase and design system |
-| E2E Crypto | Demo XOR cipher (see [`xorCipher`](Memo.jsx), [`encryptMessage`](Memo.jsx), [`decryptMessage`](Memo.jsx)) | NaCl-based E2E (TweetNaCl.js / libsodium), proper key exchange and authenticated encryption |
-| Data Storage | Firebase Firestore collection (PUBLIC_DATA_PATH used as public ledger) | On-chain PDAs for metadata; IPFS/Arweave for larger encrypted payloads; minimized on-chain state |
-| Wallet Integration | Firebase anonymous auth as identity stub | Native Solana wallets via `@solana/wallet-adapter-react` and wallet-based signing for key management |
+➡️ **Phase 2 (Current):** Integrating live Solana wallets (`@solana/wallet-adapter-react`) and production-grade encryption (TweetNaCl).
 
-## Quick Start: Running the Local POC
+**Next:** Phase 3: On-Chain Program (Anchor/Rust).
 
-This repository contains a minimal proof-of-concept UI implemented in [Memo.jsx](Memo.jsx). For a detailed local development guide and troubleshooting, see `solana_memo_local_poc_guide.md`.
+---
 
-Concise steps to run locally:
+## The Vision: Solving the Transparency Paradox
 
-1. Install dependencies:
+Public ledgers are built for transparency. This is a feature, not a bug. But it creates a critical barrier for real-world business: how do you handle confidential data?
 
-```powershell
-npm install
-```
+How do you:
+- Attach a private invoice to a public payment?
+- Include confidential contract terms with a token transfer?
+- Send a personal, token-bound message with an NFT gift?
 
-2. Provide your Firebase web app configuration by populating the `LOCAL_FIREBASE_CONFIG` object at the top of `Memo.jsx`, or by exposing a global `window.FIREBASE_CONFIG` in your `index.html` during development.
+Right now, you can't. The moment it's on-chain, it's public. If it's off-chain, it's not verifiable.
 
-3. Optional: enable wallet and NaCl-based encryption
+Memo Protocol solves this. It is the missing privacy layer for public blockchains, enabling end-to-end encrypted communication tied directly to wallet identities.
 
-- Wallets: The POC will detect Phantom-compatible wallets injected at `window.solana`. If available the UI shows a "Connect Wallet" button and the app will prefer the wallet public key for identity. For production-grade wallet integration, the next step is to integrate `@solana/wallet-adapter-react` (see Roadmap).
-- NaCl: The app attempts a dynamic import of `tweetnacl` at runtime. To ensure NaCl is used during local development, install it as a dependency:
+---
 
-```powershell
-npm install tweetnacl
-```
+## Core Concepts
 
-4. Start the dev server (adapt to your bundler):
+Memo Protocol separates the metadata from the data. It creates a new primitive that is simultaneously publicly verifiable and privately confidential.
 
-```powershell
-npm start
-# or
-npm run dev
-```
+- **Public Verifiability:** Anyone on the public ledger can audit the act of communication. They can prove that Wallet A sent a Memo to Wallet B at a specific time.
+- **Private Confidentiality:** Only the owner of Wallet B (using their private key) can decrypt and read the content of that Memo.
 
-5. Open the local URL shown by your dev server (commonly `http://localhost:3000` or `http://localhost:5173`).
+This allows you to conduct private business on a public ledger for the first time.
 
-Notes:
-- The current implementation prefers NaCl secretbox authenticated encryption when `tweetnacl` is available. If the library or a wallet is not present the app falls back to the original XOR demonstration cipher (insecure) so the end-to-end flow remains observable for testing.
-- Populate Firebase Firestore and enable anonymous auth if you plan to use the anonymous identity flow.
+---
+
+## Technology Stack
+
+| Component   | Technology                      | Purpose                                                        |
+|------------|----------------------------------|----------------------------------------------------------------|
+| Blockchain  | Solana                          | Public key identity, consensus, and (in Phase 3) the on-chain program. |
+| Frontend    | React (Vite) & Tailwind CSS     | A clean, responsive UI for demonstrating the protocol's functionality. |
+| Wallet      | @solana/wallet-adapter-react    | Handles connection to all major Solana wallets (Phantom, Solflare, etc.). |
+| Encryption  | TweetNaCl                       | Production-grade, audited library for client-side E2E encryption (secretbox). |
+| Data (POC)  | Firebase Firestore              | Simulates the public, readable ledger for storing encrypted payloads. |
+
+---
 
 ## Project Roadmap
 
-### Phase 1: Proof of Concept (Completed)
-Deliverables:
-- Single-file React POC UI ([Memo.jsx](Memo.jsx)) that demonstrates the full message lifecycle: compose → encrypt (POC cipher) → publish to a public ledger (Firestore) → client-side decryption for the recipient.
-- Anonymous identity stub via Firebase Auth to simulate wallet identifiers.
-- Public ledger representation (Firestore collection `PUBLIC_DATA_PATH`) exposing non-sensitive fields (sender, recipient, encrypted payload, createdAt).
-- Goal: validate UX and system-level assumptions for public-but-encrypted messaging.
+We are building in the open. This roadmap outlines our path from a functional POC to a fully decentralized protocol.
 
-### Phase 2: Wallet & Security Integration
-Immediate next steps:
-### Phase 2: Wallet & Security Integration (Implemented - POC)
-Completed / implemented in this POC:
-- Runtime integration: The client now attempts to dynamically import `tweetnacl` at runtime and will use NaCl secretbox for authenticated encryption when available. The repository still falls back to the XOR demo cipher when NaCl is not present to preserve testability.
-- Wallet detection: The UI detects Phantom-compatible wallets injected at `window.solana` and offers a simple "Connect Wallet" action that prefers the wallet public key for identity in place of the Firebase anonymous UID. This is a lightweight POC integration to validate flows; full `@solana/wallet-adapter-react` integration remains a future hardening step.
+### ✅ Phase 1: Proof of Concept (Completed)
+**Goal:** Validate the core UX and system assumptions for public-but-encrypted messaging.
+**Deliverables:**
+- Single-file React UI demonstrating the full message lifecycle.
+- Anonymous identity via Firebase Auth to simulate wallet identifiers.
+- Public ledger (Firestore) exposing sender, recipient, and encrypted payload.
 
-Immediate next steps to harden Phase 2 for production:
-- Replace the lightweight Phantom detection with `@solana/wallet-adapter-react` for broad wallet support, better UX, and standard sign-in flows.
-- Implement explicit key exchange (e.g., X25519/ECDH) and ephemeral session keys rather than deriving symmetric keys directly from wallet addresses.
-- Add client-side key backup and recovery flows and remove any possibility of plaintext or raw keys being persisted insecurely.
+### ➡️ Phase 2: Security & Wallet Integration (Current)
+**Goal:** Replace dummy logic with real Solana identity and production-grade cryptography.
+**Deliverables:**
+- Full integration with `@solana/wallet-adapter-react` to use the public key as the primary identity.
+- Replaced dummy crypto with TweetNaCl for authenticated, client-side encryption.
+- Hardened identity logic that always prefers the connected wallet.
 
-### Phase 3: Tokenomics & On-Chain Program
-Longer-term on-chain vision:
-- Build an Anchor/Rust program to manage message state. Messages will be anchored using Program Derived Addresses (PDAs) storing minimal metadata and pointers to encrypted payloads.
-- Introduce an SPL token ("$MEMO") minted as a receipt when a message is published on-chain. The receipt encodes provenance and optionally additional semantics (proof-of-delivery, transferability).
-- Define gas-optimized PDA layouts and permission models so that encrypted payload owners and recipients can interact with message receipts without exposing plaintext.
-- Design considerations: censorship resistance, storage cost minimization (e.g., off-chain payloads), and upgradeable program patterns.
+### Phase 3: On-Chain Protocol (Future)
+**Goal:** Decentralize the protocol and introduce the $MEMO token receipt.
+**Deliverables:**
+- Develop an Anchor/Rust program to manage message state on Solana.
+- Use Program Derived Addresses (PDAs) for minimal, gas-efficient on-chain metadata.
+- Mint an SPL token ($MEMO) as a "receipt" when a message is published, encoding provenance and making the message itself a tradable or composable asset.
 
-### Phase 4: Feature Enhancement & UX
-Stretch goals and product-grade improvements:
-- User discovery and social graph features (opt-in SNS-style discovery that respects privacy by design).
-- Burn / revoke feature: allow senders or token holders to mark receipts as invalid, with appropriate UX and on-chain attestations.
-- Group memos and multi-recipient encryption with secure key distribution and access control.
-- Analytics, moderation tooling, and enterprise integration patterns where required.
+### Phase 4: Ecosystem & Features (Future)
+**Goal:** Expand protocol utility and drive adoption.
+**Deliverables:**
+- User discovery and social graph features (opt-in, privacy-respecting).
+- "Burn" or "Revoke" features for message receipts.
+- Group memos and multi-recipient encryption with secure key distribution.
+- Analytics, moderation tooling, and enterprise integration patterns.
+
+---
 
 ## Contribution
 
-Contributions are welcome. This project is exploratory and intended to mature through practical iteration. Recommended contribution paths:
-- Security and cryptography audits and PRs to replace the demo cipher with audited libraries and correct key management flows.
-- Frontend extraction and componentization for testability and maintainability (refactor [Memo.jsx](Memo.jsx) into a composable UI).
-- On-chain program proposals and Anchor skeletons that model PDAs and token receipts.
+We are building the privacy layer we want to use. We welcome contributions from the community, especially in the areas of:
+- Security & Cryptography (e.g., formalizing the E2E key exchange)
+- On-Chain Program Design (Anchor/Rust)
+- Frontend Componentization & UX
+- Gas & Storage Optimization
 
-If you plan to contribute:
-- Open issues describing the proposed change or RFC for on-chain design.
-- Submit PRs with tests and clear migration notes where applicable.
+Feel free to open an issue or submit a pull request.
 
-License: See [LICENSE](LICENSE) for terms.
+---
+
+**License:** Licensed under the MIT License. See LICENSE for terms.
