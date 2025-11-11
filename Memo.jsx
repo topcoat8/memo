@@ -20,47 +20,15 @@ import {
   onSnapshot,
   serverTimestamp,
 } from "firebase/firestore";
-import { connectAuthEmulator } from "firebase/auth";
-import { connectFirestoreEmulator } from "firebase/firestore";
 
-// Local-first default Firebase config (suitable for emulator usage)
-// These defaults allow the app to initialize against local emulators without
-// requiring external Firebase credentials. Override via Vite env vars
-// (VITE_FIREBASE_*) or by setting window.FIREBASE_CONFIG in the host page.
-const LOCAL_FIREBASE_CONFIG = {
-  apiKey: "local",
-  authDomain: "local",
-  projectId: "local-memo",
-  storageBucket: "local",
-  messagingSenderId: "local",
-  appId: "local",
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
-
-// Build firebase config from (in-order): window.FIREBASE_CONFIG, Vite env (import.meta.env), or LOCAL_FIREBASE_CONFIG
-// We intentionally do not mutate LOCAL_FIREBASE_CONFIG so the default remains safe for local/dev.
-let firebaseConfig = LOCAL_FIREBASE_CONFIG;
-try {
-  // Prefer an explicit config provided by the host page at runtime
-  if (typeof window !== "undefined" && window.FIREBASE_CONFIG && Object.keys(window.FIREBASE_CONFIG).length) {
-    firebaseConfig = window.FIREBASE_CONFIG;
-  } else if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_FIREBASE_API_KEY) {
-    // Build a config object from Vite env vars (set by Vercel at build time)
-    const envCfg = {
-      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-      appId: import.meta.env.VITE_FIREBASE_APP_ID,
-    };
-    // Only override when at least apiKey is present
-    if (envCfg.apiKey) {
-      firebaseConfig = envCfg;
-    }
-  }
-} catch (e) {
-  // ignore and fall back to LOCAL_FIREBASE_CONFIG
-}
 
 // Name of the public collection that represents our "public ledger"
 const PUBLIC_DATA_PATH = "public_memos";
@@ -151,33 +119,20 @@ export default function App() {
   // Initialize Firebase app once
   const firebaseApp = useMemo(() => {
     try {
-      // The 'firebaseConfig' variable is already prepared by the
-      // top-level script (lines 43-73). That logic correctly reads
-      // from Vercel's build-time env vars (import.meta.env.VITE_*)
-      // or falls back to LOCAL_FIREBASE_CONFIG.
-
-      // We just need to validate and initialize the app.
-      if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
+      // Basic validation: Check if the env vars were *actually* loaded.
+      // If VITE_FIREBASE_API_KEY was missing, firebaseConfig.apiKey will be undefined.
+      if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
         throw new Error(
-          "Firebase config is missing."
+          "Firebase config is incomplete. Ensure VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID are set in Vercel."
         );
       }
-
-      // Add a check to ensure Vercel env vars were loaded
-      // import.meta.env.DEV is false in Vercel/production
-      if (firebaseConfig.apiKey === "local" && (typeof import.meta !== "undefined" && !import.meta.env.DEV)) {
-        throw new Error(
-          "App is using local default config. Check Vercel Environment Variables. They must be prefixed with 'VITE_'. (e.g., VITE_FIREBASE_API_KEY)"
-        );
-      }
-
+      
       const app = initializeApp(firebaseConfig);
       return app;
     } catch (err) {
       setAppInitError(err?.message || "Failed to initialize Firebase.");
       return null;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Debug info snapshot for troubleshooting blank-screen issues
@@ -196,23 +151,6 @@ export default function App() {
   // Firebase services (auth, db)
   const auth = useMemo(() => (firebaseApp ? getAuth(firebaseApp) : null), [firebaseApp]);
   const db = useMemo(() => (firebaseApp ? getFirestore(firebaseApp) : null), [firebaseApp]);
-
-  // Optionally connect to local emulators when requested via Vite env
-  useEffect(() => {
-    try {
-      const useEmulator = typeof import.meta !== "undefined" && import.meta.env?.VITE_USE_FIREBASE_EMULATOR === 'true';
-      if (useEmulator && auth) {
-        // Connect Auth emulator
-        connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
-      }
-      if (useEmulator && db) {
-        // Connect Firestore emulator
-        connectFirestoreEmulator(db, 'localhost', 8080);
-      }
-    } catch (e) {
-      // ignore emulator connect errors and proceed with production config
-    }
-  }, [auth, db]);
 
   // Anonymous auth and user state ready flag
   useEffect(() => {
