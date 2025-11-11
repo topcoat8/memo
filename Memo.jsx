@@ -36,9 +36,31 @@ const LOCAL_FIREBASE_CONFIG = {
   appId: "local",
 };
 
-// Fallback selection: allows overriding via a global (window.FIREBASE_CONFIG) or uses LOCAL_FIREBASE_CONFIG
-const firebaseConfig =
-  (typeof window !== "undefined" && window.FIREBASE_CONFIG) || LOCAL_FIREBASE_CONFIG;
+// Build firebase config from (in-order): window.FIREBASE_CONFIG, Vite env (import.meta.env), or LOCAL_FIREBASE_CONFIG
+// We intentionally do not mutate LOCAL_FIREBASE_CONFIG so the default remains safe for local/dev.
+let firebaseConfig = LOCAL_FIREBASE_CONFIG;
+try {
+  // Prefer an explicit config provided by the host page at runtime
+  if (typeof window !== "undefined" && window.FIREBASE_CONFIG && Object.keys(window.FIREBASE_CONFIG).length) {
+    firebaseConfig = window.FIREBASE_CONFIG;
+  } else if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_FIREBASE_API_KEY) {
+    // Build a config object from Vite env vars (set by Vercel at build time)
+    const envCfg = {
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    };
+    // Only override when at least apiKey is present
+    if (envCfg.apiKey) {
+      firebaseConfig = envCfg;
+    }
+  }
+} catch (e) {
+  // ignore and fall back to LOCAL_FIREBASE_CONFIG
+}
 
 // Name of the public collection that represents our "public ledger"
 const PUBLIC_DATA_PATH = "public_memos";
