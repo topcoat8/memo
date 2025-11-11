@@ -18,11 +18,40 @@ This repository demonstrates the core concept with a focused proof-of-concept: a
 
 ## Quick Start: Running the Local POC
 
-This repository contains a minimal proof-of-concept UI implemented in [Memo.jsx](Memo.jsx). For a local development guide and step-by-step instructions, see the companion guide: `solana_memo_local_poc_guide.md`.
+This repository contains a minimal proof-of-concept UI implemented in [Memo.jsx](Memo.jsx). For a detailed local development guide and troubleshooting, see `solana_memo_local_poc_guide.md`.
 
-Key developer notes:
-- The POC uses a local Firebase config stub (see `LOCAL_FIREBASE_CONFIG` in [Memo.jsx](Memo.jsx)). Populate your Firebase config for local runs.
-- The current encryption is intentionally insecure and exists only to demonstrate the end-to-end flow. See [`encryptMessage`](Memo.jsx) and [`decryptMessage`](Memo.jsx) for the implementation used by the POC.
+Concise steps to run locally:
+
+1. Install dependencies:
+
+```powershell
+npm install
+```
+
+2. Provide your Firebase web app configuration by populating the `LOCAL_FIREBASE_CONFIG` object at the top of `Memo.jsx`, or by exposing a global `window.FIREBASE_CONFIG` in your `index.html` during development.
+
+3. Optional: enable wallet and NaCl-based encryption
+
+- Wallets: The POC will detect Phantom-compatible wallets injected at `window.solana`. If available the UI shows a "Connect Wallet" button and the app will prefer the wallet public key for identity. For production-grade wallet integration, the next step is to integrate `@solana/wallet-adapter-react` (see Roadmap).
+- NaCl: The app attempts a dynamic import of `tweetnacl` at runtime. To ensure NaCl is used during local development, install it as a dependency:
+
+```powershell
+npm install tweetnacl
+```
+
+4. Start the dev server (adapt to your bundler):
+
+```powershell
+npm start
+# or
+npm run dev
+```
+
+5. Open the local URL shown by your dev server (commonly `http://localhost:3000` or `http://localhost:5173`).
+
+Notes:
+- The current implementation prefers NaCl secretbox authenticated encryption when `tweetnacl` is available. If the library or a wallet is not present the app falls back to the original XOR demonstration cipher (insecure) so the end-to-end flow remains observable for testing.
+- Populate Firebase Firestore and enable anonymous auth if you plan to use the anonymous identity flow.
 
 ## Project Roadmap
 
@@ -35,9 +64,15 @@ Deliverables:
 
 ### Phase 2: Wallet & Security Integration
 Immediate next steps:
-- Replace anonymous Firebase identities with wallet-based identities using `@solana/wallet-adapter-react`. This transition will map wallet addresses to recipient identifiers and enable on-device key management.
-- Implement robust end-to-end cryptography using TweetNaCl.js (or an equivalent audited library). Introduce proper key exchange, ephemeral keys, authenticated encryption, and replay protections.
-- Remove client-side storage of plaintext and design a secure flow for key pair generation, backup, and recovery tied to wallet ownership and signing.
+### Phase 2: Wallet & Security Integration (Implemented - POC)
+Completed / implemented in this POC:
+- Runtime integration: The client now attempts to dynamically import `tweetnacl` at runtime and will use NaCl secretbox for authenticated encryption when available. The repository still falls back to the XOR demo cipher when NaCl is not present to preserve testability.
+- Wallet detection: The UI detects Phantom-compatible wallets injected at `window.solana` and offers a simple "Connect Wallet" action that prefers the wallet public key for identity in place of the Firebase anonymous UID. This is a lightweight POC integration to validate flows; full `@solana/wallet-adapter-react` integration remains a future hardening step.
+
+Immediate next steps to harden Phase 2 for production:
+- Replace the lightweight Phantom detection with `@solana/wallet-adapter-react` for broad wallet support, better UX, and standard sign-in flows.
+- Implement explicit key exchange (e.g., X25519/ECDH) and ephemeral session keys rather than deriving symmetric keys directly from wallet addresses.
+- Add client-side key backup and recovery flows and remove any possibility of plaintext or raw keys being persisted insecurely.
 
 ### Phase 3: Tokenomics & On-Chain Program
 Longer-term on-chain vision:

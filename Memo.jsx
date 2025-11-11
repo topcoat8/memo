@@ -41,10 +41,39 @@ const firebaseConfig =
 const PUBLIC_DATA_PATH = "public_memos";
 
 // ===========================
-// Dummy, Non-Secure Crypto
+// Crypto: TweetNaCl (preferred) with XOR fallback
 // ===========================
-// WARNING: This is intentionally non-secure for POC purposes ONLY.
-// A simple XOR-based cipher to demonstrate end-to-end flow.
+// NOTE: This POC attempts to load `tweetnacl` dynamically at runtime.
+// If `tweetnacl` is not available the app will gracefully fall back to the
+// original XOR-based cipher. The XOR path remains intentionally insecure and
+// is present only to preserve the original POC behaviour.
+
+let _nacl = null; // runtime-loaded TweetNaCl
+
+function utf8ToUint8Array(str) {
+  return new TextEncoder().encode(str);
+}
+
+function uint8ArrayToBase64(bytes) {
+  let binary = "";
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function base64ToUint8Array(b64) {
+  const binary = atob(b64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+// Simple XOR fallback (unchanged semantics)
 function xorCipher(text, key) {
   if (!key || key.length === 0) return text;
   const keyChars = Array.from(key);
@@ -57,14 +86,51 @@ function xorCipher(text, key) {
   return out.join("");
 }
 
+// Primary encrypt/decrypt functions. Use NaCl secretbox when available.
 function encryptMessage(plaintext, recipientId) {
-  // Use recipientId as the "key" so only the intended recipient can decrypt in this POC
+  // If TweetNaCl is available, derive a 32-byte symmetric key from the recipientId
+  // (hash) and use nacl.secretbox for authenticated encryption.
+  if (_nacl) {
+    try {
+      const keyHash = _nacl.hash(utf8ToUint8Array(recipientId || ""));
+      const key = keyHash.slice(0, 32);
+      const nonce = _nacl.randomBytes(_nacl.secretbox.nonceLength);
+      const messageBytes = utf8ToUint8Array(plaintext);
+      const boxed = _nacl.secretbox(messageBytes, nonce, key);
+      // Store nonce + ciphertext as base64
+      const combined = new Uint8Array(nonce.length + boxed.length);
+      combined.set(nonce, 0);
+      combined.set(boxed, nonce.length);
+      return uint8ArrayToBase64(combined);
+    } catch (e) {
+      // fall through to XOR fallback
+    }
+  }
+
+  // Fallback: XOR cipher stored as base64 to keep original behaviour
   const cipher = xorCipher(plaintext, recipientId || "");
-  // Store as base64 to make it visibly transportable
   return btoa(unescape(encodeURIComponent(cipher)));
 }
 
 function decryptMessage(encryptedBase64, recipientId) {
+  if (_nacl) {
+    try {
+      const combined = base64ToUint8Array(encryptedBase64);
+      const nonceLen = _nacl.secretbox.nonceLength;
+      if (combined.length >= nonceLen) {
+        const nonce = combined.slice(0, nonceLen);
+        const boxed = combined.slice(nonceLen);
+        const keyHash = _nacl.hash(utf8ToUint8Array(recipientId || ""));
+        const key = keyHash.slice(0, 32);
+        const opened = _nacl.secretbox.open(boxed, nonce, key);
+        if (opened) return new TextDecoder().decode(opened);
+        return "[Decryption failed]";
+      }
+    } catch (e) {
+      // Fall back to XOR below
+    }
+  }
+
   try {
     const cipher = decodeURIComponent(escape(atob(encryptedBase64)));
     return xorCipher(cipher, recipientId || "");
@@ -80,6 +146,8 @@ export default function App() {
   const [appInitError, setAppInitError] = useState("");
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [userId, setUserId] = useState("");
+  const [walletPublicKey, setWalletPublicKey] = useState(null);
+  const [isWalletAvailable, setIsWalletAvailable] = useState(false);
   const [recipientId, setRecipientId] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -104,6 +172,27 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Attempt to dynamically import TweetNaCl at runtime for better E2E
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const nacl = await import("tweetnacl");
+        // tweetnacl exports default or named, normalize
+        _nacl = nacl.default || nacl;
+        // expose helper if running
+        if (mounted) {
+          // no-op: _nacl loaded
+        }
+      } catch (e) {
+        // keep _nacl null; fallback remains
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // Firebase services (auth, db)
   const auth = useMemo(() => (firebaseApp ? getAuth(firebaseApp) : null), [firebaseApp]);
   const db = useMemo(() => (firebaseApp ? getFirestore(firebaseApp) : null), [firebaseApp]);
@@ -113,7 +202,8 @@ export default function App() {
     if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       if (u) {
-        setUserId(u.uid);
+        // prefer wallet public key if present, otherwise use Firebase UID
+        setUserId((prev) => (walletPublicKey ? walletPublicKey : u.uid));
         setIsAuthReady(true);
       } else {
         try {
@@ -126,6 +216,41 @@ export default function App() {
     });
     return () => unsubscribe();
   }, [auth]);
+
+  // Keep userId in sync if walletPublicKey changes after auth
+  useEffect(() => {
+    if (walletPublicKey) setUserId(walletPublicKey);
+  }, [walletPublicKey]);
+
+  // Wallet connect helper (Phantom)
+  async function connectWallet() {
+    if (typeof window === "undefined" || !window?.solana) {
+      setError("No Solana wallet available in the browser.");
+      return;
+    }
+    try {
+      const resp = await window.solana.connect();
+      if (resp?.publicKey) {
+        setWalletPublicKey(resp.publicKey.toString());
+        setSuccessMessage("Wallet connected.");
+      }
+    } catch (e) {
+      setError(e?.message || "Wallet connection failed.");
+    }
+  }
+
+  // Detect Phantom (or compatible) wallet in window
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hasSolana = !!window?.solana?.isPhantom;
+    setIsWalletAvailable(Boolean(hasSolana));
+    if (hasSolana) {
+      // auto-connect if already trusted
+      window.solana.connect({ onlyIfTrusted: true }).then((res) => {
+        if (res?.publicKey) setWalletPublicKey(res.publicKey.toString());
+      }).catch(() => {});
+    }
+  }, []);
 
   // Subscribe to "public ledger" memos
   useEffect(() => {
@@ -181,7 +306,8 @@ export default function App() {
     }
     try {
       setIsLoading(true);
-      const encryptedContent = encryptMessage(message, recipientId.trim());
+      const targetRecipient = recipientId.trim();
+      const encryptedContent = encryptMessage(message, targetRecipient);
       const coll = collection(db, PUBLIC_DATA_PATH);
       // Generate a random doc id and set
       const ref = doc(coll);
@@ -225,18 +351,29 @@ export default function App() {
           <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">Wallet ID (Anonymous Auth)</p>
+                <p className="text-sm text-gray-400">Wallet ID (Anonymous Auth / Wallet)</p>
                 <p className="font-mono text-sm md:text-base break-all text-gray-200">
                   {isAuthReady ? userId : "Connecting..."}
                 </p>
               </div>
-              <span className="inline-flex items-center text-xs px-2 py-1 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                Demo-Only Crypto
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center text-xs px-2 py-1 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                  Demo-Only Crypto
+                </span>
+                {isWalletAvailable ? (
+                  <button
+                    onClick={connectWallet}
+                    className="text-sm px-3 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500"
+                  >
+                    {walletPublicKey ? "Wallet Connected" : "Connect Wallet"}
+                  </button>
+                ) : null}
+              </div>
             </div>
             <p className="mt-3 text-xs text-amber-300">
-              Warning: Encryption in this POC is a simple XOR placeholder and is NOT secure.
-              Do not use for real secrets. It exists solely to demonstrate the end-to-end flow.
+              Warning: Encryption in this POC is a simple XOR placeholder unless TweetNaCl is
+              available. Do not use for real secrets. This app will use TweetNaCl when present and
+              fall back to the demo cipher otherwise.
             </p>
           </div>
         </section>
