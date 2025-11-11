@@ -3,12 +3,19 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /public_memos/{memoId} {
       allow read: if true;
+      
+      // Allow create ONLY if the user is signed in (even anonymously)
+      // AND they are sending exactly the 4 fields we expect
+      // AND the createdAt field is a server timestamp
       allow create: if request.auth != null
-        && request.resource.data.keys().hasAll(['senderId', 'recipientId', 'encryptedContent'])
+        && request.resource.data.keys().hasAll(['senderId', 'recipientId', 'encryptedContent', 'createdAt'])
+        && request.resource.data.keys().size() == 4
         && request.resource.data.senderId is string
         && request.resource.data.recipientId is string
         && request.resource.data.encryptedContent is string
-        && request.resource.data.encryptedContent.size() < 20000;
+        && request.resource.data.encryptedContent.size() < 20000
+        && request.resource.data.createdAt == request.time;
+        
       allow update, delete: if false;
     }
   }
