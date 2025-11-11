@@ -151,29 +151,26 @@ export default function App() {
   // Initialize Firebase app once
   const firebaseApp = useMemo(() => {
     try {
-      // Basic validation hint for local dev experience
-      // If Vite envs are present, populate LOCAL_FIREBASE_CONFIG from import.meta.env
-      const useEnv = typeof import.meta !== "undefined" && Boolean(import.meta.env?.VITE_FIREBASE_API_KEY);
-      if (useEnv) {
-        const envCfg = {
-          apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-          authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-          projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-          storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-          messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-          appId: import.meta.env.VITE_FIREBASE_APP_ID,
-        };
-        // Only override when values are present
-        if (envCfg.apiKey) {
-          Object.assign(LOCAL_FIREBASE_CONFIG, envCfg);
-        }
-      }
+      // The 'firebaseConfig' variable is already prepared by the
+      // top-level script (lines 43-73). That logic correctly reads
+      // from Vercel's build-time env vars (import.meta.env.VITE_*)
+      // or falls back to LOCAL_FIREBASE_CONFIG.
 
+      // We just need to validate and initialize the app.
       if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
         throw new Error(
-          "Missing Firebase config. Populate LOCAL_FIREBASE_CONFIG in Memo.jsx or set VITE_* env vars."
+          "Firebase config is missing."
         );
       }
+
+      // Add a check to ensure Vercel env vars were loaded
+      // import.meta.env.DEV is false in Vercel/production
+      if (firebaseConfig.apiKey === "local" && (typeof import.meta !== "undefined" && !import.meta.env.DEV)) {
+        throw new Error(
+          "App is using local default config. Check Vercel Environment Variables. They must be prefixed with 'VITE_'. (e.g., VITE_FIREBASE_API_KEY)"
+        );
+      }
+
       const app = initializeApp(firebaseConfig);
       return app;
     } catch (err) {
