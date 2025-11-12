@@ -7,7 +7,6 @@
     "build": "vite build",
     "start": "vite",
     "postinstall": "node ./scripts/postinstall.js",
-    "smoke:test": "node ./scripts/smoke-test.js",
     "emulators": "firebase emulators:start --project demo-project --only auth,firestore"
   },
   "dependencies": {
@@ -21,6 +20,9 @@
   },
   "devDependencies": {
     "vite": "5.1.0",
-    "firebase-tools": "^11.24.0"
+    "firebase-tools": "^11.24.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0"
   }
 }
