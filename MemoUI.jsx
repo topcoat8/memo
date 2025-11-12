@@ -154,7 +154,7 @@ export default function MemoUI({
               </p>
               <div className="space-y-3">
                 {memos.length === 0 ? (
-                  <div className="text-sm text-gray-500">No memos yet.</div>
+                  <div className="text-sm text-gray-500">No memos found.</div>
                 ) : (
                   memos.map((m) => (
                     <div
@@ -187,11 +187,11 @@ export default function MemoUI({
             <div>
               <h2 className="text-lg font-medium mb-4 text-cyan-300">Private Inbox</h2>
               <p className="text-sm text-gray-400 mb-4">
-                Decrypts memos addressed to your Wallet ID locally in the browser.
+                Decrypts memos addressed to your wallet address locally in the browser.
               </p>
               <div className="space-y-3">
                 {memos.filter((m) => m.recipientId === userId).length === 0 ? (
-                  <div className="text-sm text-gray-500">No private memos for you (yet).</div>
+                  <div className="text-sm text-gray-500">No private memos found.</div>
                 ) : (
                   memos
                     .filter((m) => m.recipientId === userId)
@@ -222,7 +222,7 @@ export default function MemoUI({
         </div>
 
         <footer className="mt-10 text-center text-xs text-gray-600">
-          Built for privacy
+          Privacy-first encrypted messaging on Solana
         </footer>
       </div>
     </div>
