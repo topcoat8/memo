@@ -8,7 +8,23 @@
 
 > *"Public blockchains solved transparency. Memo Protocol solves confidentiality."*
 
----
+
+## Our Mission
+
+**Make private messaging a native feature in every Solana wallet.**
+
+Memo Protocol is designed for integration, not as a standalone app. Our end goal is to see major wallet providers like **Phantom, Solflare, and Backpack** ship Memo Protocol as a built-in feature—giving millions of users secure, encrypted communication without leaving their wallet.
+
+**Think of us as the Twilio of blockchain messaging:** Infrastructure that powers user-to-user communication, integrated seamlessly into the products people already use.
+
+**Why Wallets Need This:**
+- Users already expect messaging (they ask for it)
+- Keeps users in your app instead of Discord/Telegram
+- Completely open-source and self-hosted
+- 2-week integration with our SDK
+- New engagement and retention driver
+
+> 💜 **Calling Phantom, Solflare, Backpack:** We're ready to partner. Let's make Solana the first blockchain with native encrypted messaging.
 
 ## The Problem: The Transparency Paradox
 
