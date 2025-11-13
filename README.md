@@ -113,13 +113,13 @@ We're building in public and shipping iteratively.
 - [x] Public ledger simulation with Firebase
 - [x] Anonymous identity system for testing
 
-### In Progress (Phase 2)
+### Completed (Phase 2)
 - [x] Solana wallet integration (`@solana/wallet-adapter-react`)
 - [x] Production-grade encryption (TweetNaCl secretbox)
 - [x] Wallet public key as primary identity
-- [ ] SDK componentization for easy integration
-- [ ] Message indexing and retrieval optimization
-- [ ] Comprehensive security audit preparation
+- [x] SDK componentization for easy integration
+- [x] Message indexing and retrieval optimization
+- [x] Comprehensive security audit preparation
 
 ### Upcoming (Phase 3)
 - [ ] Solana program deployment (Anchor/Rust)
@@ -131,7 +131,7 @@ We're building in public and shipping iteratively.
 
 ## Roadmap
 
-### Phase 3: On-Chain Protocol (Q2 2025)
+### Phase 3: On-Chain Protocol (Q4 2025)
 **Goal:** Full decentralization and token economics
 
 **Deliverables:**
@@ -141,7 +141,7 @@ We're building in public and shipping iteratively.
 - **Gas Optimization** - Sub-0.001 SOL per message target
 - **Devnet → Mainnet Deployment** - Full test coverage before production
 
-### Phase 4: Enterprise Features (Q3 2025)
+### Phase 4: Enterprise Features (Q1 2026)
 **Goal:** Production-ready for wallet and dApp integration
 
 **Deliverables:**
@@ -230,6 +230,15 @@ Coming soon: `https://memo-protocol.xyz`
 
 ### Run Locally
 
+**Important:** For local development, you have two options:
+
+#### Option 1: Use Firebase Emulators (Recommended for Development)
+
+**Prerequisites:** Firebase emulators require Java to be installed. Install Java if you don't have it:
+- **macOS:** `brew install openjdk@17` or download from [Oracle](https://www.java.com/)
+- **Linux:** `sudo apt install openjdk-17-jdk` (or your distro's equivalent)
+- **Windows:** Download from [Oracle](https://www.java.com/)
+
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/memo-protocol.git
@@ -238,40 +247,125 @@ cd memo-protocol
 # Install dependencies
 npm install
 
-# Set up environment variables
-cp .env.example .env
-# Add your Firebase config (for Phase 2 testing)
+# Start Firebase emulators in one terminal:
+npm run emulators
 
-# Start development server
+# For faster startup (without UI), use:
+npm run emulators:fast
+
+# In another terminal, start the dev server:
 npm run dev
 ```
 
-### Integration Preview (Phase 4)
+**Tips for Faster Emulator Startup:**
+- First launch is always slower (downloads emulator binaries)
+- Keep emulators running - don't restart them for each dev session
+- Use `npm run emulators:fast` to skip the UI (saves ~5-10 seconds)
+- The emulators will persist data between restarts (unless you clear it)
+
+**Note:** When using emulators, you don't need to set environment variables. The app will automatically use placeholder values and connect to `localhost:9099` (Auth) and `localhost:8080` (Firestore).
+
+#### Option 2: Use Real Firebase Project (No Java Required)
+
+If you don't want to install Java, you can use a real Firebase project (free tier works fine):
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/memo-protocol.git
+cd memo-protocol
+
+# Install dependencies
+npm install
+
+# Create a .env file in the root directory with your Firebase config:
+# VITE_FIREBASE_API_KEY=your-api-key
+# VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+# VITE_FIREBASE_PROJECT_ID=your-project-id
+# VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+# VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+# VITE_FIREBASE_APP_ID=your-app-id
+
+# Get your Firebase config from: https://console.firebase.google.com/
+# Select your project → Project Settings → Your apps → Web app
+
+# Then start the dev server:
+npm run dev
+```
+
+**Quick Firebase Setup:**
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Create a new project (or use existing)
+3. Enable Authentication → Anonymous sign-in
+4. Create a Firestore database (start in test mode for development)
+5. Copy your web app config to `.env` file
+
+### SDK Integration (Phase 2 - Available Now)
+
+The Memo Protocol SDK is now available for integration. Here's how to use it:
 
 ```javascript
-import { MemoProvider, useMemo } from '@memo-protocol/sdk';
+import { 
+  MemoProvider, 
+  useMemoContext,
+  useMemo, 
+  useMemoMessages,
+  decryptMessage 
+} from './src/sdk/index';
 
+// Wrap your app with MemoProvider
 function YourApp() {
+  const firebaseConfig = {
+    apiKey: 'your-api-key',
+    projectId: 'your-project-id',
+    // ... other Firebase config
+  };
+
   return (
-    <MemoProvider>
+    <MemoProvider firebaseConfig={firebaseConfig}>
       <YourComponents />
     </MemoProvider>
   );
 }
 
+// Use the hooks in your components
 function ChatFeature() {
-  const { sendMemo, getMemos } = useMemo();
+  const { db, userId, isAuthReady } = useMemoContext();
+  const { sendMemo, isLoading, error } = useMemo({ db, userId, isAuthReady });
+  const { memos, inboxMessages } = useMemoMessages({ db, userId });
   
   const handleSend = async () => {
     await sendMemo({
-      recipient: 'recipient_wallet_address',
+      recipientId: 'recipient_wallet_address',
       message: 'Hello from my dApp!'
     });
   };
   
-  return <button onClick={handleSend}>Send Private Message</button>;
+  return (
+    <div>
+      <button onClick={handleSend} disabled={isLoading}>
+        Send Private Message
+      </button>
+      <div>
+        {inboxMessages.map(memo => (
+          <div key={memo.id}>
+            {decryptMessage(memo.encryptedContent, userId)}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 ```
+
+**SDK Features:**
+- `MemoProvider` - Context provider for Firebase and wallet integration
+- `useMemo()` - Hook for sending memos
+- `useMemoMessages()` - Hook for retrieving messages with optimized queries
+- `encryptMessage()` / `decryptMessage()` - Encryption utilities
+- Message indexing and query optimization
+- Conversation filtering and grouping utilities
+
+See `src/sdk/` for the complete SDK implementation.
 
 ---
 
@@ -320,6 +414,8 @@ Memo Protocol takes security seriously:
 - **Zero-Knowledge:** We never see your private keys or message content
 - **Audited Cryptography:** TweetNaCl is peer-reviewed and battle-tested
 - **Open Source:** All code is public for community review
+- **Security Documentation:** Comprehensive security docs available (see [SECURITY.md](./SECURITY.md))
+- **Audit Preparation:** Security audit documentation prepared (see [docs/SECURITY_AUDIT.md](./docs/SECURITY_AUDIT.md))
 - **Upcoming Audit:** Professional security audit planned for Phase 3
 
 **Found a vulnerability?** Email security@memo-protocol.xyz

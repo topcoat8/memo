@@ -1,25 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
-import nacl from 'tweetnacl';
-import { useWallet } from '@solana/wallet-adapter-react';
+import React, { useEffect, useState } from "react";
+import { MemoProvider, useMemoContext, useMemo, useMemoMessages, decryptMessage } from './src/sdk/index';
 import MemoUI from './MemoUI';
-import {
-  initializeApp,
-} from "firebase/app";
-import {
-  getAuth,
-  signInAnonymously,
-  onAuthStateChanged,
-} from "firebase/auth";
-import {
-  getFirestore,
-  collection,
-  doc,
-  setDoc,
-  query,
-  onSnapshot,
-  serverTimestamp,
-} from "firebase/firestore";
 
+// Firebase configuration from environment variables
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -29,163 +12,28 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Name of the public collection that represents our "public ledger"
-const PUBLIC_DATA_PATH = "public_memos";
-
-// ===========================
-// Encryption: TweetNaCl Secretbox
-// ===========================
-// Client-side encryption using TweetNaCl's authenticated encryption (secretbox).
-// Messages are encrypted with a key derived from the recipient's identifier.
-
-const naclInstance = nacl;
-
-function utf8ToUint8Array(str) {
-  return new TextEncoder().encode(str);
-}
-
-function uint8ArrayToBase64(bytes) {
-  let binary = "";
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
-function base64ToUint8Array(b64) {
-  const binary = atob(b64);
-  const len = binary.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
-
-/**
- * Derives a 32-byte encryption key from a recipient identifier.
- * Uses SHA-512 hash of the identifier, truncated to 32 bytes.
- */
-function deriveKeyFromIdentifier(id) {
-  const hash = naclInstance.hash(utf8ToUint8Array(id || ""));
-  return hash.slice(0, 32);
-}
-
-/**
- * Encrypts a plaintext message for a specific recipient.
- * Uses TweetNaCl secretbox with a random nonce.
- * Returns base64-encoded ciphertext (nonce + encrypted data).
- */
-function encryptMessage(plaintext, recipientId) {
-  const key = deriveKeyFromIdentifier(recipientId || "");
-  const nonce = naclInstance.randomBytes(naclInstance.secretbox.nonceLength);
-  const boxed = naclInstance.secretbox(utf8ToUint8Array(plaintext), nonce, key);
-  const combined = new Uint8Array(nonce.length + boxed.length);
-  combined.set(nonce, 0);
-  combined.set(boxed, nonce.length);
-  return uint8ArrayToBase64(combined);
-}
-
-/**
- * Decrypts a message encrypted for a specific recipient.
- * Returns the plaintext if decryption succeeds, or an error message if it fails.
- */
-function decryptMessage(encryptedBase64, recipientId) {
-  try {
-    const combined = base64ToUint8Array(encryptedBase64);
-    const nonceLen = naclInstance.secretbox.nonceLength;
-    if (combined.length < nonceLen) {
-      return "[Decryption failed: Invalid ciphertext]";
-    }
-    const nonce = combined.slice(0, nonceLen);
-    const boxed = combined.slice(nonceLen);
-    const key = deriveKeyFromIdentifier(recipientId || "");
-    const opened = naclInstance.secretbox.open(boxed, nonce, key);
-    if (!opened) {
-      return "[Decryption failed: Authentication failed]";
-    }
-    return new TextDecoder().decode(opened);
-  } catch (error) {
-    return "[Decryption failed]";
-  }
-}
-
-// ===========================
-// Main App Component
-// ===========================
-export default function App() {
-  const [appInitError, setAppInitError] = useState("");
-  const [isAuthReady, setIsAuthReady] = useState(false);
-  const [userId, setUserId] = useState("");
-  // wallet adapter hook is used for wallet interactions
-  const wallet = useWallet();
+// Inner app component that uses the SDK
+function MemoApp() {
+  const { db, userId, isAuthReady, wallet, appInitError } = useMemoContext();
   const [recipientId, setRecipientId] = useState("");
   const [message, setMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [globalError, setGlobalError] = useState(null);
-  const [memos, setMemos] = useState([]);
 
-  // Initialize Firebase app once
-  const firebaseApp = useMemo(() => {
-    try {
-      // Validate that required environment variables are present
-      if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-        throw new Error(
-          "Firebase configuration is incomplete. Please ensure VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID are set."
-        );
-      }
-      
-      const app = initializeApp(firebaseConfig);
-      return app;
-    } catch (err) {
-      setAppInitError(err?.message || "Failed to initialize Firebase.");
-      return null;
-    }
-  }, []);
+  // Use SDK hooks
+  const { sendMemo: sendMemoSDK, isLoading, error, successMessage } = useMemo({
+    db,
+    userId,
+    isAuthReady,
+  });
 
-
-  // Initialize Firebase services
-  const auth = useMemo(() => (firebaseApp ? getAuth(firebaseApp) : null), [firebaseApp]);
-  const db = useMemo(() => (firebaseApp ? getFirestore(firebaseApp) : null), [firebaseApp]);
-
-  // Initialize anonymous authentication and user identity
-  useEffect(() => {
-    if (!auth) return;
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // Prefer wallet public key as identity if connected, otherwise use Firebase UID
-        if (wallet?.publicKey) {
-          setUserId(wallet.publicKey.toString());
-        } else {
-          setUserId(user.uid);
-        }
-        setIsAuthReady(true);
-      } else {
-        try {
-          await signInAnonymously(auth);
-        } catch (error) {
-          setError(error?.message || "Authentication failed. Please try again.");
-          setIsAuthReady(false);
-        }
-      }
-    });
-    return () => unsubscribe();
-  }, [auth, wallet?.publicKey]);
-
-  // Synchronize user identity with wallet connection state
-  // When a wallet connects, use its public key as the identity.
-  // When disconnected, fall back to Firebase anonymous UID if available.
-  useEffect(() => {
-    if (wallet?.publicKey) {
-      setUserId(wallet.publicKey.toString());
-      setIsAuthReady(true);
-    } else if (auth?.currentUser) {
-      setUserId(auth.currentUser.uid);
-    }
-  }, [wallet?.publicKey, auth]);
+  // Get all messages (optimized query) - only fetch when ready
+  const { memos, loading: messagesLoading } = useMemoMessages({
+    db: isAuthReady ? db : null, // Only fetch when auth is ready
+    userId: isAuthReady ? userId : null,
+    sortOrder: 'desc',
+    limit: 200,
+    autoDecrypt: false, // We'll decrypt manually in the UI
+  });
 
   // Global error handler for runtime errors
   // In production, consider disabling detailed error display for security
@@ -218,78 +66,15 @@ export default function App() {
     };
   }, []);
 
-  // Subscribe to public ledger memos
-  useEffect(() => {
-    if (!db) return;
-    const q = query(collection(db, PUBLIC_DATA_PATH));
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const memosList = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          memosList.push({
-            id: doc.id,
-            senderId: data?.senderId || "",
-            recipientId: data?.recipientId || "",
-            encryptedContent: data?.encryptedContent || "",
-            createdAt: data?.createdAt || null,
-          });
-        });
-        // Sort by creation time, newest first
-        memosList.sort((a, b) => {
-          const timeA = a.createdAt?.toMillis?.() || 0;
-          const timeB = b.createdAt?.toMillis?.() || 0;
-          return timeB - timeA;
-        });
-        setMemos(memosList);
-      },
-      (error) => {
-        setError(error?.message || "Failed to load memos from the ledger.");
-      }
-    );
-    return () => unsubscribe();
-  }, [db]);
-
-  async function sendMemo() {
-    setError("");
-    setSuccessMessage("");
-    
-    if (!db) {
-      setError("Database is not initialized. Please refresh the page.");
-      return;
-    }
-    if (!isAuthReady || !userId) {
-      setError("Authentication is not ready. Please wait a moment and try again.");
-      return;
-    }
-    if (!recipientId.trim()) {
-      setError("Recipient wallet address is required.");
-      return;
-    }
-    if (!message.trim()) {
-      setError("Message cannot be empty.");
-      return;
-    }
-    
-    try {
-      setIsLoading(true);
-      const targetRecipient = recipientId.trim();
-      const encryptedContent = encryptMessage(message, targetRecipient);
-      const memosCollection = collection(db, PUBLIC_DATA_PATH);
-      const docRef = doc(memosCollection);
-      await setDoc(docRef, {
-        senderId: userId,
-        recipientId: targetRecipient,
-        encryptedContent,
-        createdAt: serverTimestamp(),
-      });
+  // Wrapper for sendMemo that matches the UI's expected signature
+  async function handleSendMemo() {
+    await sendMemoSDK({
+      recipientId,
+      message,
+    });
+    // Clear message on success
+    if (!error) {
       setMessage("");
-      setSuccessMessage("Memo sent successfully to the public ledger.");
-    } catch (error) {
-      setError(error?.message || "Failed to send memo. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
   }
 
@@ -322,13 +107,22 @@ export default function App() {
         setRecipientId={setRecipientId}
         message={message}
         setMessage={setMessage}
-        isLoading={isLoading}
+        isLoading={isLoading || messagesLoading}
         error={error}
         successMessage={successMessage}
-        sendMemo={sendMemo}
+        sendMemo={handleSendMemo}
         memos={memos}
-        decryptMessage={decryptMessage}
+        decryptMessage={(encryptedContent) => decryptMessage(encryptedContent, userId)}
       />
     </>
+  );
+}
+
+// Main app component with provider
+export default function App() {
+  return (
+    <MemoProvider firebaseConfig={firebaseConfig}>
+      <MemoApp />
+    </MemoProvider>
   );
 }

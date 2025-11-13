@@ -13,3 +13,5 @@ package-lock.json
 
 # Do not commit local Firebase project files or secrets
 .firebaserc.local
+
+docs/

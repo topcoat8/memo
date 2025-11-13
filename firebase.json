@@ -5,9 +5,15 @@
     },
     "firestore": {
       "port": 8080
-    }
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    },
+    "singleProjectMode": true
   },
   "firestore": {
-    "rules": "firebase.rules"
+    "rules": "firebase.rules",
+    "indexes": "firestore.indexes.json"
   }
 }
