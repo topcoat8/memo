@@ -121,11 +121,18 @@ We're building in public and shipping iteratively.
 - [x] Message indexing and retrieval optimization
 - [x] Comprehensive security audit preparation
 
-### Upcoming (Phase 3)
-- [ ] Solana program deployment (Anchor/Rust)
-- [ ] $MEMO SPL token receipt system
-- [ ] Program Derived Addresses (PDAs) for gas efficiency
-- [ ] Decentralized message storage with compression
+### Completed (Phase 3)
+- [x] Solana program deployment (Anchor/Rust)
+- [x] Program Derived Addresses (PDAs) for gas efficiency
+- [x] Decentralized message storage with compression
+- [x] UserMessageIndex for fast message retrieval
+- [x] Message deletion functionality
+- [x] Counter-based PDA seeds to prevent collisions
+- [x] $MEMO SPL token receipt system (1 token minted per message)
+
+### Upcoming (Phase 3.5)
+- [ ] Token economics and incentives
+- [ ] Token burn mechanism for message deletion
 
 ---
 
@@ -216,10 +223,11 @@ We're building in public and shipping iteratively.
 | **Blockchain** | Solana | Public key infrastructure, consensus, and program execution |
 | **Smart Contract** | Anchor (Rust) | On-chain message storage and $MEMO token minting |
 | **Encryption** | TweetNaCl | Audited, battle-tested E2E encryption (NaCl secretbox) |
+| **Compression** | Pako (gzip) | Message compression to reduce on-chain storage costs |
 | **Frontend** | React + Vite | Reference implementation UI |
 | **Styling** | Tailwind CSS | Rapid, customizable styling |
 | **Wallet** | @solana/wallet-adapter-react | Universal Solana wallet support |
-| **Data (POC)** | Firebase Firestore | Simulates public ledger for Phase 2 development |
+| **SDK** | @coral-xyz/anchor | Anchor framework for Solana program interaction |
 
 ---
 
@@ -228,17 +236,16 @@ We're building in public and shipping iteratively.
 ### Try the Live Demo
 Coming soon: `https://memo-protocol.xyz`
 
+### Prerequisites
+
+- **Node.js** 18+ and npm
+- **Rust** and **Cargo** (for building the Solana program)
+- **Anchor** framework (install: `cargo install --git https://github.com/coral-xyz/anchor avm && avm install latest && avm use latest`)
+- **Solana CLI** (install: `sh -c "$(curl -sSfL https://release.solana.com/stable/install)"`)
+- A Solana wallet (Phantom, Solflare, etc.)
+
 ### Run Locally
 
-**Important:** For local development, you have two options:
-
-#### Option 1: Use Firebase Emulators (Recommended for Development)
-
-**Prerequisites:** Firebase emulators require Java to be installed. Install Java if you don't have it:
-- **macOS:** `brew install openjdk@17` or download from [Oracle](https://www.java.com/)
-- **Linux:** `sudo apt install openjdk-17-jdk` (or your distro's equivalent)
-- **Windows:** Download from [Oracle](https://www.java.com/)
-
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/memo-protocol.git
@@ -247,61 +254,34 @@ cd memo-protocol
 # Install dependencies
 npm install
 
-# Start Firebase emulators in one terminal:
-npm run emulators
+# Build the Solana program (first time only, or after program changes)
+npm run anchor:build
 
-# For faster startup (without UI), use:
-npm run emulators:fast
+# Deploy to devnet (optional - for testing on-chain)
+# Make sure you have SOL in your devnet wallet first
+npm run anchor:deploy:devnet
 
-# In another terminal, start the dev server:
+# Start the development server
 npm run dev
 ```
 
-**Tips for Faster Emulator Startup:**
-- First launch is always slower (downloads emulator binaries)
-- Keep emulators running - don't restart them for each dev session
-- Use `npm run emulators:fast` to skip the UI (saves ~5-10 seconds)
-- The emulators will persist data between restarts (unless you clear it)
-
-**Note:** When using emulators, you don't need to set environment variables. The app will automatically use placeholder values and connect to `localhost:9099` (Auth) and `localhost:8080` (Firestore).
-
-#### Option 2: Use Real Firebase Project (No Java Required)
-
-If you don't want to install Java, you can use a real Firebase project (free tier works fine):
-
+**Environment Variables:**
+Create a `.env` file in the root directory (optional):
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/memo-protocol.git
-cd memo-protocol
-
-# Install dependencies
-npm install
-
-# Create a .env file in the root directory with your Firebase config:
-# VITE_FIREBASE_API_KEY=your-api-key
-# VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-# VITE_FIREBASE_PROJECT_ID=your-project-id
-# VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-# VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-# VITE_FIREBASE_APP_ID=your-app-id
-
-# Get your Firebase config from: https://console.firebase.google.com/
-# Select your project → Project Settings → Your apps → Web app
-
-# Then start the dev server:
-npm run dev
+VITE_SOLANA_NETWORK=devnet  # or 'mainnet-beta' or custom RPC URL
 ```
 
-**Quick Firebase Setup:**
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project (or use existing)
-3. Enable Authentication → Anonymous sign-in
-4. Create a Firestore database (start in test mode for development)
-5. Copy your web app config to `.env` file
+**Development Workflow:**
+1. Connect your Solana wallet (Phantom, Solflare, etc.)
+2. Switch to Devnet in your wallet
+3. Get some devnet SOL from a faucet: https://faucet.solana.com/
+4. Start sending encrypted memos on-chain!
 
-### SDK Integration (Phase 2 - Available Now)
+**Note:** The program ID in `Anchor.toml` and `programs/memo/src/lib.rs` should match your deployed program. Update these after your first deployment.
 
-The Memo Protocol SDK is now available for integration. Here's how to use it:
+### SDK Integration (Phase 3 - On-Chain)
+
+The Memo Protocol SDK is now fully on-chain. Here's how to integrate it:
 
 ```javascript
 import { 
@@ -309,19 +289,13 @@ import {
   useMemoContext,
   useMemo, 
   useMemoMessages,
-  decryptMessage 
+  decryptMessageFromChain 
 } from './src/sdk/index';
 
 // Wrap your app with MemoProvider
 function YourApp() {
-  const firebaseConfig = {
-    apiKey: 'your-api-key',
-    projectId: 'your-project-id',
-    // ... other Firebase config
-  };
-
   return (
-    <MemoProvider firebaseConfig={firebaseConfig}>
+    <MemoProvider network="devnet"> {/* or 'mainnet-beta' */}
       <YourComponents />
     </MemoProvider>
   );
@@ -329,26 +303,45 @@ function YourApp() {
 
 // Use the hooks in your components
 function ChatFeature() {
-  const { db, userId, isAuthReady } = useMemoContext();
-  const { sendMemo, isLoading, error } = useMemo({ db, userId, isAuthReady });
-  const { memos, inboxMessages } = useMemoMessages({ db, userId });
+  const { program, connection, publicKey, userId, isReady } = useMemoContext();
+  const { sendMemo, isLoading, error } = useMemo({ 
+    program, 
+    connection, 
+    publicKey, 
+    userId, 
+    isReady 
+  });
+  const { memos, inboxMessages } = useMemoMessages({ 
+    program, 
+    connection, 
+    publicKey, 
+    userId, 
+    isReady 
+  });
   
   const handleSend = async () => {
-    await sendMemo({
+    const result = await sendMemo({
       recipientId: 'recipient_wallet_address',
       message: 'Hello from my dApp!'
     });
+    if (result.success) {
+      console.log('Transaction:', result.signature);
+    }
   };
   
   return (
     <div>
-      <button onClick={handleSend} disabled={isLoading}>
+      <button onClick={handleSend} disabled={isLoading || !isReady}>
         Send Private Message
       </button>
       <div>
         {inboxMessages.map(memo => (
           <div key={memo.id}>
-            {decryptMessage(memo.encryptedContent, userId)}
+            {memo.decryptedContent || decryptMessageFromChain(
+              new Uint8Array(memo.encryptedContent),
+              memo.nonce,
+              userId
+            )}
           </div>
         ))}
       </div>
@@ -358,12 +351,19 @@ function ChatFeature() {
 ```
 
 **SDK Features:**
-- `MemoProvider` - Context provider for Firebase and wallet integration
-- `useMemo()` - Hook for sending memos
-- `useMemoMessages()` - Hook for retrieving messages with optimized queries
-- `encryptMessage()` / `decryptMessage()` - Encryption utilities
-- Message indexing and query optimization
-- Conversation filtering and grouping utilities
+- `MemoProvider` - Context provider for Solana connection and Anchor program
+- `useMemo()` - Hook for sending memos on-chain
+- `useMemoMessages()` - Hook for retrieving messages from on-chain storage
+- `encryptMessageForChain()` / `decryptMessageFromChain()` - On-chain encryption utilities
+- `compressMessage()` / `decompressMessage()` - Message compression utilities
+- PDA derivation helpers for message accounts and indexes
+- Automatic message indexing for fast retrieval
+
+**Message Format:**
+- Plaintext: 1-500 characters
+- Compressed: ~200-400 bytes (varies)
+- Encrypted: ~250-500 bytes
+- On-chain cost: <0.001 SOL per message
 
 See `src/sdk/` for the complete SDK implementation.
 
@@ -398,11 +398,12 @@ We welcome contributions in:
 
 | Metric | Value |
 |--------|-------|
-| **Protocol Version** | v0.2.0-alpha |
-| **Development Phase** | 2 of 6 |
+| **Protocol Version** | v0.3.0-alpha |
+| **Development Phase** | 3 of 6 |
 | **Test Messages Sent** | 1,000+ |
 | **Target Launch** | Q2 2025 |
-| **Lines of Code** | 5,000+ |
+| **Lines of Code** | 8,000+ |
+| **On-Chain Messages** | Fully operational |
 
 ---
 
@@ -445,10 +446,7 @@ Blockchain promised to change how we do business. But without privacy, it's stuc
 ## Links
 
 - **Website:** Coming Soon
-- **Documentation:** [docs.memo-protocol.xyz](#) (In Development)
-- **Twitter:** [@MemoProtocol](#)
-- **Discord:** [Join our community](#)
-- **GitHub:** [github.com/yourusername/memo-protocol](https://github.com/yourusername/memo-protocol)
+- **Twitter:** [@MemoOnSol](#)
 
 ---
 

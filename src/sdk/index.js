@@ -11,11 +11,14 @@ export { MemoProvider, useMemoContext } from './MemoProvider';
 // Hooks
 export { useMemo } from './hooks/useMemo';
 export { useMemoMessages } from './hooks/useMemoMessages';
+export { useMemoTokenBalance } from './hooks/useMemoTokenBalance';
 
 // Utilities
 export {
   encryptMessage,
+  encryptMessageForChain,
   decryptMessage,
+  decryptMessageFromChain,
   deriveKeyFromIdentifier,
   isValidWalletAddress,
   utf8ToUint8Array,
@@ -24,10 +27,19 @@ export {
 } from './utils/encryption';
 
 export {
-  createMessageQuery,
-  filterConversation,
-  groupByConversation,
-  getRequiredIndexes,
-  MessageQueryOptions,
-} from './utils/messageIndexing';
+  compressMessage,
+  decompressMessage,
+  getCompressedSize,
+} from './utils/compression';
 
+// Solana Client
+export {
+  initConnection,
+  initProgram,
+  getMessageCounterPDA,
+  getMessageIndexPDA,
+  getMessagePDA,
+  getMemoMintAddress,
+  anchorToSolanaPubkey,
+  solanaToAnchorPubkey,
+} from './clients/solanaClient';

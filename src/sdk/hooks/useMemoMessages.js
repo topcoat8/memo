@@ -1,20 +1,34 @@
 /**
  * Memo Protocol - useMemoMessages Hook
  * 
- * React hook for retrieving and managing memo messages with optimized queries.
+ * React hook for retrieving and managing memo messages from on-chain storage.
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { onSnapshot } from 'firebase/firestore';
-import { createMessageQuery, filterConversation } from '../utils/messageIndexing';
-import { decryptMessage } from '../utils/encryption';
+import { PublicKey } from '@solana/web3.js';
+import { getMessageIndexPDA } from '../clients/solanaClient';
+import { decryptMessageFromChain } from '../utils/encryption';
 
 /**
- * Hook for retrieving memo messages with optimized queries
+ * Filters messages for a conversation between two wallets
+ */
+function filterConversation(messages, wallet1, wallet2) {
+  return messages.filter(msg => {
+    const isFrom1To2 = msg.senderId === wallet1 && msg.recipientId === wallet2;
+    const isFrom2To1 = msg.senderId === wallet2 && msg.recipientId === wallet1;
+    return isFrom1To2 || isFrom2To1;
+  });
+}
+
+/**
+ * Hook for retrieving memo messages from on-chain storage
  * 
  * @param {Object} options - Hook options
- * @param {Firestore} options.db - Firestore database instance
+ * @param {Program} options.program - Anchor program instance
+ * @param {Connection} options.connection - Solana connection
+ * @param {PublicKey} options.publicKey - Current user's public key
  * @param {string} options.userId - Current user's wallet address
+ * @param {boolean} options.isReady - Whether program is ready
  * @param {string} options.recipientId - Filter by recipient (optional)
  * @param {string} options.senderId - Filter by sender (optional)
  * @param {string} options.conversationWith - Filter conversation with specific wallet (optional)
@@ -24,8 +38,11 @@ import { decryptMessage } from '../utils/encryption';
  * @returns {Object} - Messages state and utilities
  */
 export function useMemoMessages({
-  db,
+  program,
+  connection,
+  publicKey,
   userId,
+  isReady,
   recipientId = null,
   senderId = null,
   conversationWith = null,
@@ -37,92 +54,153 @@ export function useMemoMessages({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Create optimized query
-  const messageQuery = useMemo(() => {
-    if (!db) return null;
-    
-    return createMessageQuery(db, 'public_memos', {
-      recipientId,
-      senderId,
-      conversationWith,
-      currentUserId: userId,
-      sortOrder,
-      limitCount,
-    });
-  }, [db, recipientId, senderId, conversationWith, userId, sortOrder, limitCount]);
-
-  // Subscribe to messages (only when db and userId are ready)
+  // Fetch messages from on-chain
   useEffect(() => {
-    if (!messageQuery || !db) {
+    if (!program || !connection || !publicKey || !userId || !isReady) {
       setLoading(false);
       return;
     }
 
+    let isMounted = true;
     setLoading(true);
     setError(null);
 
-    const unsubscribe = onSnapshot(
-      messageQuery,
-      (snapshot) => {
+    async function fetchMessages() {
+      try {
+        // Step 1: Get user's message index PDA
+        const [indexPDA] = await getMessageIndexPDA(publicKey, program.programId);
+        
+        let messagePDAs = [];
         try {
-          const memosList = [];
-          snapshot.forEach((doc) => {
-            const data = doc.data();
-            memosList.push({
-              id: doc.id,
-              senderId: data?.senderId || "",
-              recipientId: data?.recipientId || "",
-              encryptedContent: data?.encryptedContent || "",
-              createdAt: data?.createdAt || null,
-            });
-          });
+          const indexAccount = await program.account.userMessageIndex.fetch(indexPDA);
+          messagePDAs = indexAccount.messagePdas || [];
+        } catch (err) {
+          // Index doesn't exist yet, user has no messages
+          console.log('No message index found for user');
+        }
 
-          // If conversation filter is active, filter client-side
-          let filteredMemos = memosList;
-          if (conversationWith && userId) {
-            filteredMemos = filterConversation(memosList, userId, conversationWith);
+        // Step 2: Fetch all message accounts
+        const messagePromises = messagePDAs.map(async (pda) => {
+          try {
+            const messageAccount = await program.account.messageAccount.fetch(pda);
+            
+            // Skip deleted messages
+            if (messageAccount.deleted) {
+              return null;
+            }
+
+            return {
+              id: pda.toString(),
+              senderId: messageAccount.sender.toString(),
+              recipientId: messageAccount.recipient.toString(),
+              encryptedContent: messageAccount.encryptedContent,
+              nonce: messageAccount.nonce,
+              timestamp: messageAccount.timestamp,
+              createdAt: new Date(messageAccount.timestamp * 1000),
+              deleted: messageAccount.deleted,
+            };
+          } catch (err) {
+            console.warn('Failed to fetch message account:', pda.toString(), err);
+            return null;
           }
+        });
 
-          // Auto-decrypt messages for current user
-          if (autoDecrypt && userId) {
-            filteredMemos = filteredMemos.map(memo => {
-              if (memo.recipientId === userId) {
+        const messages = (await Promise.all(messagePromises))
+          .filter(msg => msg !== null);
+
+        // Step 3: Apply filters
+        let filteredMessages = messages;
+        
+        if (recipientId) {
+          filteredMessages = filteredMessages.filter(m => m.recipientId === recipientId);
+        }
+        
+        if (senderId) {
+          filteredMessages = filteredMessages.filter(m => m.senderId === senderId);
+        }
+        
+        if (conversationWith) {
+          filteredMessages = filterConversation(filteredMessages, userId, conversationWith);
+        }
+
+        // Step 4: Sort messages
+        filteredMessages.sort((a, b) => {
+          const timeA = a.timestamp || 0;
+          const timeB = b.timestamp || 0;
+          return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+        });
+
+        // Step 5: Apply limit
+        if (limitCount > 0) {
+          filteredMessages = filteredMessages.slice(0, limitCount);
+        }
+
+        // Step 6: Auto-decrypt messages for current user
+        if (autoDecrypt && userId) {
+          filteredMessages = filteredMessages.map(memo => {
+            if (memo.recipientId === userId) {
+              try {
+                const decrypted = decryptMessageFromChain(
+                  new Uint8Array(memo.encryptedContent),
+                  memo.nonce,
+                  userId
+                );
                 return {
                   ...memo,
-                  decryptedContent: decryptMessage(memo.encryptedContent, userId),
+                  decryptedContent: decrypted,
                   isDecrypted: true,
                 };
+              } catch (err) {
+                console.warn('Failed to decrypt message:', err);
+                return {
+                  ...memo,
+                  decryptedContent: '[Decryption failed]',
+                  isDecrypted: false,
+                };
               }
-              return memo;
-            });
-          }
+            }
+            return memo;
+          });
+        }
 
-          setMemos(filteredMemos);
-          setLoading(false);
-        } catch (err) {
-          setError(err?.message || 'Failed to process messages');
+        if (isMounted) {
+          setMemos(filteredMessages);
           setLoading(false);
         }
-      },
-      (err) => {
-        setError(err?.message || 'Failed to load messages');
-        setLoading(false);
+      } catch (err) {
+        console.error('Failed to fetch messages:', err);
+        if (isMounted) {
+          setError(err?.message || 'Failed to load messages');
+          setLoading(false);
+        }
       }
-    );
+    }
 
-    return () => unsubscribe();
-  }, [messageQuery, userId, conversationWith, autoDecrypt]);
+    fetchMessages();
+
+    // Set up polling to refresh messages periodically
+    const pollInterval = setInterval(() => {
+      if (isMounted) {
+        fetchMessages();
+      }
+    }, 10000); // Poll every 10 seconds
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollInterval);
+    };
+  }, [program, connection, publicKey, userId, isReady, recipientId, senderId, conversationWith, sortOrder, limitCount, autoDecrypt]);
 
   // Get messages sent to current user
   const inboxMessages = useMemo(() => {
     if (!userId) return [];
-    return memos.filter(m => m.recipientId === userId);
+    return memos.filter(m => m.recipientId === userId && !m.deleted);
   }, [memos, userId]);
 
   // Get messages sent by current user
   const sentMessages = useMemo(() => {
     if (!userId) return [];
-    return memos.filter(m => m.senderId === userId);
+    return memos.filter(m => m.senderId === userId && !m.deleted);
   }, [memos, userId]);
 
   // Decrypt a specific message
@@ -133,7 +211,15 @@ export function useMemoMessages({
     if (memo.decryptedContent) {
       return memo.decryptedContent;
     }
-    return decryptMessage(memo.encryptedContent, userId);
+    try {
+      return decryptMessageFromChain(
+        new Uint8Array(memo.encryptedContent),
+        memo.nonce,
+        userId
+      );
+    } catch (err) {
+      return `[Decryption failed: ${err.message}]`;
+    }
   }, [userId]);
 
   return {
@@ -145,4 +231,3 @@ export function useMemoMessages({
     decrypt,
   };
 }
-

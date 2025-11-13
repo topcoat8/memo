@@ -1,42 +1,57 @@
 import React, { useEffect, useState } from "react";
-import { MemoProvider, useMemoContext, useMemo, useMemoMessages, decryptMessage } from './src/sdk/index';
+import { MemoProvider, useMemoContext, useMemo, useMemoMessages, decryptMessageFromChain } from './src/sdk/index';
+import { useMemoTokenBalance } from './src/sdk/hooks/useMemoTokenBalance';
+import { getMemoMintAddress } from './src/sdk/clients/solanaClient';
 import MemoUI from './MemoUI';
 
-// Firebase configuration from environment variables
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
+// Solana network configuration
+const network = import.meta.env.VITE_SOLANA_NETWORK || 'devnet';
 
 // Inner app component that uses the SDK
 function MemoApp() {
-  const { db, userId, isAuthReady, wallet, appInitError } = useMemoContext();
+  const { connection, program, publicKey, userId, isReady, error: contextError, wallet } = useMemoContext();
   const [recipientId, setRecipientId] = useState("");
   const [message, setMessage] = useState("");
   const [globalError, setGlobalError] = useState(null);
 
   // Use SDK hooks
   const { sendMemo: sendMemoSDK, isLoading, error, successMessage } = useMemo({
-    db,
+    program,
+    connection,
+    publicKey,
     userId,
-    isAuthReady,
+    isReady,
+    wallet,
   });
 
-  // Get all messages (optimized query) - only fetch when ready
+  // Get all messages - only fetch when ready
   const { memos, loading: messagesLoading } = useMemoMessages({
-    db: isAuthReady ? db : null, // Only fetch when auth is ready
-    userId: isAuthReady ? userId : null,
+    program: isReady ? program : null,
+    connection: isReady ? connection : null,
+    publicKey,
+    userId: isReady ? userId : null,
+    isReady,
     sortOrder: 'desc',
     limit: 200,
     autoDecrypt: false, // We'll decrypt manually in the UI
   });
 
+  // Get $MEMO token mint and balance
+  const [memoMint, setMemoMint] = useState(null);
+  useEffect(() => {
+    if (program && isReady) {
+      getMemoMintAddress(program).then(setMemoMint).catch(console.error);
+    }
+  }, [program, isReady]);
+
+  const { balance: tokenBalance, loading: balanceLoading } = useMemoTokenBalance({
+    connection,
+    publicKey,
+    memoMint,
+    isReady: isReady && !!memoMint,
+  });
+
   // Global error handler for runtime errors
-  // In production, consider disabling detailed error display for security
   useEffect(() => {
     function handleError(message, source, lineno, colno, error) {
       setGlobalError({ 
@@ -68,13 +83,31 @@ function MemoApp() {
 
   // Wrapper for sendMemo that matches the UI's expected signature
   async function handleSendMemo() {
-    await sendMemoSDK({
+    const result = await sendMemoSDK({
       recipientId,
       message,
     });
     // Clear message on success
-    if (!error) {
+    if (result?.success) {
       setMessage("");
+    }
+  }
+
+  // Decrypt message helper for UI
+  function decryptMessageHelper(memo) {
+    if (!memo || !userId) return "[Not available]";
+    if (memo.decryptedContent) return memo.decryptedContent;
+    if (memo.recipientId !== userId) return "[Cannot decrypt: Not the recipient]";
+    if (!memo.encryptedContent || !memo.nonce) return "[Invalid message data]";
+    
+    try {
+      return decryptMessageFromChain(
+        new Uint8Array(memo.encryptedContent),
+        memo.nonce,
+        userId
+      );
+    } catch (err) {
+      return `[Decryption failed: ${err.message}]`;
     }
   }
 
@@ -91,18 +124,18 @@ function MemoApp() {
           </div>
         </div>
       ) : null}
-      {appInitError ? (
+      {contextError ? (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-40 max-w-4xl w-full px-4">
           <div className="rounded-md border border-red-500/50 bg-red-900/20 p-4">
             <p className="text-red-300 font-medium">Initialization Error</p>
-            <p className="text-red-300 text-sm mt-1">{appInitError}</p>
+            <p className="text-red-300 text-sm mt-1">{contextError}</p>
           </div>
         </div>
       ) : null}
       <MemoUI
-        isAuthReady={isAuthReady}
+        isAuthReady={isReady}
         userId={userId}
-        wallet={wallet}
+        wallet={null} // Wallet is now in context
         recipientId={recipientId}
         setRecipientId={setRecipientId}
         message={message}
@@ -112,7 +145,9 @@ function MemoApp() {
         successMessage={successMessage}
         sendMemo={handleSendMemo}
         memos={memos}
-        decryptMessage={(encryptedContent) => decryptMessage(encryptedContent, userId)}
+        decryptMessage={decryptMessageHelper}
+        tokenBalance={tokenBalance}
+        balanceLoading={balanceLoading}
       />
     </>
   );
@@ -121,7 +156,7 @@ function MemoApp() {
 // Main app component with provider
 export default function App() {
   return (
-    <MemoProvider firebaseConfig={firebaseConfig}>
+    <MemoProvider network={network}>
       <MemoApp />
     </MemoProvider>
   );

@@ -15,6 +15,8 @@ export default function MemoUI({
   sendMemo,
   memos,
   decryptMessage,
+  tokenBalance = 0,
+  balanceLoading = false,
 }) {
   const [activeTab, setActiveTab] = useState("send");
 
@@ -36,26 +38,40 @@ export default function MemoUI({
           </p>
         </header>
 
-        {/* Wallet ID + Warning */}
+        {/* Wallet ID + Token Balance + Warning */}
         <section className="mb-8">
           <div className="rounded-lg border border-indigo-900/50 bg-gray-950/70 backdrop-blur-md shadow-xl shadow-black/20 p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-400">Wallet ID (Anonymous Auth / Wallet)</p>
+              <div className="flex-1">
+                <p className="text-sm text-gray-400">Wallet ID</p>
                 <p className="font-mono text-sm md:text-base break-all text-cyan-400">
                   {isAuthReady ? (
                     wallet?.publicKey ? wallet.publicKey.toString() : (userId ? `anonymous:${userId.slice(0,8)}` : 'Not connected')
                   ) : "Connecting..."}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
+                {isAuthReady && (
+                  <div className="text-right">
+                    <p className="text-sm text-gray-400">$MEMO Balance</p>
+                    <p className="text-lg font-bold text-emerald-400">
+                      {balanceLoading ? '...' : tokenBalance}
+                    </p>
+                    {tokenBalance < 1 && (
+                      <p className="text-xs text-amber-400 mt-1">Need tokens to send</p>
+                    )}
+                  </div>
+                )}
                 <div className="text-sm">
                   <WalletMultiButton />
                 </div>
               </div>
             </div>
             <p className="mt-3 text-xs text-amber-400 border-t border-amber-500/20 pt-3">
-              Encryption is handled in-browser using authenticated encryption (TweetNaCl).
+              Encryption is handled in-browser using authenticated encryption (TweetNaCl). 
+              {tokenBalance < 1 && isAuthReady && (
+                <span className="block mt-1">⚠️ You need at least 1 $MEMO token to send messages.</span>
+              )}
             </p>
           </div>
         </section>
@@ -132,13 +148,15 @@ export default function MemoUI({
                 <div className="flex items-center gap-3">
                   <button
                     onClick={sendMemo}
-                    disabled={isLoading || !isAuthReady}
+                    disabled={isLoading || !isAuthReady || tokenBalance < 1}
                     className="inline-flex items-center justify-center rounded-md bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2 text-sm font-medium text-white shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20 transition-all duration-300 transform hover:scale-105"
                   >
-                    {isLoading ? "Sending..." : "Send Memo"}
+                    {isLoading ? "Sending..." : `Send Memo (Cost: 1 $MEMO)`}
                   </button>
                   {!isAuthReady ? (
                     <span className="text-xs text-gray-400">Waiting for auth...</span>
+                  ) : tokenBalance < 1 ? (
+                    <span className="text-xs text-amber-400">Insufficient $MEMO tokens</span>
                   ) : null}
                 </div>
               </div>
