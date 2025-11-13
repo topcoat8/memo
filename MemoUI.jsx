@@ -197,6 +197,10 @@ export default function MemoUI({
                     .filter((m) => m.recipientId === userId)
                     .map((m) => {
                       const decrypted = decryptMessage(m.encryptedContent, userId);
+                      const handleReply = () => {
+                        setRecipientId(m.senderId);
+                        setActiveTab("send");
+                      };
                       return (
                         <div
                           key={m.id}
@@ -211,6 +215,14 @@ export default function MemoUI({
                               <span className="text-cyan-600">Decrypted Message:</span>
                               <p className="break-words mt-1">{decrypted}</p>
                             </div>
+                          </div>
+                          <div className="mt-3 pt-3 border-t border-gray-700">
+                            <button
+                              onClick={handleReply}
+                              className="inline-flex items-center justify-center rounded-md bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 px-4 py-1.5 text-xs font-medium text-white shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20 transition-all duration-300 transform hover:scale-105"
+                            >
+                              Reply
+                            </button>
                           </div>
                         </div>
                       );
