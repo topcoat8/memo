@@ -7,7 +7,8 @@
     "build": "vite build",
     "start": "vite",
     "postinstall": "node ./scripts/postinstall.js",
-    "emulators": "firebase emulators:start --project demo-project --only auth,firestore"
+    "emulators": "firebase emulators:start --project demo-project --only auth,firestore",
+    "emulators:fast": "firebase emulators:start --project demo-project --only auth,firestore --ui=false"
   },
   "dependencies": {
     "react": "18.2.0",
