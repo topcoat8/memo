@@ -29,10 +29,10 @@ export default function MemoUI({
       <div className="max-w-4xl mx-auto px-4 py-8">
         <header className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-500 py-1">
-            Solana Secure Memo ($MEMO)
+            Memo Protocol (POC)
           </h1>
           <p className="text-gray-400 mt-1">
-            Encrypted messaging using a local-first ledger for consistent developer and private deployments.
+            Send tokens with encrypted messages. Powered by Solana and TweetNaCl encryption.
           </p>
         </header>
 
@@ -40,22 +40,20 @@ export default function MemoUI({
         <section className="mb-8">
           <div className="rounded-lg border border-indigo-900/50 bg-gray-950/70 backdrop-blur-md shadow-xl shadow-black/20 p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-400">Wallet ID (Anonymous Auth / Wallet)</p>
+              <div className="flex-1">
+                <p className="text-sm text-gray-400">Wallet ID</p>
                 <p className="font-mono text-sm md:text-base break-all text-cyan-400">
                   {isAuthReady ? (
                     wallet?.publicKey ? wallet.publicKey.toString() : (userId ? `anonymous:${userId.slice(0,8)}` : 'Not connected')
                   ) : "Connecting..."}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="text-sm">
-                  <WalletMultiButton />
-                </div>
+              <div className="text-sm">
+                <WalletMultiButton />
               </div>
             </div>
             <p className="mt-3 text-xs text-amber-400 border-t border-amber-500/20 pt-3">
-              Encryption is handled in-browser using authenticated encryption (TweetNaCl).
+              Encryption is handled in-browser using TweetNaCl. Messages are stored on-chain with 1 token transfer per message.
             </p>
           </div>
         </section>
@@ -103,9 +101,8 @@ export default function MemoUI({
               <h2 className="text-lg font-medium mb-4 text-cyan-300">Send Memo</h2>
               <div className="mb-4 p-4 bg-indigo-950/30 border border-indigo-800/50 rounded-md">
                 <p className="text-sm text-gray-300 leading-relaxed">
-                  Send encrypted messages to any Solana wallet address. Your message is encrypted using 
-                  authenticated encryption (TweetNaCl) before being stored in the public ledger. Only the 
-                  recipient with the matching wallet address can decrypt and read your message.
+                  Send 1 token with an encrypted message to any Solana wallet. Messages are encrypted
+                  using TweetNaCl before being stored on-chain. Only the recipient can decrypt your message.
                 </p>
               </div>
               <div className="space-y-4">
@@ -135,10 +132,10 @@ export default function MemoUI({
                     disabled={isLoading || !isAuthReady}
                     className="inline-flex items-center justify-center rounded-md bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2 text-sm font-medium text-white shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20 transition-all duration-300 transform hover:scale-105"
                   >
-                    {isLoading ? "Sending..." : "Send Memo"}
+                    {isLoading ? "Sending..." : "Send Memo + 1 Token"}
                   </button>
                   {!isAuthReady ? (
-                    <span className="text-xs text-gray-400">Waiting for auth...</span>
+                    <span className="text-xs text-gray-400">Connect wallet to send</span>
                   ) : null}
                 </div>
               </div>
@@ -150,7 +147,7 @@ export default function MemoUI({
             <div>
               <h2 className="text-lg font-medium mb-4 text-cyan-300">Public Ledger</h2>
               <p className="text-sm text-gray-400 mb-4">
-                Entries visible to everyone. Only public fields are shown here.
+                All messages on the ledger (encrypted). Transaction details are public, content is private.
               </p>
               <div className="space-y-3">
                 {memos.length === 0 ? (
@@ -164,15 +161,15 @@ export default function MemoUI({
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <div>
                           <span className="text-cyan-600">Sender:</span>
-                          <p className="font-mono break-all">{m.senderId}</p>
+                          <p className="font-mono text-xs break-all">{m.senderId}</p>
                         </div>
                         <div>
                           <span className="text-cyan-600">Recipient:</span>
-                          <p className="font-mono break-all">{m.recipientId}</p>
+                          <p className="font-mono text-xs break-all">{m.recipientId}</p>
                         </div>
                         <div>
-                          <span className="text-cyan-600">Encrypted:</span>
-                          <p className="font-mono break-all">{m.encryptedContent}</p>
+                          <span className="text-cyan-600">Status:</span>
+                          <p className="text-emerald-400">Encrypted</p>
                         </div>
                       </div>
                     </div>
@@ -187,7 +184,7 @@ export default function MemoUI({
             <div>
               <h2 className="text-lg font-medium mb-4 text-cyan-300">Private Inbox</h2>
               <p className="text-sm text-gray-400 mb-4">
-                Decrypts memos addressed to your wallet address locally in the browser.
+                Decrypts memos addressed to your wallet locally in the browser.
               </p>
               <div className="space-y-3">
                 {memos.filter((m) => m.recipientId === userId).length === 0 ? (
@@ -196,7 +193,7 @@ export default function MemoUI({
                   memos
                     .filter((m) => m.recipientId === userId)
                     .map((m) => {
-                      const decrypted = decryptMessage(m.encryptedContent, userId);
+                      const decrypted = decryptMessage(m);
                       const handleReply = () => {
                         setRecipientId(m.senderId);
                         setActiveTab("send");
@@ -209,7 +206,7 @@ export default function MemoUI({
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                             <div>
                               <span className="text-cyan-600">From:</span>
-                              <p className="font-mono break-all">{m.senderId}</p>
+                              <p className="font-mono text-xs break-all">{m.senderId}</p>
                             </div>
                             <div className="md:col-span-2">
                               <span className="text-cyan-600">Decrypted Message:</span>
@@ -234,10 +231,9 @@ export default function MemoUI({
         </div>
 
         <footer className="mt-10 text-center text-xs text-gray-600">
-          Privacy-first encrypted messaging on Solana
+          Privacy-first encrypted messaging on Solana • Proof of Concept
         </footer>
       </div>
     </div>
   );
 }
-

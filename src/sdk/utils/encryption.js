@@ -3,9 +3,12 @@
  * 
  * Client-side encryption using TweetNaCl's authenticated encryption (secretbox).
  * All encryption/decryption happens in the browser - we never see private keys or message content.
+ * 
+ * For on-chain storage: Messages are compressed before encryption, and nonce is stored separately.
  */
 
 import nacl from 'tweetnacl';
+import { compressMessage, decompressMessage } from './compression';
 
 const naclInstance = nacl;
 
@@ -57,7 +60,42 @@ export function deriveKeyFromIdentifier(id) {
 }
 
 /**
- * Encrypts a plaintext message for a specific recipient.
+ * Encrypts a plaintext message for a specific recipient (on-chain version).
+ * Compresses the message first, then encrypts with TweetNaCl secretbox.
+ * Returns encrypted data and nonce separately for on-chain storage.
+ * 
+ * @param {string} plaintext - The message to encrypt
+ * @param {string} recipientId - The recipient's wallet public key
+ * @returns {Object} - { encryptedData: Uint8Array, nonce: Uint8Array }
+ */
+export function encryptMessageForChain(plaintext, recipientId) {
+  if (!plaintext || typeof plaintext !== 'string') {
+    throw new Error('Message must be a non-empty string');
+  }
+  if (!recipientId || typeof recipientId !== 'string') {
+    throw new Error('Recipient ID must be a non-empty string');
+  }
+
+  // Step 1: Compress the message
+  const compressed = compressMessage(plaintext);
+
+  // Step 2: Encrypt the compressed data
+  const key = deriveKeyFromIdentifier(recipientId);
+  const nonce = naclInstance.randomBytes(naclInstance.secretbox.nonceLength);
+  const boxed = naclInstance.secretbox(compressed, nonce, key);
+  
+  if (!boxed) {
+    throw new Error('Encryption failed');
+  }
+
+  return {
+    encryptedData: boxed,
+    nonce: Array.from(nonce), // Convert to array for Anchor serialization
+  };
+}
+
+/**
+ * Encrypts a plaintext message for a specific recipient (legacy version).
  * Uses TweetNaCl secretbox with a random nonce.
  * Returns base64-encoded ciphertext (nonce + encrypted data).
  * 
@@ -88,7 +126,52 @@ export function encryptMessage(plaintext, recipientId) {
 }
 
 /**
- * Decrypts a message encrypted for a specific recipient.
+ * Decrypts a message from on-chain storage.
+ * Decrypts first, then decompresses to get the original plaintext.
+ * 
+ * @param {Uint8Array} encryptedData - Encrypted message data
+ * @param {Uint8Array|Array<number>} nonce - Nonce used for encryption (24 bytes)
+ * @param {string} recipientId - The recipient's wallet public key
+ * @returns {string} - Decrypted plaintext message or error message
+ */
+export function decryptMessageFromChain(encryptedData, nonce, recipientId) {
+  if (!encryptedData || !(encryptedData instanceof Uint8Array)) {
+    return "[Decryption failed: Invalid encrypted data format]";
+  }
+  if (!nonce || (nonce.length !== 24 && !Array.isArray(nonce))) {
+    return "[Decryption failed: Invalid nonce format]";
+  }
+  if (!recipientId || typeof recipientId !== 'string') {
+    return "[Decryption failed: Invalid recipient ID]";
+  }
+
+  try {
+    // Convert nonce to Uint8Array if it's an array
+    const nonceBytes = Array.isArray(nonce) ? new Uint8Array(nonce) : nonce;
+    
+    if (nonceBytes.length !== naclInstance.secretbox.nonceLength) {
+      return "[Decryption failed: Invalid nonce length]";
+    }
+    
+    // Step 1: Decrypt
+    const key = deriveKeyFromIdentifier(recipientId);
+    const opened = naclInstance.secretbox.open(encryptedData, nonceBytes, key);
+    
+    if (!opened) {
+      return "[Decryption failed: Authentication failed]";
+    }
+    
+    // Step 2: Decompress
+    const plaintext = decompressMessage(opened);
+    
+    return plaintext;
+  } catch (error) {
+    return `[Decryption failed: ${error.message}]`;
+  }
+}
+
+/**
+ * Decrypts a message encrypted for a specific recipient (legacy version).
  * Returns the plaintext if decryption succeeds, or an error message if it fails.
  * 
  * @param {string} encryptedBase64 - Base64-encoded encrypted message

@@ -2,7 +2,7 @@
 
 ## The Privacy Layer for Public Blockchains
 
-[![Phase](https://img.shields.io/badge/Phase-2%20Active-blue)]() [![Solana](https://img.shields.io/badge/Solana-Native-purple)]() [![License](https://img.shields.io/badge/License-MIT-green)]()
+[![Phase](https://img.shields.io/badge/Phase-3%20Development-blue)]() [![Solana](https://img.shields.io/badge/Solana-Native-purple)]() [![License](https://img.shields.io/badge/License-MIT-green)]()
 
 **Memo Protocol is end-to-end encrypted, wallet-to-wallet communication infrastructure for Solana.** We're building the missing primitive that enables private business on public ledgers.
 
@@ -83,9 +83,9 @@ Memo Protocol is designed to be embedded into existing Solana applications:
 │  • Zero-knowledge architecture                      │
 ├─────────────────────────────────────────────────────┤
 │  LEDGER LAYER (Solana Program)                      │
-│  • Encrypted payload storage                        │
+│  • Memo Program - Encrypted payload storage         │
 │  • Sender/recipient metadata                        │
-│  • $MEMO token receipts                             │
+│  • $MEMO token receipts (via Pump Fun)              │
 │  • Verifiable timestamps                            │
 └─────────────────────────────────────────────────────┘
 ```
@@ -103,14 +103,14 @@ Memo Protocol is designed to be embedded into existing Solana applications:
 
 ---
 
-## Current Status: Phase 2 Development
+## Current Status: Phase 4 Development
 
 We're building in public and shipping iteratively.
 
 ### Completed (Phase 1)
 - [x] Core protocol design and POC validation
 - [x] React UI demonstrating full message lifecycle
-- [x] Public ledger simulation with Firebase
+- [x] Firebase-based ledger simulation
 - [x] Anonymous identity system for testing
 
 ### Completed (Phase 2)
@@ -121,25 +121,28 @@ We're building in public and shipping iteratively.
 - [x] Message indexing and retrieval optimization
 - [x] Comprehensive security audit preparation
 
-### Upcoming (Phase 3)
-- [ ] Solana program deployment (Anchor/Rust)
-- [ ] $MEMO SPL token receipt system
-- [ ] Program Derived Addresses (PDAs) for gas efficiency
-- [ ] Decentralized message storage with compression
+### Completed (Phase 3) ✅
+- [x] Solana Memo Program integration for on-chain storage
+- [x] $MEMO SPL token receipt system using Pump Fun infrastructure
+- [x] Program Derived Addresses (PDAs) for gas efficiency
+- [x] Message compression and optimization
+- [x] Full on-chain transition complete
+- [x] **End-to-end encrypted on-chain messaging working**
+
+### In Progress (Phase 4)
+**Goal:** Full decentralization using Solana's built-in Memo program
+
+**Deliverables:**
+- **Solana Memo Program Integration** - Leverage Solana's native memo instruction for storage
+- **$MEMO SPL Token** - Token minted as message receipts using Pump Fun infrastructure
+- **Message Compression** - Optimize payload size for on-chain storage
+- **PDA Architecture** - Minimal on-chain footprint with maximum efficiency
+- **Gas Optimization** - Sub-0.001 SOL per message target
+- **Testnet Deployment** - Full test coverage before mainnet
 
 ---
 
 ## Roadmap
-
-### Phase 3: On-Chain Protocol (Q4 2025)
-**Goal:** Full decentralization and token economics
-
-**Deliverables:**
-- **Anchor Program Development** - Write and audit the Solana smart contract
-- **$MEMO Token Launch** - SPL token minted as message receipts
-- **PDA Architecture** - Minimal on-chain footprint with maximum efficiency
-- **Gas Optimization** - Sub-0.001 SOL per message target
-- **Devnet → Mainnet Deployment** - Full test coverage before production
 
 ### Phase 4: Enterprise Features (Q1 2026)
 **Goal:** Production-ready for wallet and dApp integration
@@ -151,6 +154,28 @@ We're building in public and shipping iteratively.
 - **Rate Limiting & Anti-Spam** - Protocol-level protections
 - **Integration Docs** - Complete guides for Phantom, Solflare, etc.
 - **Customization API** - White-label styling and branding
+
+### Phase 5: Advanced Capabilities (Q2 2026)
+**Goal:** Become the standard for Solana private communication
+
+**Deliverables:**
+- **Group Messaging** - Multi-recipient encryption with key rotation
+- **Message Revocation** - Burn mechanism for $MEMO receipts
+- **Cross-Chain Bridges** - Extend to EVM and other chains
+- **Bot & Automation Framework** - Programmatic messaging APIs
+- **Analytics Dashboard** - Network statistics (privacy-preserving)
+- **Enterprise Licensing** - Custom SLAs and priority support
+
+### Phase 6: Ecosystem Expansion (Q4 2026)
+**Goal:** Power the next generation of private blockchain applications
+
+**Deliverables:**
+- **Smart Contract Integration** - Programs can send memos on behalf of users
+- **Payment Streaming** - Attach memos to Streamflow/Zebec payments
+- **Gaming & Social** - In-game encrypted chat for Solana games
+- **DAO Tooling** - Private proposal discussions and voting notes
+- **Mobile SDKs** - Native iOS and Android support
+- **Grant Program** - Fund developers building on Memo Protocol
 
 ### Phase 5: Advanced Capabilities (Q4 2025)
 **Goal:** Become the standard for Solana private communication
@@ -213,159 +238,13 @@ We're building in public and shipping iteratively.
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| **Blockchain** | Solana | Public key infrastructure, consensus, and program execution |
-| **Smart Contract** | Anchor (Rust) | On-chain message storage and $MEMO token minting |
+| **Blockchain** | Solana | Public key infrastructure, consensus, and ledger |
 | **Encryption** | TweetNaCl | Audited, battle-tested E2E encryption (NaCl secretbox) |
 | **Frontend** | React + Vite | Reference implementation UI |
 | **Styling** | Tailwind CSS | Rapid, customizable styling |
 | **Wallet** | @solana/wallet-adapter-react | Universal Solana wallet support |
-| **Data (POC)** | Firebase Firestore | Simulates public ledger for Phase 2 development |
-
----
-
-## Quick Start for Developers
-
-### Try the Live Demo
-Coming soon: `https://memo-protocol.xyz`
-
-### Run Locally
-
-**Important:** For local development, you have two options:
-
-#### Option 1: Use Firebase Emulators (Recommended for Development)
-
-**Prerequisites:** Firebase emulators require Java to be installed. Install Java if you don't have it:
-- **macOS:** `brew install openjdk@17` or download from [Oracle](https://www.java.com/)
-- **Linux:** `sudo apt install openjdk-17-jdk` (or your distro's equivalent)
-- **Windows:** Download from [Oracle](https://www.java.com/)
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/memo-protocol.git
-cd memo-protocol
-
-# Install dependencies
-npm install
-
-# Start Firebase emulators in one terminal:
-npm run emulators
-
-# For faster startup (without UI), use:
-npm run emulators:fast
-
-# In another terminal, start the dev server:
-npm run dev
-```
-
-**Tips for Faster Emulator Startup:**
-- First launch is always slower (downloads emulator binaries)
-- Keep emulators running - don't restart them for each dev session
-- Use `npm run emulators:fast` to skip the UI (saves ~5-10 seconds)
-- The emulators will persist data between restarts (unless you clear it)
-
-**Note:** When using emulators, you don't need to set environment variables. The app will automatically use placeholder values and connect to `localhost:9099` (Auth) and `localhost:8080` (Firestore).
-
-#### Option 2: Use Real Firebase Project (No Java Required)
-
-If you don't want to install Java, you can use a real Firebase project (free tier works fine):
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/memo-protocol.git
-cd memo-protocol
-
-# Install dependencies
-npm install
-
-# Create a .env file in the root directory with your Firebase config:
-# VITE_FIREBASE_API_KEY=your-api-key
-# VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-# VITE_FIREBASE_PROJECT_ID=your-project-id
-# VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-# VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-# VITE_FIREBASE_APP_ID=your-app-id
-
-# Get your Firebase config from: https://console.firebase.google.com/
-# Select your project → Project Settings → Your apps → Web app
-
-# Then start the dev server:
-npm run dev
-```
-
-**Quick Firebase Setup:**
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project (or use existing)
-3. Enable Authentication → Anonymous sign-in
-4. Create a Firestore database (start in test mode for development)
-5. Copy your web app config to `.env` file
-
-### SDK Integration (Phase 2 - Available Now)
-
-The Memo Protocol SDK is now available for integration. Here's how to use it:
-
-```javascript
-import { 
-  MemoProvider, 
-  useMemoContext,
-  useMemo, 
-  useMemoMessages,
-  decryptMessage 
-} from './src/sdk/index';
-
-// Wrap your app with MemoProvider
-function YourApp() {
-  const firebaseConfig = {
-    apiKey: 'your-api-key',
-    projectId: 'your-project-id',
-    // ... other Firebase config
-  };
-
-  return (
-    <MemoProvider firebaseConfig={firebaseConfig}>
-      <YourComponents />
-    </MemoProvider>
-  );
-}
-
-// Use the hooks in your components
-function ChatFeature() {
-  const { db, userId, isAuthReady } = useMemoContext();
-  const { sendMemo, isLoading, error } = useMemo({ db, userId, isAuthReady });
-  const { memos, inboxMessages } = useMemoMessages({ db, userId });
-  
-  const handleSend = async () => {
-    await sendMemo({
-      recipientId: 'recipient_wallet_address',
-      message: 'Hello from my dApp!'
-    });
-  };
-  
-  return (
-    <div>
-      <button onClick={handleSend} disabled={isLoading}>
-        Send Private Message
-      </button>
-      <div>
-        {inboxMessages.map(memo => (
-          <div key={memo.id}>
-            {decryptMessage(memo.encryptedContent, userId)}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-```
-
-**SDK Features:**
-- `MemoProvider` - Context provider for Firebase and wallet integration
-- `useMemo()` - Hook for sending memos
-- `useMemoMessages()` - Hook for retrieving messages with optimized queries
-- `encryptMessage()` / `decryptMessage()` - Encryption utilities
-- Message indexing and query optimization
-- Conversation filtering and grouping utilities
-
-See `src/sdk/` for the complete SDK implementation.
+| **Storage** | Solana Memo Program | On-chain message storage via native memo instruction |
+| **Tokens** | SPL Token + Pump Fun | Message receipts and token infrastructure |
 
 ---
 
@@ -398,27 +277,11 @@ We welcome contributions in:
 
 | Metric | Value |
 |--------|-------|
-| **Protocol Version** | v0.2.0-alpha |
-| **Development Phase** | 2 of 6 |
+| **Protocol Version** | v0.4.0-alpha |
+| **Development Phase** | 4 of 6 |
 | **Test Messages Sent** | 1,000+ |
-| **Target Launch** | Q2 2025 |
+| **Target Launch** | Q1 2026 |
 | **Lines of Code** | 5,000+ |
-
----
-
-## Security
-
-Memo Protocol takes security seriously:
-
-- **Client-Side Encryption:** All encryption happens in the user's browser
-- **Zero-Knowledge:** We never see your private keys or message content
-- **Audited Cryptography:** TweetNaCl is peer-reviewed and battle-tested
-- **Open Source:** All code is public for community review
-- **Security Documentation:** Comprehensive security docs available (see [SECURITY.md](./SECURITY.md))
-- **Audit Preparation:** Security audit documentation prepared (see [docs/SECURITY_AUDIT.md](./docs/SECURITY_AUDIT.md))
-- **Upcoming Audit:** Professional security audit planned for Phase 3
-
-**Found a vulnerability?** Email security@memo-protocol.xyz
 
 ---
 
@@ -439,16 +302,6 @@ Blockchain promised to change how we do business. But without privacy, it's stuc
 - The entire ecosystem benefits from verifiable private communication
 
 **We're not just building a messaging app. We're building the infrastructure that makes blockchain usable for real-world business.**
-
----
-
-## Links
-
-- **Website:** Coming Soon
-- **Documentation:** [docs.memo-protocol.xyz](#) (In Development)
-- **Twitter:** [@MemoProtocol](#)
-- **Discord:** [Join our community](#)
-- **GitHub:** [github.com/yourusername/memo-protocol](https://github.com/yourusername/memo-protocol)
 
 ---
 
