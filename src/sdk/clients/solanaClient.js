@@ -1,25 +1,14 @@
 /**
  * Memo Protocol - Solana Client
  * 
- * Initializes Anchor program client and provides utilities for Solana operations.
+ * Initializes Solana connection and provides utilities for interacting with 
+ * Solana's native Memo program for encrypted message storage.
  */
 
-import { Connection, PublicKey, Keypair } from '@solana/web3.js';
-import { Program, AnchorProvider } from '@coral-xyz/anchor';
+import { Connection, PublicKey, TransactionInstruction, Transaction } from '@solana/web3.js';
 
-// Import IDL directly
-import idlJson from '../idl/memo.json';
-
-// IDL for the Memo program
-const idl = idlJson;
-
-// Load IDL synchronously
-async function loadIdl() {
-  return idl;
-}
-
-// Program ID - will be set after deployment
-const PROGRAM_ID = new PublicKey('Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS');
+// Solana's native Memo program ID
+const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gDiRvsFj7gjrV6RgstZ1aichaosNZmQesEFm');
 
 /**
  * Initialize Solana connection
@@ -42,108 +31,81 @@ export function initConnection(network = 'mainnet-beta') {
 }
 
 /**
- * Initialize Anchor program
+ * Send encrypted memo on-chain using Solana's native Memo program
  *
  * @param {Connection} connection - Solana connection
- * @param {Wallet} wallet - Wallet adapter wallet
- * @returns {Program} - Anchor program instance
+ * @param {Keypair} payer - Payer keypair
+ * @param {string} encryptedData - Base64 encoded encrypted message
+ * @returns {Promise<string>} - Transaction signature
  */
-export async function initProgram(connection, wallet) {
-  if (!wallet || !wallet.publicKey) {
-    throw new Error('Wallet not connected');
-  }
-
-  const loadedIdl = await loadIdl();
-  if (!loadedIdl) {
-    throw new Error('IDL not found. Please build the program first: npm run anchor:build');
+export async function sendMemoTransaction(connection, payer, encryptedData) {
+  if (!payer) {
+    throw new Error('Payer keypair required');
   }
 
   try {
-    // Check if program exists on-chain
-    const accountInfo = await connection.getAccountInfo(PROGRAM_ID);
-    if (!accountInfo) {
-      throw new Error(`Program not deployed. Deploy the program to mainnet first. Program ID: ${PROGRAM_ID.toString()}`);
-    }
+    // Create memo instruction with encrypted data
+    const memoInstruction = new TransactionInstruction({
+      keys: [],
+      programId: MEMO_PROGRAM_ID,
+      data: Buffer.from(encryptedData, 'utf-8'),
+    });
 
-    const provider = new AnchorProvider(
-      connection,
-      wallet,
-      { commitment: 'confirmed' }
-    );
+    // Create transaction
+    const transaction = new Transaction().add(memoInstruction);
 
-    return new Program(loadedIdl, PROGRAM_ID, provider);
+    // Set recent blockhash
+    const { blockhash } = await connection.getLatestBlockhash('confirmed');
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = payer.publicKey;
+
+    // Sign transaction
+    transaction.sign(payer);
+
+    // Send transaction
+    const signature = await connection.sendRawTransaction(transaction.serialize());
+    
+    // Wait for confirmation
+    await connection.confirmTransaction(signature, 'confirmed');
+
+    return signature;
   } catch (err) {
-    console.error('Program initialization error:', err);
+    console.error('Error sending memo transaction:', err);
     throw err;
   }
 }
 
 /**
- * Derive PDA for user message counter
- * 
- * @param {PublicKey} userPubkey - User's public key
- * @param {PublicKey} programId - Program ID
- * @returns {Promise<[PublicKey, number]>} - [PDA, bump]
+ * Get memo transactions for a wallet
+ *
+ * @param {Connection} connection - Solana connection
+ * @param {PublicKey} walletPubkey - Wallet public key
+ * @param {number} limit - Number of transactions to fetch
+ * @returns {Promise<Array>} - Array of memo transactions
  */
-export async function getMessageCounterPDA(userPubkey, programId = PROGRAM_ID) {
-  const [pda, bump] = await PublicKey.findProgramAddress(
-    [
-      Buffer.from('memo'),
-      Buffer.from('counter'),
-      userPubkey.toBuffer(),
-    ],
-    programId
-  );
-  return [pda, bump];
-}
+export async function getMemoTransactions(connection, walletPubkey, limit = 100) {
+  try {
+    const signatures = await connection.getSignaturesForAddress(walletPubkey, { limit });
+    
+    const transactions = await Promise.all(
+      signatures.map(async (sig) => {
+        const tx = await connection.getTransaction(sig.signature, {
+          maxSupportedTransactionVersion: 0,
+        });
+        return tx;
+      })
+    );
 
-/**
- * Derive PDA for user message index
- * 
- * @param {PublicKey} userPubkey - User's public key
- * @param {PublicKey} programId - Program ID
- * @returns {Promise<[PublicKey, number]>} - [PDA, bump]
- */
-export async function getMessageIndexPDA(userPubkey, programId = PROGRAM_ID) {
-  const [pda, bump] = await PublicKey.findProgramAddress(
-    [
-      Buffer.from('memo'),
-      Buffer.from('index'),
-      userPubkey.toBuffer(),
-    ],
-    programId
-  );
-  return [pda, bump];
-}
-
-/**
- * Derive PDA for message account
- * 
- * @param {PublicKey} senderPubkey - Sender's public key
- * @param {PublicKey} recipientPubkey - Recipient's public key
- * @param {number} counter - Message counter value
- * @param {PublicKey} programId - Program ID
- * @returns {Promise<[PublicKey, number]>} - [PDA, bump]
- */
-export async function getMessagePDA(
-  senderPubkey,
-  recipientPubkey,
-  counter,
-  programId = PROGRAM_ID
-) {
-  const counterBuffer = Buffer.allocUnsafe(8);
-  counterBuffer.writeBigUInt64LE(BigInt(counter), 0);
-
-  const [pda, bump] = await PublicKey.findProgramAddress(
-    [
-      Buffer.from('memo'),
-      senderPubkey.toBuffer(),
-      recipientPubkey.toBuffer(),
-      counterBuffer,
-    ],
-    programId
-  );
-  return [pda, bump];
+    // Filter for memo program transactions
+    return transactions.filter(tx => 
+      tx && tx.transaction.message.instructions.some(
+        ix => ix.programId.toString() === MEMO_PROGRAM_ID.toString()
+      )
+    );
+  } catch (err) {
+    console.error('Error fetching memo transactions:', err);
+    throw err;
+  }
 }
 
 

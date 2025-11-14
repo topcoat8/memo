@@ -35,8 +35,6 @@ export {
 // Solana Client
 export {
   initConnection,
-  initProgram,
-  getMessageCounterPDA,
-  getMessageIndexPDA,
-  getMessagePDA,
+  sendMemoTransaction,
+  getMemoTransactions,
 } from './clients/solanaClient';

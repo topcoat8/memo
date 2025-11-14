@@ -285,22 +285,6 @@ We welcome contributions in:
 
 ---
 
-## Security
-
-Memo Protocol takes security seriously:
-
-- **Client-Side Encryption:** All encryption happens in the user's browser
-- **Zero-Knowledge:** We never see your private keys or message content
-- **Audited Cryptography:** TweetNaCl is peer-reviewed and battle-tested
-- **Open Source:** All code is public for community review
-- **Security Documentation:** Comprehensive security docs available (see [SECURITY.md](./SECURITY.md))
-- **Audit Preparation:** Security audit documentation prepared (see [docs/SECURITY_AUDIT.md](./docs/SECURITY_AUDIT.md))
-- **Upcoming Audit:** Professional security audit planned for Phase 3
-
-**Found a vulnerability?** Email security@memo-protocol.xyz
-
----
-
 ## License
 
 Licensed under the MIT License. See [LICENSE](./LICENSE) for full terms.
@@ -318,16 +302,6 @@ Blockchain promised to change how we do business. But without privacy, it's stuc
 - The entire ecosystem benefits from verifiable private communication
 
 **We're not just building a messaging app. We're building the infrastructure that makes blockchain usable for real-world business.**
-
----
-
-## Links
-
-- **Website:** Coming Soon
-- **Documentation:** [docs.memo-protocol.xyz](#) (In Development)
-- **Twitter:** [@MemoProtocol](#)
-- **Discord:** [Join our community](#)
-- **GitHub:** [github.com/yourusername/memo-protocol](https://github.com/yourusername/memo-protocol)
 
 ---
 
