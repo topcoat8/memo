@@ -1,0 +1,54 @@
+{
+  "version": "0.1.0",
+  "name": "memo",
+  "instructions": [
+    {
+      "name": "sendMemo",
+      "accounts": [
+        { "name": "sender", "isMut": true, "isSigner": true },
+        { "name": "recipient", "isMut": false, "isSigner": false },
+        { "name": "messageAccount", "isMut": true, "isSigner": false },
+        { "name": "counterAccount", "isMut": true, "isSigner": false },
+        { "name": "senderIndex", "isMut": true, "isSigner": false },
+        { "name": "recipientIndex", "isMut": true, "isSigner": false },
+        { "name": "senderTokenAccount", "isMut": true, "isSigner": false },
+        { "name": "recipientTokenAccount", "isMut": true, "isSigner": false },
+        { "name": "tokenProgram", "isMut": false, "isSigner": false },
+        { "name": "systemProgram", "isMut": false, "isSigner": false }
+      ],
+      "args": [
+        { "name": "encrypted_content", "type": { "vec": "u8" } },
+        { "name": "nonce", "type": { "array": ["u8", 24] } }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "MessageAccount",
+      "fields": [
+        { "name": "sender", "type": "publicKey" },
+        { "name": "recipient", "type": "publicKey" },
+        { "name": "encrypted_content", "type": { "vec": "u8" } },
+        { "name": "timestamp", "type": "i64" },
+        { "name": "nonce", "type": { "array": ["u8", 24] } },
+        { "name": "deleted", "type": "bool" }
+      ]
+    },
+    {
+      "name": "UserMessageCounter",
+      "fields": [
+        { "name": "user", "type": "publicKey" },
+        { "name": "counter", "type": "u64" }
+      ]
+    },
+    {
+      "name": "UserMessageIndex",
+      "fields": [
+        { "name": "user", "type": "publicKey" },
+        { "name": "message_pdas", "type": { "vec": "publicKey" } },
+        { "name": "total_count", "type": "u32" },
+        { "name": "last_updated", "type": "i64" }
+      ]
+    }
+  ]
+}

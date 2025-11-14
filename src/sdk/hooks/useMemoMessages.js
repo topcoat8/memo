@@ -1,12 +1,13 @@
 /**
  * Memo Protocol - useMemoMessages Hook
- * 
- * React hook for retrieving and managing memo messages from on-chain storage.
+ *
+ * React hook for retrieving memo messages from on-chain transactions.
+ * Queries RPC for token transfers and parses attached memos.
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { PublicKey } from '@solana/web3.js';
-import { getMessageIndexPDA } from '../clients/solanaClient';
+import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { decryptMessageFromChain } from '../utils/encryption';
 
 /**
@@ -21,14 +22,14 @@ function filterConversation(messages, wallet1, wallet2) {
 }
 
 /**
- * Hook for retrieving memo messages from on-chain storage
- * 
+ * Hook for retrieving memo messages from on-chain transactions
+ *
  * @param {Object} options - Hook options
- * @param {Program} options.program - Anchor program instance
  * @param {Connection} options.connection - Solana connection
  * @param {PublicKey} options.publicKey - Current user's public key
  * @param {string} options.userId - Current user's wallet address
- * @param {boolean} options.isReady - Whether program is ready
+ * @param {boolean} options.isReady - Whether wallet is connected
+ * @param {string} options.tokenMint - Token mint address to query
  * @param {string} options.recipientId - Filter by recipient (optional)
  * @param {string} options.senderId - Filter by sender (optional)
  * @param {string} options.conversationWith - Filter conversation with specific wallet (optional)
@@ -38,11 +39,11 @@ function filterConversation(messages, wallet1, wallet2) {
  * @returns {Object} - Messages state and utilities
  */
 export function useMemoMessages({
-  program,
   connection,
   publicKey,
   userId,
   isReady,
+  tokenMint,
   recipientId = null,
   senderId = null,
   conversationWith = null,
@@ -54,9 +55,9 @@ export function useMemoMessages({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch messages from on-chain
+  // Fetch messages from on-chain transactions
   useEffect(() => {
-    if (!program || !connection || !publicKey || !userId || !isReady) {
+    if (!connection || !publicKey || !userId || !isReady || !tokenMint) {
       setLoading(false);
       return;
     }
@@ -67,81 +68,139 @@ export function useMemoMessages({
 
     async function fetchMessages() {
       try {
-        // Step 1: Get user's message index PDA
-        const [indexPDA] = await getMessageIndexPDA(publicKey, program.programId);
-        
-        let messagePDAs = [];
+        const TOKEN_MINT = new PublicKey(tokenMint);
+
+        // Step 1: Get user's token account
+        const tokenAccount = await getAssociatedTokenAddress(
+          TOKEN_MINT,
+          publicKey
+        );
+
+        // Check if token account exists
         try {
-          const indexAccount = await program.account.userMessageIndex.fetch(indexPDA);
-          messagePDAs = indexAccount.messagePdas || [];
+          const accountInfo = await connection.getAccountInfo(tokenAccount);
+          if (!accountInfo) {
+            if (isMounted) {
+              setMemos([]);
+              setLoading(false);
+            }
+            return;
+          }
         } catch (err) {
-          // Index doesn't exist yet, user has no messages
-          console.log('No message index found for user');
+          // Token account doesn't exist yet
         }
 
-        // Step 2: Fetch all message accounts
-        const messagePromises = messagePDAs.map(async (pda) => {
+        // Step 2: Get transaction signatures for this token account
+        const signatures = await connection.getSignaturesForAddress(
+          tokenAccount,
+          { limit: limitCount * 2 } // Get extra to account for filtering
+        );
+
+        // Step 3: Fetch and parse transactions
+        const txPromises = signatures.map(async (sigInfo) => {
           try {
-            const messageAccount = await program.account.messageAccount.fetch(pda);
-            
-            // Skip deleted messages
-            if (messageAccount.deleted) {
+            const tx = await connection.getParsedTransaction(sigInfo.signature, {
+              maxSupportedTransactionVersion: 0,
+            });
+
+            if (!tx || !tx.meta || tx.meta.err) {
               return null;
             }
 
+            // Find memo instruction - check both parsed and raw
+            let memoInstruction = tx.transaction.message.instructions.find(
+              (ix) => {
+                // For parsed instructions
+                if (ix.programId?.toString() === 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr') {
+                  return true;
+                }
+                // For raw instructions
+                if (ix.program === 'spl-memo') {
+                  return true;
+                }
+                return false;
+              }
+            );
+
+            if (!memoInstruction) {
+              return null;
+            }
+
+            // Parse memo data - handle both formats
+            let memoData;
+            if (memoInstruction.parsed) {
+              // Parsed format
+              memoData = memoInstruction.parsed;
+            } else if (memoInstruction.data) {
+              // Base64 format
+              memoData = Buffer.from(memoInstruction.data, 'base64').toString('utf-8');
+            } else {
+              return null;
+            }
+
+            let parsedMemo;
+            try {
+              parsedMemo = typeof memoData === 'string' ? JSON.parse(memoData) : memoData;
+            } catch (err) {
+              return null; // Not our format
+            }
+
+            // Find token transfer to get sender/recipient
+            const tokenTransfer = tx.meta.postTokenBalances?.find(
+              (bal) => bal.mint === TOKEN_MINT.toString()
+            );
+
             return {
-              id: pda.toString(),
-              senderId: messageAccount.sender.toString(),
-              recipientId: messageAccount.recipient.toString(),
-              encryptedContent: messageAccount.encryptedContent,
-              nonce: messageAccount.nonce,
-              timestamp: messageAccount.timestamp,
-              createdAt: new Date(messageAccount.timestamp * 1000),
-              deleted: messageAccount.deleted,
+              id: sigInfo.signature,
+              senderId: tx.transaction.message.accountKeys[0].pubkey.toString(),
+              recipientId: parsedMemo.recipient,
+              encryptedContent: new Uint8Array(parsedMemo.encrypted),
+              nonce: new Uint8Array(parsedMemo.nonce),
+              timestamp: tx.blockTime || 0,
+              createdAt: new Date((tx.blockTime || 0) * 1000),
+              signature: sigInfo.signature,
             };
           } catch (err) {
-            console.warn('Failed to fetch message account:', pda.toString(), err);
             return null;
           }
         });
 
-        const messages = (await Promise.all(messagePromises))
-          .filter(msg => msg !== null);
+        const messages = (await Promise.all(txPromises)).filter(msg => msg !== null);
 
-        // Step 3: Apply filters
+        // Step 4: Apply filters
         let filteredMessages = messages;
-        
+
         if (recipientId) {
           filteredMessages = filteredMessages.filter(m => m.recipientId === recipientId);
         }
-        
+
         if (senderId) {
           filteredMessages = filteredMessages.filter(m => m.senderId === senderId);
         }
-        
+
         if (conversationWith) {
           filteredMessages = filterConversation(filteredMessages, userId, conversationWith);
         }
 
-        // Step 4: Sort messages
+        // Step 5: Sort messages
         filteredMessages.sort((a, b) => {
           const timeA = a.timestamp || 0;
           const timeB = b.timestamp || 0;
           return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
         });
 
-        // Step 5: Apply limit
+        // Step 6: Apply limit
         if (limitCount > 0) {
           filteredMessages = filteredMessages.slice(0, limitCount);
         }
 
-        // Step 6: Auto-decrypt messages for current user
+        // Step 7: Auto-decrypt messages for current user
         if (autoDecrypt && userId) {
           filteredMessages = filteredMessages.map(memo => {
             if (memo.recipientId === userId) {
               try {
                 const decrypted = decryptMessageFromChain(
-                  new Uint8Array(memo.encryptedContent),
+                  memo.encryptedContent,
                   memo.nonce,
                   userId
                 );
@@ -151,7 +210,6 @@ export function useMemoMessages({
                   isDecrypted: true,
                 };
               } catch (err) {
-                console.warn('Failed to decrypt message:', err);
                 return {
                   ...memo,
                   decryptedContent: '[Decryption failed]',
@@ -189,18 +247,18 @@ export function useMemoMessages({
       isMounted = false;
       clearInterval(pollInterval);
     };
-  }, [program, connection, publicKey, userId, isReady, recipientId, senderId, conversationWith, sortOrder, limitCount, autoDecrypt]);
+  }, [connection, publicKey, userId, isReady, tokenMint, recipientId, senderId, conversationWith, sortOrder, limitCount, autoDecrypt]);
 
   // Get messages sent to current user
   const inboxMessages = useMemo(() => {
     if (!userId) return [];
-    return memos.filter(m => m.recipientId === userId && !m.deleted);
+    return memos.filter(m => m.recipientId === userId);
   }, [memos, userId]);
 
   // Get messages sent by current user
   const sentMessages = useMemo(() => {
     if (!userId) return [];
-    return memos.filter(m => m.senderId === userId && !m.deleted);
+    return memos.filter(m => m.senderId === userId);
   }, [memos, userId]);
 
   // Decrypt a specific message

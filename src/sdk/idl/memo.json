@@ -1,0 +1,110 @@
+{
+  "version": "0.1.0",
+  "name": "memo",
+  "instructions": [
+    {
+      "name": "sendMemo",
+      "accounts": [
+        { "name": "sender", "isMut": true, "isSigner": true },
+        { "name": "recipient", "isMut": false, "isSigner": false },
+        { "name": "messageAccount", "isMut": true, "isSigner": false },
+        { "name": "counterAccount", "isMut": true, "isSigner": false },
+        { "name": "senderIndex", "isMut": true, "isSigner": false },
+        { "name": "recipientIndex", "isMut": true, "isSigner": false },
+        { "name": "systemProgram", "isMut": false, "isSigner": false }
+      ],
+      "args": [
+        { "name": "encryptedContent", "type": { "vec": "u8" } },
+        { "name": "nonce", "type": { "array": ["u8", 24] } }
+      ]
+    },
+    {
+      "name": "deleteMemo",
+      "accounts": [
+        { "name": "sender", "isMut": true, "isSigner": true },
+        { "name": "messageAccount", "isMut": true, "isSigner": false },
+        { "name": "senderIndex", "isMut": true, "isSigner": false },
+        { "name": "systemProgram", "isMut": false, "isSigner": false }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "MessageAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "sender", "type": "publicKey" },
+          { "name": "recipient", "type": "publicKey" },
+          { "name": "encryptedContent", "type": { "vec": "u8" } },
+          { "name": "timestamp", "type": "i64" },
+          { "name": "nonce", "type": { "array": ["u8", 24] } },
+          { "name": "deleted", "type": "bool" }
+        ]
+      }
+    },
+    {
+      "name": "UserMessageCounter",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "user", "type": "publicKey" },
+          { "name": "counter", "type": "u64" }
+        ]
+      }
+    },
+    {
+      "name": "UserMessageIndex",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "user", "type": "publicKey" },
+          { "name": "messagePdas", "type": { "vec": "publicKey" } },
+          { "name": "totalCount", "type": "u32" },
+          { "name": "lastUpdated", "type": "i64" }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "MessageTooLong",
+      "msg": "Message exceeds maximum length"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidRecipient",
+      "msg": "Invalid recipient address"
+    },
+    {
+      "code": 6002,
+      "name": "CounterOverflow",
+      "msg": "Message counter overflow"
+    },
+    {
+      "code": 6003,
+      "name": "PdaDerivationFailed",
+      "msg": "PDA derivation failed"
+    },
+    {
+      "code": 6004,
+      "name": "UnauthorizedDeletion",
+      "msg": "Unauthorized message deletion"
+    },
+    {
+      "code": 6005,
+      "name": "MessageAlreadyDeleted",
+      "msg": "Message already deleted"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidMessageAccount",
+      "msg": "Invalid message account"
+    }
+  ],
+  "metadata": {
+    "address": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+  }
+}

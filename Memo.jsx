@@ -1,80 +1,64 @@
 import React, { useEffect, useState } from "react";
 import { MemoProvider, useMemoContext, useMemo, useMemoMessages, decryptMessageFromChain } from './src/sdk/index';
-import { useMemoTokenBalance } from './src/sdk/hooks/useMemoTokenBalance';
-import { getMemoMintAddress } from './src/sdk/clients/solanaClient';
 import MemoUI from './MemoUI';
 
-// Solana network configuration
-const network = import.meta.env.VITE_SOLANA_NETWORK || 'devnet';
+// Solana network configuration - use mainnet for real pump.fun token
+const network = import.meta.env.VITE_SOLANA_NETWORK || 'mainnet-beta';
+const tokenMint = import.meta.env.VITE_TOKEN_MINT; // Your pump.fun token mint address
 
 // Inner app component that uses the SDK
 function MemoApp() {
-  const { connection, program, publicKey, userId, isReady, error: contextError, wallet } = useMemoContext();
+  const { connection, publicKey, userId, isReady, error: contextError, wallet, tokenMint: contextTokenMint } = useMemoContext();
   const [recipientId, setRecipientId] = useState("");
   const [message, setMessage] = useState("");
   const [globalError, setGlobalError] = useState(null);
 
   // Use SDK hooks
   const { sendMemo: sendMemoSDK, isLoading, error, successMessage } = useMemo({
-    program,
     connection,
     publicKey,
     userId,
     isReady,
     wallet,
+    tokenMint: contextTokenMint,
   });
 
   // Get all messages - only fetch when ready
   const { memos, loading: messagesLoading } = useMemoMessages({
-    program: isReady ? program : null,
     connection: isReady ? connection : null,
     publicKey,
     userId: isReady ? userId : null,
     isReady,
+    tokenMint: contextTokenMint,
     sortOrder: 'desc',
     limit: 200,
     autoDecrypt: false, // We'll decrypt manually in the UI
   });
 
-  // Get $MEMO token mint and balance
-  const [memoMint, setMemoMint] = useState(null);
-  useEffect(() => {
-    if (program && isReady) {
-      getMemoMintAddress(program).then(setMemoMint).catch(console.error);
-    }
-  }, [program, isReady]);
-
-  const { balance: tokenBalance, loading: balanceLoading } = useMemoTokenBalance({
-    connection,
-    publicKey,
-    memoMint,
-    isReady: isReady && !!memoMint,
-  });
-
   // Global error handler for runtime errors
   useEffect(() => {
     function handleError(message, source, lineno, colno, error) {
-      setGlobalError({ 
-        message: message?.toString(), 
-        source, 
-        lineno, 
-        colno, 
-        stack: error?.stack 
+      setGlobalError({
+        message: message?.toString(),
+        source,
+        lineno,
+        colno,
+        stack: error?.stack
       });
     }
     function handleRejection(event) {
       const reason = event?.reason || event;
-      setGlobalError({ 
-        message: reason?.message || String(reason), 
-        stack: reason?.stack 
+      setGlobalError({
+        message: reason?.message || String(reason),
+        stack: reason?.stack
       });
     }
-    window.addEventListener('error', (event) => 
+    window.addEventListener('error', (event) =>
       handleError(event.message, event.filename, event.lineno, event.colno, event.error)
     );
     window.addEventListener('unhandledrejection', handleRejection);
     return () => {
-      window.removeEventListener('error', (event) => 
+      window.removeEventListener('error', (event) =>
         handleError(event.message, event.filename, event.lineno, event.colno, event.error)
       );
       window.removeEventListener('unhandledrejection', handleRejection);
@@ -99,7 +83,7 @@ function MemoApp() {
     if (memo.decryptedContent) return memo.decryptedContent;
     if (memo.recipientId !== userId) return "[Cannot decrypt: Not the recipient]";
     if (!memo.encryptedContent || !memo.nonce) return "[Invalid message data]";
-    
+
     try {
       return decryptMessageFromChain(
         new Uint8Array(memo.encryptedContent),
@@ -146,8 +130,6 @@ function MemoApp() {
         sendMemo={handleSendMemo}
         memos={memos}
         decryptMessage={decryptMessageHelper}
-        tokenBalance={tokenBalance}
-        balanceLoading={balanceLoading}
       />
     </>
   );
@@ -156,7 +138,7 @@ function MemoApp() {
 // Main app component with provider
 export default function App() {
   return (
-    <MemoProvider network={network}>
+    <MemoProvider network={network} tokenMint={tokenMint}>
       <MemoApp />
     </MemoProvider>
   );

@@ -1,34 +1,37 @@
 /**
  * Memo Protocol - useMemo Hook
- * 
- * Main React hook for sending memos and managing memo state.
+ *
+ * Simple token transfer + memo approach using native Solana programs.
  */
 
 import { useState, useCallback } from 'react';
-import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
-import { getAssociatedTokenAddress, createTransferInstruction } from '@solana/spl-token';
+import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
+import { getAssociatedTokenAddress, createTransferInstruction, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
 import { encryptMessageForChain, isValidWalletAddress } from '../utils/encryption';
-import { getMessageCounterPDA, getMessageIndexPDA, getMessagePDA, getMemoMintAddress } from '../clients/solanaClient';
+
+// Native Solana Memo program
+const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
 
 /**
- * Hook for sending memos and managing memo operations
- * 
+ * Hook for sending memos with token transfers
+ *
  * @param {Object} options - Hook options
- * @param {Program} options.program - Anchor program instance
  * @param {Connection} options.connection - Solana connection
  * @param {PublicKey} options.publicKey - Current user's public key
  * @param {string} options.userId - Current user's wallet address
- * @param {boolean} options.isReady - Whether program is ready
+ * @param {boolean} options.isReady - Whether wallet is connected
+ * @param {Object} options.wallet - Wallet adapter instance
+ * @param {string} options.tokenMint - Token mint address to use (your pump.fun token)
  * @returns {Object} - Memo operations and state
  */
-export function useMemo({ program, connection, publicKey, userId, isReady, wallet }) {
+export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenMint }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
   /**
-   * Sends an encrypted memo to a recipient on-chain
-   * 
+   * Sends an encrypted memo with 1 token transfer to a recipient
+   *
    * @param {Object} params - Send parameters
    * @param {string} params.recipientId - Recipient's wallet address
    * @param {string} params.message - Plaintext message to send
@@ -37,48 +40,43 @@ export function useMemo({ program, connection, publicKey, userId, isReady, walle
   const sendMemo = useCallback(async ({ recipientId, message }) => {
     setError("");
     setSuccessMessage("");
-    
+
     // Validation
-    if (!program) {
-      setError("Program is not initialized. Please connect your wallet.");
-      return { success: false, error: "Program not initialized" };
-    }
-    
     if (!connection) {
       setError("Connection is not initialized. Please refresh the page.");
       return { success: false, error: "Connection not initialized" };
     }
-    
-    if (!isReady || !userId || !publicKey) {
+
+    if (!isReady || !userId || !publicKey || !wallet) {
       setError("Wallet is not connected. Please connect your wallet.");
       return { success: false, error: "Wallet not connected" };
     }
-    
+
     if (!recipientId || !recipientId.trim()) {
       setError("Recipient wallet address is required.");
       return { success: false, error: "Recipient required" };
     }
-    
+
     const trimmedRecipient = recipientId.trim();
-    
+
     // Validate wallet address format
     if (!isValidWalletAddress(trimmedRecipient)) {
       setError("Invalid wallet address format. Please check the recipient address.");
       return { success: false, error: "Invalid recipient address" };
     }
-    
+
     if (!message || !message.trim()) {
       setError("Message cannot be empty.");
       return { success: false, error: "Message cannot be empty" };
     }
 
-    // Validate message length (280-500 characters)
+    // Validate message length
     const messageText = message.trim();
     if (messageText.length < 1 || messageText.length > 500) {
       setError("Message must be between 1 and 500 characters.");
       return { success: false, error: "Invalid message length" };
     }
-    
+
     // Prevent sending to self
     if (trimmedRecipient === userId) {
       setError("Cannot send memo to yourself.");
@@ -92,119 +90,111 @@ export function useMemo({ program, connection, publicKey, userId, isReady, walle
       setError("Invalid recipient wallet address.");
       return { success: false, error: "Invalid recipient address format" };
     }
-    
+
     try {
       setIsLoading(true);
-      
-      // Step 1: Get $MEMO token mint address
-      const memoMint = await getMemoMintAddress(program);
-      if (!memoMint) {
-        setError("$MEMO token mint is not initialized. Please contact support.");
-        return { success: false, error: "Token mint not initialized" };
+
+      if (!tokenMint) {
+        setError("Token mint not configured. Please set VITE_TOKEN_MINT in your environment.");
+        return { success: false, error: "Token mint not configured" };
       }
-      
-      // Step 2: Check user has $MEMO tokens (required to send)
-      const senderTokenAccount = await getAssociatedTokenAddress(memoMint, publicKey);
+
+      const TOKEN_MINT = new PublicKey(tokenMint);
+
+      // Step 1: Check sender has tokens to send
+      const senderTokenAccount = await getAssociatedTokenAddress(
+        TOKEN_MINT,
+        publicKey
+      );
+
       let senderBalance = 0;
       try {
         const accountInfo = await connection.getTokenAccountBalance(senderTokenAccount);
         senderBalance = accountInfo.value.uiAmount || 0;
       } catch (err) {
-        // Token account doesn't exist, balance is 0
+        setError("You don't have any tokens. Please acquire some tokens first.");
+        return { success: false, error: "No token account found" };
       }
-      
+
       if (senderBalance < 1) {
-        setError("You need at least 1 $MEMO token to send messages. Please acquire $MEMO tokens first.");
-        return { success: false, error: "Insufficient $MEMO tokens" };
+        setError(`Insufficient balance. You have ${senderBalance} tokens, need at least 1.`);
+        return { success: false, error: "Insufficient tokens" };
       }
-      
-      // Step 3: Encrypt and compress message
+
+      // Step 2: Encrypt message
       const { encryptedData, nonce } = encryptMessageForChain(messageText, trimmedRecipient);
-      
-      // Step 4: Get user's message counter
-      const [counterPDA] = await getMessageCounterPDA(publicKey, program.programId);
-      let counterAccount;
+
+      // Create memo data: combine encrypted content + nonce
+      const memoData = JSON.stringify({
+        encrypted: Array.from(encryptedData),
+        nonce: Array.from(nonce),
+        recipient: trimmedRecipient,
+      });
+
+      // Step 3: Get recipient token account (or create it if needed)
+      const recipientTokenAccount = await getAssociatedTokenAddress(
+        TOKEN_MINT,
+        recipientPubkey
+      );
+
+      // Step 4: Build transaction
+      const transaction = new Transaction();
+
+      // Check if recipient token account exists, if not, create it
       try {
-        counterAccount = await program.account.userMessageCounter.fetch(counterPDA);
+        await connection.getTokenAccountBalance(recipientTokenAccount);
       } catch (err) {
-        // Counter doesn't exist yet, will be created by the program
-        counterAccount = { counter: 0 };
+        // Create associated token account for recipient
+        const createAtaIx = createAssociatedTokenAccountInstruction(
+          publicKey, // payer
+          recipientTokenAccount, // ata
+          recipientPubkey, // owner
+          TOKEN_MINT // mint
+        );
+        transaction.add(createAtaIx);
       }
-      
-      const currentCounter = counterAccount?.counter || 0;
-      
-      // Step 5: Derive message PDA
-      const [messagePDA] = await getMessagePDA(
-        publicKey,
-        recipientPubkey,
-        currentCounter,
-        program.programId
-      );
-      
-      // Step 6: Get index PDAs
-      const [senderIndexPDA] = await getMessageIndexPDA(publicKey, program.programId);
-      const [recipientIndexPDA] = await getMessageIndexPDA(recipientPubkey, program.programId);
-      
-      // Step 7: Get mint config PDA
-      const [mintConfigPDA] = await PublicKey.findProgramAddress(
-        [Buffer.from('memo'), Buffer.from('mint')],
-        program.programId
-      );
-      
-      // Step 8: Get recipient token account
-      const recipientTokenAccount = await getAssociatedTokenAddress(memoMint, recipientPubkey);
-      
-      // Step 9: Build send_memo instruction
-      const sendMemoIx = await program.methods
-        .sendMemo(Array.from(encryptedData), nonce)
-        .accounts({
-          sender: publicKey,
-          recipient: recipientPubkey,
-          messageAccount: messagePDA,
-          counterAccount: counterPDA,
-          senderIndex: senderIndexPDA,
-          recipientIndex: recipientIndexPDA,
-          memoMintConfig: mintConfigPDA,
-          memoMint: memoMint,
-          recipientTokenAccount: recipientTokenAccount,
-          tokenProgram: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'), // SPL Token program
-          systemProgram: SystemProgram.programId,
-        })
-        .instruction();
-      
-      // Step 10: Create token transfer instruction (payment for sending)
+
+      // Add token transfer instruction (1 token)
       const transferIx = createTransferInstruction(
         senderTokenAccount,
         recipientTokenAccount,
         publicKey,
-        1, // Transfer 1 token (since decimals = 0)
+        1, // Transfer 1 token
         []
       );
-      
-      // Step 11: Combine both instructions into one transaction
+      transaction.add(transferIx);
+
+      // Add memo instruction (stores encrypted message on-chain)
+      const memoIx = new TransactionInstruction({
+        keys: [],
+        programId: MEMO_PROGRAM_ID,
+        data: Buffer.from(memoData, 'utf-8'),
+      });
+      transaction.add(memoIx);
+
+      // Step 5: Send transaction
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-      const transaction = new Transaction().add(sendMemoIx).add(transferIx);
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
-      
-      // Send transaction using wallet adapter (it will handle signing)
+
+      // Send transaction using wallet adapter
       const signature = await wallet.sendTransaction(transaction, connection, {
         skipPreflight: false,
         maxRetries: 3,
       });
-      
+
       await connection.confirmTransaction({
         signature,
         blockhash,
         lastValidBlockHeight,
       }, 'confirmed');
-      
-      setSuccessMessage("Memo sent successfully! 1 $MEMO token paid.");
+
+      setSuccessMessage("Message sent successfully with 1 token transfer!");
       return { success: true, signature };
     } catch (err) {
       console.error('Send memo error:', err);
       let errorMessage = "Failed to send memo. Please try again.";
-      
+
       if (err.message) {
         if (err.message.includes('MessageTooLong')) {
           errorMessage = "Message is too long. Maximum 500 characters.";
@@ -216,13 +206,13 @@ export function useMemo({ program, connection, publicKey, userId, isReady, walle
           errorMessage = err.message;
         }
       }
-      
+
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
     }
-  }, [program, connection, publicKey, userId, isReady, wallet]);
+  }, [connection, publicKey, userId, isReady, wallet, tokenMint]);
 
   /**
    * Clears error and success messages

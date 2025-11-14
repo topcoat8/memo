@@ -2,7 +2,7 @@
 
 ## The Privacy Layer for Public Blockchains
 
-[![Phase](https://img.shields.io/badge/Phase-2%20Active-blue)]() [![Solana](https://img.shields.io/badge/Solana-Native-purple)]() [![License](https://img.shields.io/badge/License-MIT-green)]()
+[![Phase](https://img.shields.io/badge/Phase-3%20Development-blue)]() [![Solana](https://img.shields.io/badge/Solana-Native-purple)]() [![License](https://img.shields.io/badge/License-MIT-green)]()
 
 **Memo Protocol is end-to-end encrypted, wallet-to-wallet communication infrastructure for Solana.** We're building the missing primitive that enables private business on public ledgers.
 
@@ -83,9 +83,9 @@ Memo Protocol is designed to be embedded into existing Solana applications:
 │  • Zero-knowledge architecture                      │
 ├─────────────────────────────────────────────────────┤
 │  LEDGER LAYER (Solana Program)                      │
-│  • Encrypted payload storage                        │
+│  • Memo Program - Encrypted payload storage         │
 │  • Sender/recipient metadata                        │
-│  • $MEMO token receipts                             │
+│  • $MEMO token receipts (via Pump Fun)              │
 │  • Verifiable timestamps                            │
 └─────────────────────────────────────────────────────┘
 ```
@@ -103,14 +103,14 @@ Memo Protocol is designed to be embedded into existing Solana applications:
 
 ---
 
-## Current Status: Phase 2 Development
+## Current Status: Phase 3 Development
 
 We're building in public and shipping iteratively.
 
 ### Completed (Phase 1)
 - [x] Core protocol design and POC validation
 - [x] React UI demonstrating full message lifecycle
-- [x] Public ledger simulation with Firebase
+- [x] Firebase-based ledger simulation
 - [x] Anonymous identity system for testing
 
 ### Completed (Phase 2)
@@ -121,32 +121,27 @@ We're building in public and shipping iteratively.
 - [x] Message indexing and retrieval optimization
 - [x] Comprehensive security audit preparation
 
-### Completed (Phase 3)
-- [x] Solana program deployment (Anchor/Rust)
-- [x] Program Derived Addresses (PDAs) for gas efficiency
-- [x] Decentralized message storage with compression
-- [x] UserMessageIndex for fast message retrieval
-- [x] Message deletion functionality
-- [x] Counter-based PDA seeds to prevent collisions
-- [x] $MEMO SPL token receipt system (1 token minted per message)
-
-### Upcoming (Phase 3.5)
-- [ ] Token economics and incentives
-- [ ] Token burn mechanism for message deletion
+### In Progress (Phase 3)
+- [ ] Solana Memo Program integration for on-chain storage
+- [ ] $MEMO SPL token receipt system using Pump Fun infrastructure
+- [ ] Program Derived Addresses (PDAs) for gas efficiency
+- [ ] Message compression and optimization
+- [ ] Full on-chain transition from Firebase
 
 ---
 
 ## Roadmap
 
 ### Phase 3: On-Chain Protocol (Q4 2025)
-**Goal:** Full decentralization and token economics
+**Goal:** Full decentralization using Solana's built-in Memo program
 
 **Deliverables:**
-- **Anchor Program Development** - Write and audit the Solana smart contract
-- **$MEMO Token Launch** - SPL token minted as message receipts
+- **Solana Memo Program Integration** - Leverage Solana's native memo instruction for storage
+- **$MEMO SPL Token** - Token minted as message receipts using Pump Fun infrastructure
+- **Message Compression** - Optimize payload size for on-chain storage
 - **PDA Architecture** - Minimal on-chain footprint with maximum efficiency
 - **Gas Optimization** - Sub-0.001 SOL per message target
-- **Devnet → Mainnet Deployment** - Full test coverage before production
+- **Testnet Deployment** - Full test coverage before mainnet
 
 ### Phase 4: Enterprise Features (Q1 2026)
 **Goal:** Production-ready for wallet and dApp integration
@@ -220,152 +215,13 @@ We're building in public and shipping iteratively.
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| **Blockchain** | Solana | Public key infrastructure, consensus, and program execution |
-| **Smart Contract** | Anchor (Rust) | On-chain message storage and $MEMO token minting |
+| **Blockchain** | Solana | Public key infrastructure, consensus, and ledger |
 | **Encryption** | TweetNaCl | Audited, battle-tested E2E encryption (NaCl secretbox) |
-| **Compression** | Pako (gzip) | Message compression to reduce on-chain storage costs |
 | **Frontend** | React + Vite | Reference implementation UI |
 | **Styling** | Tailwind CSS | Rapid, customizable styling |
 | **Wallet** | @solana/wallet-adapter-react | Universal Solana wallet support |
-| **SDK** | @coral-xyz/anchor | Anchor framework for Solana program interaction |
-
----
-
-## Quick Start for Developers
-
-### Try the Live Demo
-Coming soon: `https://memo-protocol.xyz`
-
-### Prerequisites
-
-- **Node.js** 18+ and npm
-- **Rust** and **Cargo** (for building the Solana program)
-- **Anchor** framework (install: `cargo install --git https://github.com/coral-xyz/anchor avm && avm install latest && avm use latest`)
-- **Solana CLI** (install: `sh -c "$(curl -sSfL https://release.solana.com/stable/install)"`)
-- A Solana wallet (Phantom, Solflare, etc.)
-
-### Run Locally
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/memo-protocol.git
-cd memo-protocol
-
-# Install dependencies
-npm install
-
-# Build the Solana program (first time only, or after program changes)
-npm run anchor:build
-
-# Deploy to devnet (optional - for testing on-chain)
-# Make sure you have SOL in your devnet wallet first
-npm run anchor:deploy:devnet
-
-# Start the development server
-npm run dev
-```
-
-**Environment Variables:**
-Create a `.env` file in the root directory (optional):
-```bash
-VITE_SOLANA_NETWORK=devnet  # or 'mainnet-beta' or custom RPC URL
-```
-
-**Development Workflow:**
-1. Connect your Solana wallet (Phantom, Solflare, etc.)
-2. Switch to Devnet in your wallet
-3. Get some devnet SOL from a faucet: https://faucet.solana.com/
-4. Start sending encrypted memos on-chain!
-
-**Note:** The program ID in `Anchor.toml` and `programs/memo/src/lib.rs` should match your deployed program. Update these after your first deployment.
-
-### SDK Integration (Phase 3 - On-Chain)
-
-The Memo Protocol SDK is now fully on-chain. Here's how to integrate it:
-
-```javascript
-import { 
-  MemoProvider, 
-  useMemoContext,
-  useMemo, 
-  useMemoMessages,
-  decryptMessageFromChain 
-} from './src/sdk/index';
-
-// Wrap your app with MemoProvider
-function YourApp() {
-  return (
-    <MemoProvider network="devnet"> {/* or 'mainnet-beta' */}
-      <YourComponents />
-    </MemoProvider>
-  );
-}
-
-// Use the hooks in your components
-function ChatFeature() {
-  const { program, connection, publicKey, userId, isReady } = useMemoContext();
-  const { sendMemo, isLoading, error } = useMemo({ 
-    program, 
-    connection, 
-    publicKey, 
-    userId, 
-    isReady 
-  });
-  const { memos, inboxMessages } = useMemoMessages({ 
-    program, 
-    connection, 
-    publicKey, 
-    userId, 
-    isReady 
-  });
-  
-  const handleSend = async () => {
-    const result = await sendMemo({
-      recipientId: 'recipient_wallet_address',
-      message: 'Hello from my dApp!'
-    });
-    if (result.success) {
-      console.log('Transaction:', result.signature);
-    }
-  };
-  
-  return (
-    <div>
-      <button onClick={handleSend} disabled={isLoading || !isReady}>
-        Send Private Message
-      </button>
-      <div>
-        {inboxMessages.map(memo => (
-          <div key={memo.id}>
-            {memo.decryptedContent || decryptMessageFromChain(
-              new Uint8Array(memo.encryptedContent),
-              memo.nonce,
-              userId
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-```
-
-**SDK Features:**
-- `MemoProvider` - Context provider for Solana connection and Anchor program
-- `useMemo()` - Hook for sending memos on-chain
-- `useMemoMessages()` - Hook for retrieving messages from on-chain storage
-- `encryptMessageForChain()` / `decryptMessageFromChain()` - On-chain encryption utilities
-- `compressMessage()` / `decompressMessage()` - Message compression utilities
-- PDA derivation helpers for message accounts and indexes
-- Automatic message indexing for fast retrieval
-
-**Message Format:**
-- Plaintext: 1-500 characters
-- Compressed: ~200-400 bytes (varies)
-- Encrypted: ~250-500 bytes
-- On-chain cost: <0.001 SOL per message
-
-See `src/sdk/` for the complete SDK implementation.
+| **Storage** | Solana Memo Program | On-chain message storage via native memo instruction |
+| **Tokens** | SPL Token + Pump Fun | Message receipts and token infrastructure |
 
 ---
 
@@ -401,9 +257,8 @@ We welcome contributions in:
 | **Protocol Version** | v0.3.0-alpha |
 | **Development Phase** | 3 of 6 |
 | **Test Messages Sent** | 1,000+ |
-| **Target Launch** | Q2 2025 |
-| **Lines of Code** | 8,000+ |
-| **On-Chain Messages** | Fully operational |
+| **Target Launch** | Q4 2025 |
+| **Lines of Code** | 5,000+ |
 
 ---
 
@@ -446,7 +301,10 @@ Blockchain promised to change how we do business. But without privacy, it's stuc
 ## Links
 
 - **Website:** Coming Soon
-- **Twitter:** [@MemoOnSol](#)
+- **Documentation:** [docs.memo-protocol.xyz](#) (In Development)
+- **Twitter:** [@MemoProtocol](#)
+- **Discord:** [Join our community](#)
+- **GitHub:** [github.com/yourusername/memo-protocol](https://github.com/yourusername/memo-protocol)
 
 ---
 

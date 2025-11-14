@@ -1,27 +1,27 @@
 /**
  * Memo Protocol - MemoProvider Component
- * 
+ *
  * React context provider for Memo Protocol SDK.
- * Manages Solana connection, Anchor program, and wallet integration.
+ * Manages Solana connection and wallet integration.
  */
 
 import React, { createContext, useContext, useMemo, useEffect, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Connection, PublicKey } from '@solana/web3.js';
-import { initConnection, initProgram } from './clients/solanaClient';
+import { initConnection } from './clients/solanaClient';
 
 const MemoContext = createContext(null);
 
 /**
  * MemoProvider component
- * 
+ *
  * @param {Object} props - Component props
- * @param {string} props.network - Solana network: 'devnet', 'mainnet-beta', or RPC URL (default: 'devnet')
+ * @param {string} props.network - Solana network: 'devnet', 'mainnet-beta', or RPC URL (default: 'mainnet-beta')
+ * @param {string} props.tokenMint - Token mint address for your pump.fun memecoin
  * @param {React.ReactNode} props.children - Child components
  */
-export function MemoProvider({ network = 'devnet', children }) {
+export function MemoProvider({ network = 'mainnet-beta', tokenMint, children }) {
   const [connection, setConnection] = useState(null);
-  const [program, setProgram] = useState(null);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState(null);
   const wallet = useWallet();
@@ -38,35 +38,13 @@ export function MemoProvider({ network = 'devnet', children }) {
     }
   }, [network]);
 
-  // Initialize Anchor program when wallet is connected
+  // Set ready when wallet is connected
   useEffect(() => {
-    if (!connection || !wallet || !wallet.publicKey) {
-      setProgram(null);
+    if (connection && wallet && wallet.publicKey) {
+      setIsReady(true);
+    } else {
       setIsReady(false);
-      return;
     }
-
-    let isMounted = true;
-    
-    initProgram(connection, wallet)
-      .then((prog) => {
-        if (isMounted) {
-          setProgram(prog);
-          setIsReady(true);
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err?.message || 'Failed to initialize Anchor program');
-          console.error('Program initialization error:', err);
-          setIsReady(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
   }, [connection, wallet, wallet?.publicKey]);
 
   // Get user ID from wallet public key
@@ -76,13 +54,13 @@ export function MemoProvider({ network = 'devnet', children }) {
 
   const value = useMemo(() => ({
     connection,
-    program,
     wallet,
     publicKey: wallet?.publicKey || null,
     userId,
     isReady,
     error,
-  }), [connection, program, wallet, userId, isReady, error]);
+    tokenMint,
+  }), [connection, wallet, userId, isReady, error, tokenMint]);
 
   return (
     <MemoContext.Provider value={value}>

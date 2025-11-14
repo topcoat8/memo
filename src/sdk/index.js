@@ -39,7 +39,4 @@ export {
   getMessageCounterPDA,
   getMessageIndexPDA,
   getMessagePDA,
-  getMemoMintAddress,
-  anchorToSolanaPubkey,
-  solanaToAnchorPubkey,
 } from './clients/solanaClient';
