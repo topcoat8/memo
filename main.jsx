@@ -19,7 +19,7 @@ const wallets = [new PhantomWalletAdapter()];
 
 const root = createRoot(document.getElementById('root'));
 root.render(
-  <ConnectionProvider endpoint={import.meta.env.VITE_SOLANA_RPC || 'https://mainnet.helius-rpc.com/?api-key=c32f1ad1-fdec-4254-bf8a-1d216158d467'}>
+  <ConnectionProvider endpoint={import.meta.env.VITE_SOLANA_RPC || 'https://api.mainnet-beta.solana.com'}>
     <WalletProvider wallets={wallets} autoConnect={false}>
       <WalletModalProvider>
         <App />
