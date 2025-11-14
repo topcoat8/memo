@@ -1,70 +1,101 @@
 # Memo Protocol
 
-## The Privacy Layer for Public Blockchains
+## End-to-End Encrypted Communication on Solana
 
-[![Phase](https://img.shields.io/badge/Phase-3%20Development-blue)]() [![Solana](https://img.shields.io/badge/Solana-Native-purple)]() [![License](https://img.shields.io/badge/License-MIT-green)]()
+[![Phase](https://img.shields.io/badge/Phase-3%20Complete-blue)]() [![Solana](https://img.shields.io/badge/Solana-Mainnet-purple)]() [![License](https://img.shields.io/badge/License-MIT-green)]()
 
-**Memo Protocol is end-to-end encrypted, wallet-to-wallet communication infrastructure for Solana.** We're building the missing primitive that enables private business on public ledgers.
+**Memo Protocol enables verifiable, encrypted communication tied to blockchain transactions.** We solve problems traditional messaging apps fundamentally can't: immutable legal records, uncensorable whistleblowing, timestamped financial signals, and unforgeable business documentation.
 
-> *"Public blockchains solved transparency. Memo Protocol solves confidentiality."*
+> *"When your message can't afford to disappear, it lives on-chain."*
 
+---
 
-## Our Mission
+## The Problem: When Deletion = Liability
 
-**Make private messaging a native feature in every Solana wallet.**
+Traditional messaging apps have a fatal flaw for high-stakes communication: **messages can be deleted, altered, or denied.**
 
-Memo Protocol is designed for integration, not as a standalone app. Our end goal is to see major wallet providers like **Phantom, Solflare, and Backpack** ship Memo Protocol as a built-in feature—giving millions of users secure, encrypted communication without leaving their wallet.
+**Real-world scenarios where this breaks down:**
 
-**Think of us as the Twilio of blockchain messaging:** Infrastructure that powers user-to-user communication, integrated seamlessly into the products people already use.
+### Legal & Compliance
+- Legal notices that need proof of delivery (Email: "I never got it")
+- Regulatory compliance documentation (Slack: Admin can delete)
+- Dispute resolution requiring message history (WhatsApp: Can be doctored)
 
-**Why Wallets Need This:**
-- Users already expect messaging (they ask for it)
-- Keeps users in your app instead of Discord/Telegram
-- Completely open-source and self-hosted
-- 2-week integration with our SDK
-- New engagement and retention driver
+### Whistleblowing & Journalism  
+- Anonymous tips that need protection (Signal: Server can be seized)
+- Investigative evidence that can't be censored (Telegram: Can be shut down)
+- Source protection with verifiable timestamps (SecureDrop: Still centralized)
 
-> 💜 **Calling Phantom, Solflare, Backpack:** We're ready to partner. Let's make Solana the first blockchain with native encrypted messaging.
+### Financial Communications
+- Trading signals with verifiable timestamps (Discord: Screenshots can be faked)
+- Investment advice requiring proof of timing (Email: Can be backdated)
+- Financial instructions needing immutability (Messages: Can be altered)
 
-## The Problem: The Transparency Paradox
+### Business Records
+- M&A negotiations requiring unforgeable records (DocuSign: Still centralized)
+- Contract terms needing timestamped proof (Email: Can be disputed)
+- B2B communications where deletion = legal risk (Any platform: Can be manipulated)
 
-Blockchain transparency is a feature until you need to do business.
+**The fundamental problem:** Centralized platforms have admins, servers can be seized, and logs can be altered.
 
-**Real-world scenarios that are impossible today:**
-- A supplier sends an invoice with a payment transaction
-- Two parties exchange confidential contract terms alongside a token transfer  
-- An NFT collector includes a personal message with a gift
-- A DAO shares sensitive governance details with token holders
-- An enterprise coordinates logistics without exposing trade secrets
-
-**The dilemma:** On-chain = public. Off-chain = unverifiable.
-
-Memo Protocol resolves this paradox. For the first time, you can have **cryptographically verifiable private communication** tied directly to wallet identities and on-chain activity.
+**Memo Protocol's solution:** Cryptographically timestamped, immutable, encrypted messages on Solana's public ledger.
 
 ---
 
 ## What Makes Memo Different
 
-### The First True Privacy Primitive for Solana
+### Not a Messaging App - A Communication Primitive
 
-Memo Protocol isn't a messaging app - it's **infrastructure**. We're building the layer that other applications integrate to add encrypted communication to their products.
+Memo Protocol isn't competing with WhatsApp, Signal or X for casual chat. **We're infrastructure for communications that require:**
 
-| Feature | Traditional Messaging | Blockchain Messaging | Memo Protocol |
-|---------|---------------------|---------------------|---------------|
-| **Identity** | Phone/Email | Public (Exposed) | Wallet-Based E2E Encrypted |
-| **Verifiability** | None | Full (But Public) | Full + Private |
-| **Integration** | Complex APIs | None | Drop-in SDK |
-| **Decentralization** | Centralized | Decentralized | Decentralized |
-| **Privacy** | Platform-Dependent | None | Cryptographic |
+✓ **Cryptographic immutability** - Can't be deleted or altered  
+✓ **Verifiable timestamps** - Blockchain-proven timing  
+✓ **Censorship resistance** - No server to shut down  
+✓ **Legal enforceability** - Cryptographic proof holds up in court  
+✓ **End-to-end encryption** - Private content, public verification  
 
-### Built for Integration
+| Feature | Traditional Apps | Memo Protocol |
+|---------|-----------------|---------------|
+| **Can be deleted** | Yes | No (on-chain) |
+| **Can be altered** | Yes | No (cryptographic) |
+| **Timestamp proof** | No (can be faked) | Yes (blockchain) |
+| **Censorship resistant** | No (server-based) | Yes (decentralized) |
+| **Legal admissibility** | Disputed | Cryptographically provable |
+| **Cost per message** | Free | ~$0.001 SOL |
 
-Memo Protocol is designed to be embedded into existing Solana applications:
-- **Wallet Providers** (Phantom, Solflare, Backpack) - Add native messaging
-- **DEXs & NFT Marketplaces** - Enable buyer/seller communication
-- **DeFi Protocols** - Private notifications and alerts
-- **DAOs & Social Apps** - Encrypted coordination layers
-- **Enterprise dApps** - Compliant private communication
+**The cost is a feature:** It filters for seriousness and prevents spam.
+
+---
+
+## How It Works
+
+### The Transparency Paradox - Solved
+
+```
+┌─────────────────────────────────────────────────────┐
+│  PUBLIC (On Solana Blockchain)                      │
+│  • That Alice sent a message to Bob                 │
+│  • Exact timestamp (block height)                   │
+│  • Encrypted payload (visible but unreadable)       │
+│  • $MEMO token receipt                              │
+├─────────────────────────────────────────────────────┤
+│  PRIVATE (Client-side Decryption)                   │
+│  • Message content (only Bob can decrypt)           │
+│  • Encrypted with Bob's public key                  │
+│  • Zero-knowledge - Memo Protocol can't read it     │
+└─────────────────────────────────────────────────────┘
+```
+
+### Technical Flow
+
+1. **Alice wants to send Bob a legal notice**
+2. Message is encrypted client-side using Bob's wallet public key (TweetNaCl)
+3. Encrypted payload stored on-chain via Solana's Memo Program
+4. $MEMO token minted as verifiable receipt (via Pump Fun infrastructure)
+5. Anyone can verify Alice sent Bob *something* at *this exact time*
+6. Only Bob can decrypt and read the actual content
+
+**Result:** Public verification + Private content = The first practical solution to the Transparency Paradox.
 
 ---
 
@@ -74,163 +105,94 @@ Memo Protocol is designed to be embedded into existing Solana applications:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  APPLICATION LAYER (Your dApp/Wallet/Protocol)     │
-│  ↓ Integrates Memo SDK                              │
+│  APPLICATION LAYER                                  │
+│  • React UI (reference implementation)              │
+│  • Wallet connection (@solana/wallet-adapter)       │
+│  • Message composition & display                    │
 ├─────────────────────────────────────────────────────┤
-│  ENCRYPTION LAYER (TweetNaCl E2E)                   │
+│  ENCRYPTION LAYER                                   │
 │  • Client-side encryption                           │
 │  • Wallet-derived keys                              │
 │  • Zero-knowledge architecture                      │
 ├─────────────────────────────────────────────────────┤
-│  LEDGER LAYER (Solana Program)                      │
-│  • Memo Program - Encrypted payload storage         │
-│  • Sender/recipient metadata                        │
-│  • $MEMO token receipts (via Pump Fun)              │
-│  • Verifiable timestamps                            │
+│  LEDGER LAYER (Solana)                              │
+│  • Memo Program                                     │
+│  • SPL Token: $MEMO receipts                        │
+│  • Immutable storage, cryptographic timestamps      │
 └─────────────────────────────────────────────────────┘
 ```
 
-### How It Works
+---
 
-1. **Alice wants to send a private memo to Bob's wallet**
-2. Memo Protocol encrypts the message using Bob's public key
-3. The encrypted payload is published to the Solana ledger
-4. Anyone can see *that* Alice sent a memo to Bob (transparency)
-5. Only Bob can decrypt and read the content (confidentiality)
-6. A $MEMO token is minted as a verifiable receipt (composability)
+## Current Status: Phase 3 Complete ✅
 
-**The breakthrough:** The act of communication is public and auditable. The content remains private.
+### What's Working Now
+
+- ✅ **End-to-end encrypted messaging on Solana mainnet**
+- ✅ **Messages stored permanently on-chain via Memo Program**
+- ✅ **$MEMO token receipts minted for each message**
+- ✅ **Wallet-to-wallet communication (no phone/email needed)**
+- ✅ **Client-side encryption (we never see your messages)**
+- ✅ **Production-ready UI for testing**
+
+**Try it now:** [memo-protocol.xyz](https://memo-protocol.xyz) (testnet demo)
+
+### Development Phases
+
+- ✅ **Phase 1:** Protocol design & proof of concept
+- ✅ **Phase 2:** Wallet integration & encryption implementation  
+- ✅ **Phase 3:** On-chain storage via Solana Memo Program
+- 🔄 **Phase 4:** Enterprise features & SDK (Q1 2026)
+- 📋 **Phase 5:** Advanced capabilities (Q2 2026)
+- 📋 **Phase 6:** Ecosystem expansion (Q4 2026)
 
 ---
 
-## Current Status: Phase 4 Development
+## Use Cases
 
-We're building in public and shipping iteratively.
+### Who Should Use Memo Protocol?
 
-### Completed (Phase 1)
-- [x] Core protocol design and POC validation
-- [x] React UI demonstrating full message lifecycle
-- [x] Firebase-based ledger simulation
-- [x] Anonymous identity system for testing
+#### ✅ Perfect For:
+- **Law firms** - Immutable client communications
+- **Whistleblowers** - Censorship-resistant evidence submission
+- **Financial advisors** - Timestamped trading recommendations
+- **Enterprises** - Unforgeable business records
+- **Journalists** - Protected source communications
+- **DAOs** - Private governance discussions
+- **Compliance officers** - Auditable regulatory documentation
 
-### Completed (Phase 2)
-- [x] Solana wallet integration (`@solana/wallet-adapter-react`)
-- [x] Production-grade encryption (TweetNaCl secretbox)
-- [x] Wallet public key as primary identity
-- [x] SDK componentization for easy integration
-- [x] Message indexing and retrieval optimization
-- [x] Comprehensive security audit preparation
+#### ❌ Not For:
+- **Casual group chats** (too expensive)
+- **High-volume messaging** (cost prohibitive)
+- **Real-time chat** (blockchain has latency)
+- **Chatting with the boys** (use Discord)
 
-### Completed (Phase 3) ✅
-- [x] Solana Memo Program integration for on-chain storage
-- [x] $MEMO SPL token receipt system using Pump Fun infrastructure
-- [x] Program Derived Addresses (PDAs) for gas efficiency
-- [x] Message compression and optimization
-- [x] Full on-chain transition complete
-- [x] **End-to-end encrypted on-chain messaging working**
-
-### In Progress (Phase 4)
-**Goal:** Full decentralization using Solana's built-in Memo program
-
-**Deliverables:**
-- **Solana Memo Program Integration** - Leverage Solana's native memo instruction for storage
-- **$MEMO SPL Token** - Token minted as message receipts using Pump Fun infrastructure
-- **Message Compression** - Optimize payload size for on-chain storage
-- **PDA Architecture** - Minimal on-chain footprint with maximum efficiency
-- **Gas Optimization** - Sub-0.001 SOL per message target
-- **Testnet Deployment** - Full test coverage before mainnet
+**Rule of thumb:** If you'd need the message in court, use Memo. If you're just saying "gm", use literally anything else.
 
 ---
 
 ## Roadmap
 
 ### Phase 4: Enterprise Features (Q1 2026)
-**Goal:** Production-ready for wallet and dApp integration
-
-**Deliverables:**
-- **Integration SDK** - npm package with React hooks and vanilla JS support
-- **Reference Implementation** - Mobile-ready UI components
-- **Message Discovery** - Efficient indexing and search
-- **Rate Limiting & Anti-Spam** - Protocol-level protections
-- **Integration Docs** - Complete guides for Phantom, Solflare, etc.
-- **Customization API** - White-label styling and branding
+- Integration SDK (npm package)
+- Reference implementation for wallets
+- Rate limiting & anti-spam
+- Message discovery optimization
+- Complete integration documentation
 
 ### Phase 5: Advanced Capabilities (Q2 2026)
-**Goal:** Become the standard for Solana private communication
-
-**Deliverables:**
-- **Group Messaging** - Multi-recipient encryption with key rotation
-- **Message Revocation** - Burn mechanism for $MEMO receipts
-- **Cross-Chain Bridges** - Extend to EVM and other chains
-- **Bot & Automation Framework** - Programmatic messaging APIs
-- **Analytics Dashboard** - Network statistics (privacy-preserving)
-- **Enterprise Licensing** - Custom SLAs and priority support
+- Group messaging with key rotation
+- Message revocation (burn $MEMO receipts)
+- Cross-chain bridges (EVM support)
+- Programmatic messaging APIs
+- Analytics dashboard
 
 ### Phase 6: Ecosystem Expansion (Q4 2026)
-**Goal:** Power the next generation of private blockchain applications
-
-**Deliverables:**
-- **Smart Contract Integration** - Programs can send memos on behalf of users
-- **Payment Streaming** - Attach memos to Streamflow/Zebec payments
-- **Gaming & Social** - In-game encrypted chat for Solana games
-- **DAO Tooling** - Private proposal discussions and voting notes
-- **Mobile SDKs** - Native iOS and Android support
-- **Grant Program** - Fund developers building on Memo Protocol
-
-### Phase 5: Advanced Capabilities (Q4 2025)
-**Goal:** Become the standard for Solana private communication
-
-**Deliverables:**
-- **Group Messaging** - Multi-recipient encryption with key rotation
-- **Message Revocation** - Burn mechanism for $MEMO receipts
-- **Cross-Chain Bridges** - Extend to EVM and other chains
-- **Bot & Automation Framework** - Programmatic messaging APIs
-- **Analytics Dashboard** - Network statistics (privacy-preserving)
-- **Enterprise Licensing** - Custom SLAs and priority support
-
-### Phase 6: Ecosystem Expansion (2026)
-**Goal:** Power the next generation of private blockchain applications
-
-**Deliverables:**
-- **Smart Contract Integration** - Programs can send memos on behalf of users
-- **Payment Streaming** - Attach memos to Streamflow/Zebec payments
-- **Gaming & Social** - In-game encrypted chat for Solana games
-- **DAO Tooling** - Private proposal discussions and voting notes
-- **Mobile SDKs** - Native iOS and Android support
-- **Grant Program** - Fund developers building on Memo Protocol
-
----
-
-## Use Cases
-
-### For Wallet Providers
-**Why Phantom, Solflare, and Backpack Should Integrate Memo:**
-- Differentiate with native messaging (users expect this)
-- Keep users inside your app instead of going to Discord/Telegram
-- Enable social features without centralized infrastructure
-- Create new engagement opportunities
-
-**Integration Effort:** ~2 weeks with our SDK (Phase 4)
-
-### For DeFi Protocols
-- Private notifications for liquidations and important events
-- Confidential loan offers and negotiation
-- Encrypted metadata for advanced trading strategies
-
-### For NFT Marketplaces
-- Buyer/seller communication without revealing wallets publicly
-- Private offers and counteroffers
-- Creator-to-collector engagement
-
-### For DAOs
-- Secure communication between governance participants
-- Private discussions before public proposals
-- Confidential coordination for multisig signers
-
-### For Enterprises
-- Supply chain coordination on-chain without exposing partners
-- Regulatory-compliant audit trails with confidential details
-- Private B2B invoicing and contract management
+- Smart contract integration
+- Payment streaming with memos
+- Mobile SDKs (iOS/Android)
+- DAO tooling
+- Grant program for developers
 
 ---
 
@@ -238,73 +200,85 @@ We're building in public and shipping iteratively.
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| **Blockchain** | Solana | Public key infrastructure, consensus, and ledger |
-| **Encryption** | TweetNaCl | Audited, battle-tested E2E encryption (NaCl secretbox) |
-| **Frontend** | React + Vite | Reference implementation UI |
-| **Styling** | Tailwind CSS | Rapid, customizable styling |
-| **Wallet** | @solana/wallet-adapter-react | Universal Solana wallet support |
-| **Storage** | Solana Memo Program | On-chain message storage via native memo instruction |
-| **Tokens** | SPL Token + Pump Fun | Message receipts and token infrastructure |
+| **Blockchain** | Solana | Immutable ledger & timestamp authority |
+| **Encryption** | TweetNaCl | Battle-tested E2E encryption (NaCl secretbox) |
+| **Storage** | Solana Memo Program | On-chain message storage (native) |
+| **Tokens** | SPL Token + Pump Fun | Message receipts & token infrastructure |
+| **Frontend** | React + Vite | Reference implementation |
+| **Wallet** | @solana/wallet-adapter | Universal Solana wallet support |
 
 ---
 
-## Partner With Us
+## Why This Matters
 
-### For Wallet Providers
-We're actively seeking integration partners. If you're building a Solana wallet and want to add native encrypted messaging, **let's talk.**
+### The Missing Primitive
 
-**What we provide:**
-- Full SDK with React and vanilla JS support
-- White-label UI components
-- Technical integration support
-- Co-marketing opportunities
+Blockchain solved transparency. Crypto solved payments. NFTs solved provenance.
 
-**Contact:** partnerships@memo-protocol.xyz
+**Memo Protocol solves verifiable private communication.**
+
+For the first time, you can have:
+- Messages that **can't be deleted** (immutable)
+- Messages that **can't be faked** (cryptographic proof)
+- Messages that **can't be censored** (decentralized)
+- Messages that **stay private** (end-to-end encrypted)
+
+This unlocks:
+- **Legal systems** using blockchain for evidence
+- **Enterprises** conducting private business on public ledgers
+- **Whistleblowers** with protected, permanent records
+- **Financial professionals** with provable compliance
+
+**We're not just building a protocol. We're building the infrastructure that makes blockchain viable for real-world business communications.**
+
+---
+
+## Get Involved
+
+### For Enterprises & Legal Firms
+Interested in using Memo Protocol for compliance, legal documentation, or business communications?
+
+**Contact:** enterprise@memo-protocol.xyz
 
 ### For Developers
 We welcome contributions in:
 - Security & cryptography review
 - Solana program optimization
 - Frontend components & UX
-- Documentation & tutorials
-- Testing & quality assurance
+- Documentation & integration guides
 
-**See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.**
+**See [CONTRIBUTING.md](./CONTRIBUTING.md)**
+
+### For Investors & Partners
+Interested in supporting the development of verifiable private communication infrastructure?
+
+**Contact:** partnerships@memo-protocol.xyz
 
 ---
 
-## Project Metrics
+## Project Status
 
 | Metric | Value |
 |--------|-------|
-| **Protocol Version** | v0.4.0-alpha |
-| **Development Phase** | 4 of 6 |
-| **Test Messages Sent** | 1,000+ |
-| **Target Launch** | Q1 2026 |
-| **Lines of Code** | 5,000+ |
+| **Protocol Version** | v0.3.0-production |
+| **Development Phase** | 3 of 6 (Complete) |
+| **Network** | Solana Mainnet |
+| **Messages Sent** | 1,000+ (testnet) |
+| **Target SDK Launch** | Q1 2026 |
 
 ---
 
 ## License
 
-Licensed under the MIT License. See [LICENSE](./LICENSE) for full terms.
+MIT License - See [LICENSE](./LICENSE) for details.
 
 ---
 
-## Why This Matters
+## Tagline
 
-Blockchain promised to change how we do business. But without privacy, it's stuck being a transparent ledger where every transaction is public.
-
-**Memo Protocol unlocks the next evolution:**
-- Enterprises can use blockchain without exposing trade secrets
-- Individuals can transact without sacrificing personal privacy
-- Developers can build social features without centralized infrastructure
-- The entire ecosystem benefits from verifiable private communication
-
-**We're not just building a messaging app. We're building the infrastructure that makes blockchain usable for real-world business.**
+**When your message can't afford to disappear, it lives on Memo.**
 
 ---
 
-**Built by the Memo Protocol team**
-
-*Making private communication on public blockchains a reality.*
+**Built by the Memo Protocol team**  
+*Making verifiable private communication on public blockchains a reality.*
