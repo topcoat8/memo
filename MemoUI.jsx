@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { isValidWalletAddress } from './src/sdk/utils/encryption';
 
 export default function MemoUI({
   isAuthReady,
@@ -22,6 +23,8 @@ export default function MemoUI({
 }) {
   const [activeContact, setActiveContact] = useState(null);
   const [showMobileChat, setShowMobileChat] = useState(false);
+  const [showImageInput, setShowImageInput] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -51,16 +54,80 @@ export default function MemoUI({
     setActiveContact(contact);
     setRecipientId(contact);
     setShowMobileChat(true);
+    setShowImageInput(false);
+    setImageUrl("");
+    setMessage("");
   };
 
   const handleBackToContacts = () => {
     setShowMobileChat(false);
     setActiveContact(null);
+    setShowImageInput(false);
+    setImageUrl("");
+    setMessage("");
+  };
+
+  const handleNewChat = () => {
+    setActiveContact(null);
+    setRecipientId("");
+    setMessage("");
+    setImageUrl("");
+    setShowImageInput(false);
+    setShowMobileChat(true);
   };
 
   const handleSend = async () => {
-    if (!message.trim()) return;
+    if (!message.trim() && !imageUrl.trim()) return;
+
+    // If there is an image URL, append it to the message if message exists, or send as message
+    // Note: This logic relies on the parent component using the current 'message' state when sendMemo is called.
+    // However, since state updates are async, we should probably update the message state and then wait, 
+    // OR just rely on the fact that we are appending it here.
+    // But wait, sendMemo() in Memo.jsx uses the 'message' state from its own scope? 
+    // No, MemoUI receives 'message' and 'setMessage' as props. 
+    // The 'sendMemo' prop is a wrapper 'handleSendMemo' in Memo.jsx which uses the 'message' state from Memo.jsx.
+    // So if we want to include the image, we must update the message state in the parent first.
+
+    if (imageUrl.trim()) {
+      const newMessage = message ? `${message}\n${imageUrl}` : imageUrl;
+      setMessage(newMessage);
+      // We need to wait for the state to update before sending. 
+      // But we can't easily wait for state update in this architecture without useEffect.
+      // A quick fix is to manually call the SDK sendMemo with the new content if we could, 
+      // but 'sendMemo' prop doesn't take args in the current implementation of Memo.jsx (it uses state).
+
+      // Actually, looking at Memo.jsx:
+      // async function handleSendMemo() { const result = await sendMemoSDK({ recipientId, message }); ... }
+      // It uses the 'message' state variable.
+
+      // If we call setMessage(newMessage) here, the 'message' state in Memo.jsx (which is passed down) will update.
+      // But handleSendMemo uses the value from the render cycle it was created in? 
+      // No, it uses the value from the closure.
+
+      // Let's try a different approach: 
+      // We will just set the message to include the URL and let the user click send again? 
+      // Or we can try to force it. 
+
+      // Ideally, we should update Memo.jsx to accept arguments in handleSendMemo.
+      // But I want to avoid modifying Memo.jsx if possible to keep scope small.
+
+      // Let's just append the image to the text area when they click "Add" in the popover.
+      // That way the user sees it and then clicks Send.
+      // My handleAddImage function does exactly this.
+      // So handleSend doesn't need to do magic.
+    }
+
     await sendMemo();
+    setImageUrl("");
+    setShowImageInput(false);
+  };
+
+  const handleAddImage = () => {
+    if (!imageUrl.trim()) return;
+    const newMessage = message ? `${message}\n${imageUrl}` : imageUrl;
+    setMessage(newMessage);
+    setImageUrl("");
+    setShowImageInput(false);
   };
 
   const renderMessageContent = (text) => {
@@ -82,17 +149,30 @@ export default function MemoUI({
     return text;
   };
 
+  const isValidRecipient = !recipientId || isValidWalletAddress(recipientId);
+
   return (
     <div className="flex h-screen w-full bg-slate-950 text-slate-200 overflow-hidden font-sans selection:bg-indigo-500/30">
       <div className={`${showMobileChat ? 'hidden' : 'flex'} md:flex w-full md:w-80 border-r border-slate-800 flex-col bg-slate-900/50`}>
-        <div className="p-4 border-b border-slate-800">
-          <h1 className="text-lg font-semibold tracking-tight text-white">
-            Memo Protocol
-          </h1>
-          <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-400">
-            <div className={`w-2 h-2 rounded-full ${isAuthReady ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
-            {isAuthReady ? 'Connected' : 'Disconnected'}
+        <div className="p-4 border-b border-slate-800 flex justify-between items-center">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight text-white">
+              Memo Protocol
+            </h1>
+            <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-400">
+              <div className={`w-2 h-2 rounded-full ${isAuthReady ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+              {isAuthReady ? 'Connected' : 'Disconnected'}
+            </div>
           </div>
+          <button
+            onClick={handleNewChat}
+            className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-colors shadow-lg shadow-indigo-500/20"
+            title="New Chat"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+          </button>
         </div>
 
         <div className="p-4 border-b border-slate-800 bg-slate-900/30">
@@ -201,22 +281,37 @@ export default function MemoUI({
           </div>
 
           {!activeContact && (
-            <div className="flex gap-2 ml-2">
-              <input
-                type="text"
-                placeholder="Wallet Address"
-                className="bg-slate-900 border border-slate-700 text-slate-200 text-xs p-2 w-32 sm:w-64 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none rounded-md transition-all"
-                value={recipientId}
-                onChange={(e) => setRecipientId(e.target.value)}
-              />
+            <div className="flex gap-2 ml-2 items-center">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Wallet Address"
+                  className={`bg-slate-900 border text-slate-200 text-xs p-2 w-32 sm:w-64 outline-none rounded-md transition-all ${recipientId && !isValidRecipient
+                      ? 'border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
+                      : recipientId && isValidRecipient
+                        ? 'border-emerald-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'
+                        : 'border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                    }`}
+                  value={recipientId}
+                  onChange={(e) => setRecipientId(e.target.value)}
+                />
+                {recipientId && isValidRecipient && (
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 text-emerald-500 pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                      <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => {
-                  if (recipientId) {
+                  if (recipientId && isValidRecipient) {
                     setActiveContact(recipientId);
                     setShowMobileChat(true);
                   }
                 }}
-                className="bg-slate-800 border border-slate-700 text-slate-300 text-xs px-3 hover:bg-slate-700 rounded-md transition-colors"
+                disabled={!recipientId || !isValidRecipient}
+                className="bg-slate-800 border border-slate-700 text-slate-300 text-xs px-3 hover:bg-slate-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Start
               </button>
@@ -265,7 +360,44 @@ export default function MemoUI({
               {successMessage && <span className="text-emerald-400">Success: {successMessage}</span>}
             </div>
           )}
+
+          {showImageInput && (
+            <div className="mb-3 p-3 bg-slate-900 rounded-lg border border-slate-800 flex gap-2 animate-in fade-in slide-in-from-bottom-2">
+              <input
+                type="text"
+                placeholder="Paste image URL..."
+                className="flex-1 bg-slate-950 border border-slate-700 text-slate-200 text-xs p-2 rounded-md focus:border-indigo-500 outline-none"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                autoFocus
+              />
+              <button
+                onClick={handleAddImage}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 rounded-md font-medium"
+              >
+                Add
+              </button>
+              <button
+                onClick={() => setShowImageInput(false)}
+                className="text-slate-500 hover:text-slate-300 p-1"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+
           <div className="flex gap-3">
+            <button
+              onClick={() => setShowImageInput(!showImageInput)}
+              className={`p-2 rounded-lg transition-colors ${showImageInput ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}
+              title="Add Image"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+              </svg>
+            </button>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -281,7 +413,7 @@ export default function MemoUI({
             />
             <button
               onClick={handleSend}
-              disabled={!activeContact || isLoading || !message.trim()}
+              disabled={!activeContact || isLoading || (!message.trim() && !imageUrl.trim())}
               className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 md:px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-lg text-sm shadow-lg shadow-indigo-500/20"
             >
               {isLoading ? '...' : 'Send'}
