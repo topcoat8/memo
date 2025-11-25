@@ -21,6 +21,7 @@ export default function MemoUI({
   publicKeyRegistry,
 }) {
   const [activeContact, setActiveContact] = useState(null);
+  const [showMobileChat, setShowMobileChat] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -49,6 +50,12 @@ export default function MemoUI({
   const handleContactSelect = (contact) => {
     setActiveContact(contact);
     setRecipientId(contact);
+    setShowMobileChat(true);
+  };
+
+  const handleBackToContacts = () => {
+    setShowMobileChat(false);
+    setActiveContact(null);
   };
 
   const handleSend = async () => {
@@ -77,7 +84,7 @@ export default function MemoUI({
 
   return (
     <div className="flex h-screen w-full bg-slate-950 text-slate-200 overflow-hidden font-sans selection:bg-indigo-500/30">
-      <div className="w-80 border-r border-slate-800 flex flex-col bg-slate-900/50">
+      <div className={`${showMobileChat ? 'hidden' : 'flex'} md:flex w-full md:w-80 border-r border-slate-800 flex-col bg-slate-900/50`}>
         <div className="p-4 border-b border-slate-800">
           <h1 className="text-lg font-semibold tracking-tight text-white">
             Memo Protocol
@@ -162,36 +169,54 @@ export default function MemoUI({
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col bg-slate-950 relative">
-        <div className="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-10">
-          <div>
-            {activeContact ? (
-              <div>
-                <div className="text-sm font-medium text-slate-200 flex items-center gap-2">
-                  <span className="text-slate-500 font-normal">To:</span>
-                  <span className="font-mono text-slate-300">{activeContact}</span>
-                </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">
-                  {publicKeyRegistry && publicKeyRegistry[activeContact] ? '🔒 End-to-End Encrypted' : '🔓 Standard Encryption'}
-                </div>
-              </div>
-            ) : (
-              <div className="text-slate-500">Select a contact to start messaging</div>
+      <div className={`${showMobileChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-slate-950 relative w-full`}>
+        <div className="h-16 border-b border-slate-800 flex items-center justify-between px-4 md:px-6 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-10">
+          <div className="flex items-center gap-3 overflow-hidden">
+            {activeContact && (
+              <button
+                onClick={handleBackToContacts}
+                className="md:hidden p-1.5 -ml-2 text-slate-400 hover:text-slate-200"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
+              </button>
             )}
+
+            <div className="flex-1 min-w-0">
+              {activeContact ? (
+                <div>
+                  <div className="text-sm font-medium text-slate-200 flex items-center gap-2">
+                    <span className="text-slate-500 font-normal hidden sm:inline">To:</span>
+                    <span className="font-mono text-slate-300 truncate">{activeContact}</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-0.5 truncate">
+                    {publicKeyRegistry && publicKeyRegistry[activeContact] ? '🔒 End-to-End Encrypted' : '🔓 Standard Encryption'}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-slate-500 text-sm">Select a contact</div>
+              )}
+            </div>
           </div>
 
           {!activeContact && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 ml-2">
               <input
                 type="text"
-                placeholder="Enter Wallet Address"
-                className="bg-slate-900 border border-slate-700 text-slate-200 text-xs p-2 w-64 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none rounded-md transition-all"
+                placeholder="Wallet Address"
+                className="bg-slate-900 border border-slate-700 text-slate-200 text-xs p-2 w-32 sm:w-64 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none rounded-md transition-all"
                 value={recipientId}
                 onChange={(e) => setRecipientId(e.target.value)}
               />
               <button
-                onClick={() => activeContact ? null : setActiveContact(recipientId)}
-                className="bg-slate-800 border border-slate-700 text-slate-300 text-xs px-4 hover:bg-slate-700 rounded-md transition-colors"
+                onClick={() => {
+                  if (recipientId) {
+                    setActiveContact(recipientId);
+                    setShowMobileChat(true);
+                  }
+                }}
+                className="bg-slate-800 border border-slate-700 text-slate-300 text-xs px-3 hover:bg-slate-700 rounded-md transition-colors"
               >
                 Start
               </button>
@@ -199,14 +224,14 @@ export default function MemoUI({
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 min-h-0">
           {activeMessages.map((msg) => {
             const isMe = msg.senderId === userId;
             const decrypted = decryptMessage(msg);
 
             return (
               <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
+                <div className={`max-w-[85%] md:max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
                   <div className="text-[10px] text-slate-500 mb-1">
                     {isMe ? 'You' : msg.senderId.slice(0, 8)} • {msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
@@ -257,14 +282,14 @@ export default function MemoUI({
             <button
               onClick={handleSend}
               disabled={!activeContact || isLoading || !message.trim()}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-lg text-sm shadow-lg shadow-indigo-500/20"
+              className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 md:px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-lg text-sm shadow-lg shadow-indigo-500/20"
             >
-              {isLoading ? 'Sending...' : 'Send'}
+              {isLoading ? '...' : 'Send'}
             </button>
           </div>
           <div className="mt-2 text-[10px] text-slate-600 flex justify-between px-1">
             <span>Memo Protocol v2</span>
-            <span>Network Fee: ~0.000005 SOL</span>
+            <span>Fee: ~0.000005 SOL</span>
           </div>
         </div>
       </div>
