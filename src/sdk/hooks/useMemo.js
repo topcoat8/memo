@@ -7,9 +7,8 @@
 import { useState, useCallback } from 'react';
 import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { getAssociatedTokenAddress, createTransferInstruction, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
-import { encryptMessageForChain, isValidWalletAddress } from '../utils/encryption';
+import { encryptMessageForChain, isValidWalletAddress, encryptMessageAsymmetric, uint8ArrayToBase64, base64ToUint8Array } from '../utils/encryption';
 
-// Native Solana Memo program
 const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
 
 /**
@@ -22,15 +21,81 @@ const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfc
  * @param {boolean} options.isReady - Whether wallet is connected
  * @param {Object} options.wallet - Wallet adapter instance
  * @param {string} options.tokenMint - Token mint address to use (your pump.fun token)
+ * @param {Object} options.encryptionKeys - User's Curve25519 keypair (optional)
+ * @param {Object} options.publicKeyRegistry - Map of wallet addresses to identity keys
  * @returns {Object} - Memo operations and state
  */
-export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenMint }) {
+export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenMint, encryptionKeys, publicKeyRegistry }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
   /**
+   * Announces the user's encryption public key to the chain
+   */
+  const announceIdentity = useCallback(async () => {
+    setError("");
+    setSuccessMessage("");
+
+    if (!isReady || !encryptionKeys) {
+      setError("You must be logged in to announce your identity.");
+      return { success: false, error: "Not logged in" };
+    }
+
+    try {
+      setIsLoading(true);
+
+      const identityMsg = {
+        type: 'IDENTITY',
+        publicKey: uint8ArrayToBase64(encryptionKeys.publicKey),
+        timestamp: Date.now()
+      };
+
+      const memoData = JSON.stringify(identityMsg);
+
+      const transaction = new Transaction();
+
+      const memoIx = new TransactionInstruction({
+        keys: [],
+        programId: MEMO_PROGRAM_ID,
+        data: Buffer.from(memoData, 'utf-8'),
+      });
+      transaction.add(memoIx);
+
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = publicKey;
+
+      const signature = await wallet.sendTransaction(transaction, connection);
+
+      await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight,
+      }, 'confirmed');
+
+      setSuccessMessage("Identity announced successfully!");
+      return { success: true, signature };
+
+    } catch (err) {
+      console.error('Announce identity error:', err);
+      setError(err.message || "Failed to announce identity");
+      return { success: false, error: err.message };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [connection, publicKey, isReady, wallet, encryptionKeys]);
+
+  /**
    * Sends an encrypted memo with 1 token transfer to a recipient
+   * 
+   * Logic:
+   * 1. Validates inputs and wallet connection.
+   * 2. Checks sender balance (must have > 1 token).
+   * 3. Encrypts message (Asymmetric if recipient key found, else Legacy).
+   * 4. Gets/Creates recipient token account.
+   * 5. Builds transaction: Create ATA (if needed) + Transfer 1 Token + Memo Instruction.
+   * 6. Sends and confirms transaction.
    *
    * @param {Object} params - Send parameters
    * @param {string} params.recipientId - Recipient's wallet address
@@ -41,7 +106,6 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
     setError("");
     setSuccessMessage("");
 
-    // Validation
     if (!connection) {
       setError("Connection is not initialized. Please refresh the page.");
       return { success: false, error: "Connection not initialized" };
@@ -59,7 +123,6 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
 
     const trimmedRecipient = recipientId.trim();
 
-    // Validate wallet address format
     if (!isValidWalletAddress(trimmedRecipient)) {
       setError("Invalid wallet address format. Please check the recipient address.");
       return { success: false, error: "Invalid recipient address" };
@@ -70,14 +133,12 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
       return { success: false, error: "Message cannot be empty" };
     }
 
-    // Validate message length
     const messageText = message.trim();
     if (messageText.length < 1 || messageText.length > 500) {
       setError("Message must be between 1 and 500 characters.");
       return { success: false, error: "Invalid message length" };
     }
 
-    // Prevent sending to self
     if (trimmedRecipient === userId) {
       setError("Cannot send memo to yourself.");
       return { success: false, error: "Cannot send to self" };
@@ -101,7 +162,6 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
 
       const TOKEN_MINT = new PublicKey(tokenMint);
 
-      // Step 1: Check sender has tokens to send
       const senderTokenAccount = await getAssociatedTokenAddress(
         TOKEN_MINT,
         publicKey
@@ -121,50 +181,65 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
         return { success: false, error: "Insufficient tokens" };
       }
 
-      // Step 2: Encrypt message
-      const { encryptedData, nonce } = encryptMessageForChain(messageText, trimmedRecipient);
+      let memoDataObj;
 
-      // Create memo data: combine encrypted content + nonce
-      const memoData = JSON.stringify({
-        encrypted: Array.from(encryptedData),
-        nonce: Array.from(nonce),
-        recipient: trimmedRecipient,
-      });
+      const recipientIdentityKey = publicKeyRegistry ? publicKeyRegistry[trimmedRecipient] : null;
 
-      // Step 3: Get recipient token account (or create it if needed)
+      if (encryptionKeys && recipientIdentityKey) {
+        const recipientPub = base64ToUint8Array(recipientIdentityKey);
+        const { encryptedData, nonce } = encryptMessageAsymmetric(
+          messageText,
+          recipientPub,
+          encryptionKeys.secretKey
+        );
+
+        memoDataObj = {
+          encrypted: Array.from(encryptedData),
+          nonce: Array.from(nonce),
+          recipient: trimmedRecipient,
+          isAsymmetric: true
+        };
+      } else {
+        const { encryptedData, nonce } = encryptMessageForChain(messageText, trimmedRecipient);
+
+        memoDataObj = {
+          encrypted: Array.from(encryptedData),
+          nonce: Array.from(nonce),
+          recipient: trimmedRecipient,
+          isAsymmetric: false
+        };
+      }
+
+      const memoData = JSON.stringify(memoDataObj);
+
       const recipientTokenAccount = await getAssociatedTokenAddress(
         TOKEN_MINT,
         recipientPubkey
       );
 
-      // Step 4: Build transaction
       const transaction = new Transaction();
 
-      // Check if recipient token account exists, if not, create it
       try {
         await connection.getTokenAccountBalance(recipientTokenAccount);
       } catch (err) {
-        // Create associated token account for recipient
         const createAtaIx = createAssociatedTokenAccountInstruction(
-          publicKey, // payer
-          recipientTokenAccount, // ata
-          recipientPubkey, // owner
-          TOKEN_MINT // mint
+          publicKey,
+          recipientTokenAccount,
+          recipientPubkey,
+          TOKEN_MINT
         );
         transaction.add(createAtaIx);
       }
 
-      // Add token transfer instruction (1 token)
       const transferIx = createTransferInstruction(
         senderTokenAccount,
         recipientTokenAccount,
         publicKey,
-        1, // Transfer 1 token
+        1,
         []
       );
       transaction.add(transferIx);
 
-      // Add memo instruction (stores encrypted message on-chain)
       const memoIx = new TransactionInstruction({
         keys: [],
         programId: MEMO_PROGRAM_ID,
@@ -172,12 +247,10 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
       });
       transaction.add(memoIx);
 
-      // Step 5: Send transaction
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
 
-      // Send transaction using wallet adapter
       const signature = await wallet.sendTransaction(transaction, connection, {
         skipPreflight: false,
         maxRetries: 3,
@@ -212,7 +285,7 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
     } finally {
       setIsLoading(false);
     }
-  }, [connection, publicKey, userId, isReady, wallet, tokenMint]);
+  }, [connection, publicKey, userId, isReady, wallet, tokenMint, encryptionKeys, publicKeyRegistry]);
 
   /**
    * Clears error and success messages
@@ -224,6 +297,7 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
 
   return {
     sendMemo,
+    announceIdentity,
     isLoading,
     error,
     successMessage,

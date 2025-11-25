@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 export default function MemoUI({
   isAuthReady,
   userId,
-  wallet,
   recipientId,
   setRecipientId,
   message,
@@ -15,224 +14,259 @@ export default function MemoUI({
   sendMemo,
   memos,
   decryptMessage,
+  encryptionKeys,
+  login,
+  logout,
+  announceIdentity,
+  publicKeyRegistry,
 }) {
-  const [activeTab, setActiveTab] = useState("send");
+  const [activeContact, setActiveContact] = useState(null);
+  const messagesEndRef = useRef(null);
 
-  const tabs = [
-    { id: "send", label: "Send Memo" },
-    { id: "public", label: "Public Ledger" },
-    { id: "private", label: "Private Inbox" },
-  ];
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [memos, activeContact]);
+
+  const contacts = React.useMemo(() => {
+    const contactSet = new Set();
+    memos.forEach(m => {
+      if (m.senderId !== userId) contactSet.add(m.senderId);
+      if (m.recipientId !== userId) contactSet.add(m.recipientId);
+    });
+    return Array.from(contactSet);
+  }, [memos, userId]);
+
+  const activeMessages = React.useMemo(() => {
+    if (!activeContact) return [];
+    return memos.filter(m =>
+      (m.senderId === userId && m.recipientId === activeContact) ||
+      (m.senderId === activeContact && m.recipientId === userId)
+    ).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+  }, [memos, userId, activeContact]);
+
+  const handleContactSelect = (contact) => {
+    setActiveContact(contact);
+    setRecipientId(contact);
+  };
+
+  const handleSend = async () => {
+    if (!message.trim()) return;
+    await sendMemo();
+  };
+
+  const renderMessageContent = (text) => {
+    const imgRegex = /(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp))/i;
+    const match = text.match(imgRegex);
+
+    if (match) {
+      const parts = text.split(match[0]);
+      return (
+        <div>
+          {parts[0]}
+          <div className="mt-2 mb-2">
+            <img src={match[0]} alt="Embedded content" className="max-w-full h-auto rounded-lg border border-slate-700 max-h-64 object-contain" />
+          </div>
+          {parts[1]}
+        </div>
+      );
+    }
+    return text;
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-indigo-950 text-gray-200">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <header className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-500 py-1">
-            Memo Protocol (POC)
+    <div className="flex h-screen w-full bg-slate-950 text-slate-200 overflow-hidden font-sans selection:bg-indigo-500/30">
+      <div className="w-80 border-r border-slate-800 flex flex-col bg-slate-900/50">
+        <div className="p-4 border-b border-slate-800">
+          <h1 className="text-lg font-semibold tracking-tight text-white">
+            Memo Protocol
           </h1>
-          <p className="text-gray-400 mt-1">
-            Send tokens with encrypted messages. Powered by Solana and TweetNaCl encryption.
-          </p>
-        </header>
-
-        {/* Wallet ID + Warning */}
-        <section className="mb-8">
-          <div className="rounded-lg border border-indigo-900/50 bg-gray-950/70 backdrop-blur-md shadow-xl shadow-black/20 p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm text-gray-400">Wallet ID</p>
-                <p className="font-mono text-sm md:text-base break-all text-cyan-400">
-                  {isAuthReady ? (
-                    wallet?.publicKey ? wallet.publicKey.toString() : (userId ? `anonymous:${userId.slice(0,8)}` : 'Not connected')
-                  ) : "Connecting..."}
-                </p>
-              </div>
-              <div className="text-sm">
-                <WalletMultiButton />
-              </div>
-            </div>
-            <p className="mt-3 text-xs text-amber-400 border-t border-amber-500/20 pt-3">
-              Encryption is handled in-browser using TweetNaCl. Messages are stored on-chain with 1 token transfer per message.
-            </p>
+          <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-400">
+            <div className={`w-2 h-2 rounded-full ${isAuthReady ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+            {isAuthReady ? 'Connected' : 'Disconnected'}
           </div>
-        </section>
+        </div>
 
-        {/* Notifications */}
-        {(error || successMessage) && (
-          <div className="mb-6 space-y-3">
-            {error ? (
-              <div className="rounded-md border border-red-500/50 bg-red-900/20 p-3 text-sm text-red-300">
-                {error}
-              </div>
-            ) : null}
-            {successMessage ? (
-              <div className="rounded-md border border-emerald-500/50 bg-emerald-900/20 p-3 text-sm text-emerald-300">
-                {successMessage}
-              </div>
-            ) : null}
+        <div className="p-4 border-b border-slate-800 bg-slate-900/30">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Security</span>
+            {encryptionKeys ? (
+              <span className="text-[10px] font-medium text-emerald-400 bg-emerald-950/30 px-2 py-0.5 rounded-full border border-emerald-900/50">Encrypted</span>
+            ) : (
+              <span className="text-[10px] font-medium text-amber-400 bg-amber-950/30 px-2 py-0.5 rounded-full border border-amber-900/50">Unsecured</span>
+            )}
           </div>
-        )}
 
-        {/* Tabs */}
-        <div className="mb-6">
-          <div className="flex space-x-1 border-b border-gray-700">
-            {tabs.map((tab) => (
+          {isAuthReady ? (
+            encryptionKeys ? (
+              <div className="space-y-2">
+                <button
+                  onClick={announceIdentity}
+                  className="w-full text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 px-3 rounded-md transition-colors text-left flex justify-between items-center"
+                >
+                  <span>Announce Public Key</span>
+                  <span className="text-[10px] text-slate-500">On-chain</span>
+                </button>
+                <button
+                  onClick={logout}
+                  className="w-full text-xs font-medium text-slate-500 hover:text-rose-400 py-1.5 px-1 transition-colors text-left"
+                >
+                  Lock Identity
+                </button>
+              </div>
+            ) : (
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? "text-cyan-400 border-b-2 border-cyan-400"
-                    : "text-gray-400 hover:text-gray-300"
-                }`}
+                onClick={login}
+                className="w-full text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-3 rounded-md transition-all shadow-sm shadow-indigo-500/20"
               >
-                {tab.label}
+                Initialize Encryption
               </button>
-            ))}
+            )
+          ) : (
+            <div className="opacity-50 pointer-events-none">
+              <WalletMultiButton />
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+          <div className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 px-2 mt-2">Contacts</div>
+          {contacts.map(contact => (
+            <button
+              key={contact}
+              onClick={() => handleContactSelect(contact)}
+              className={`w-full text-left p-2.5 text-sm rounded-md transition-all ${activeContact === contact
+                ? 'bg-indigo-500/10 text-indigo-300'
+                : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                }`}
+            >
+              <div className="truncate font-mono text-xs">{contact}</div>
+              {publicKeyRegistry && publicKeyRegistry[contact] && (
+                <div className="text-[10px] text-emerald-500/80 mt-0.5 flex items-center gap-1">
+                  <span className="w-1 h-1 bg-emerald-500 rounded-full"></span>
+                  Secure
+                </div>
+              )}
+            </button>
+          ))}
+          {contacts.length === 0 && (
+            <div className="p-4 text-xs text-slate-600 text-center italic">
+              No contacts yet
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-slate-800">
+          <WalletMultiButton className="!bg-slate-800 hover:!bg-slate-700 !text-slate-200 !font-medium !text-sm !h-10 !w-full !justify-center !rounded-md !transition-colors" />
+        </div>
+      </div>
+
+      <div className="flex-1 flex flex-col bg-slate-950 relative">
+        <div className="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-10">
+          <div>
+            {activeContact ? (
+              <div>
+                <div className="text-sm font-medium text-slate-200 flex items-center gap-2">
+                  <span className="text-slate-500 font-normal">To:</span>
+                  <span className="font-mono text-slate-300">{activeContact}</span>
+                </div>
+                <div className="text-[10px] text-slate-500 mt-0.5">
+                  {publicKeyRegistry && publicKeyRegistry[activeContact] ? '🔒 End-to-End Encrypted' : '🔓 Standard Encryption'}
+                </div>
+              </div>
+            ) : (
+              <div className="text-slate-500">Select a contact to start messaging</div>
+            )}
+          </div>
+
+          {!activeContact && (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Enter Wallet Address"
+                className="bg-slate-900 border border-slate-700 text-slate-200 text-xs p-2 w-64 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none rounded-md transition-all"
+                value={recipientId}
+                onChange={(e) => setRecipientId(e.target.value)}
+              />
+              <button
+                onClick={() => activeContact ? null : setActiveContact(recipientId)}
+                className="bg-slate-800 border border-slate-700 text-slate-300 text-xs px-4 hover:bg-slate-700 rounded-md transition-colors"
+              >
+                Start
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
+          {activeMessages.map((msg) => {
+            const isMe = msg.senderId === userId;
+            const decrypted = decryptMessage(msg);
+
+            return (
+              <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
+                  <div className="text-[10px] text-slate-500 mb-1">
+                    {isMe ? 'You' : msg.senderId.slice(0, 8)} • {msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                  <div
+                    className={`p-3.5 rounded-2xl shadow-sm ${isMe
+                      ? 'bg-indigo-600 text-white rounded-br-sm'
+                      : 'bg-slate-800 text-slate-200 rounded-bl-sm'
+                      }`}
+                  >
+                    <div className="text-sm break-words whitespace-pre-wrap leading-relaxed">
+                      {renderMessageContent(decrypted)}
+                    </div>
+                  </div>
+                  {msg.isAsymmetric && (
+                    <div className="mt-1 text-[9px] text-emerald-500/70 flex items-center justify-end gap-1">
+                      <span className="w-1 h-1 bg-emerald-500 rounded-full"></span>
+                      Encrypted
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="p-4 border-t border-slate-800 bg-slate-950">
+          {(error || successMessage) && (
+            <div className="mb-3 text-xs px-1">
+              {error && <span className="text-rose-400">Error: {error}</span>}
+              {successMessage && <span className="text-emerald-400">Success: {successMessage}</span>}
+            </div>
+          )}
+          <div className="flex gap-3">
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder={activeContact ? "Type a message..." : "Select a contact first"}
+              disabled={!activeContact || isLoading}
+              className="flex-1 bg-slate-900 border border-slate-700 text-slate-200 p-3 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none h-12 disabled:opacity-50 rounded-lg transition-all"
+            />
+            <button
+              onClick={handleSend}
+              disabled={!activeContact || isLoading || !message.trim()}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-lg text-sm shadow-lg shadow-indigo-500/20"
+            >
+              {isLoading ? 'Sending...' : 'Send'}
+            </button>
+          </div>
+          <div className="mt-2 text-[10px] text-slate-600 flex justify-between px-1">
+            <span>Memo Protocol v2</span>
+            <span>Network Fee: ~0.000005 SOL</span>
           </div>
         </div>
-
-        {/* Tab Content */}
-        <div className="rounded-lg border border-indigo-900/50 bg-gray-950/70 backdrop-blur-md shadow-xl shadow-black/20 p-4">
-          {/* Send Memo Tab */}
-          {activeTab === "send" && (
-            <div>
-              <h2 className="text-lg font-medium mb-4 text-cyan-300">Send Memo</h2>
-              <div className="mb-4 p-4 bg-indigo-950/30 border border-indigo-800/50 rounded-md">
-                <p className="text-sm text-gray-300 leading-relaxed">
-                  Send 1 token with an encrypted message to any Solana wallet. Messages are encrypted
-                  using TweetNaCl before being stored on-chain. Only the recipient can decrypt your message.
-                </p>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-cyan-400 mb-1 font-medium">Recipient Wallet ID</label>
-                  <input
-                    type="text"
-                    className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-300"
-                    placeholder="Paste the recipient's Solana wallet address here"
-                    value={recipientId}
-                    onChange={(e) => setRecipientId(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-cyan-400 mb-1 font-medium">Message</label>
-                  <textarea
-                    rows={4}
-                    className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-300"
-                    placeholder="Type your memo..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={sendMemo}
-                    disabled={isLoading || !isAuthReady}
-                    className="inline-flex items-center justify-center rounded-md bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2 text-sm font-medium text-white shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20 transition-all duration-300 transform hover:scale-105"
-                  >
-                    {isLoading ? "Sending..." : "Send Memo + 1 Token"}
-                  </button>
-                  {!isAuthReady ? (
-                    <span className="text-xs text-gray-400">Connect wallet to send</span>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Public Ledger Tab */}
-          {activeTab === "public" && (
-            <div>
-              <h2 className="text-lg font-medium mb-4 text-cyan-300">Public Ledger</h2>
-              <p className="text-sm text-gray-400 mb-4">
-                All messages on the ledger (encrypted). Transaction details are public, content is private.
-              </p>
-              <div className="space-y-3">
-                {memos.length === 0 ? (
-                  <div className="text-sm text-gray-500">No memos found.</div>
-                ) : (
-                  memos.map((m) => (
-                    <div
-                      key={m.id}
-                      className="rounded-md border border-gray-800 bg-gray-900/80 p-3 text-sm"
-                    >
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        <div>
-                          <span className="text-cyan-600">Sender:</span>
-                          <p className="font-mono text-xs break-all">{m.senderId}</p>
-                        </div>
-                        <div>
-                          <span className="text-cyan-600">Recipient:</span>
-                          <p className="font-mono text-xs break-all">{m.recipientId}</p>
-                        </div>
-                        <div>
-                          <span className="text-cyan-600">Status:</span>
-                          <p className="text-emerald-400">Encrypted</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Private Inbox Tab */}
-          {activeTab === "private" && (
-            <div>
-              <h2 className="text-lg font-medium mb-4 text-cyan-300">Private Inbox</h2>
-              <p className="text-sm text-gray-400 mb-4">
-                Decrypts memos addressed to your wallet locally in the browser.
-              </p>
-              <div className="space-y-3">
-                {memos.filter((m) => m.recipientId === userId).length === 0 ? (
-                  <div className="text-sm text-gray-500">No private memos found.</div>
-                ) : (
-                  memos
-                    .filter((m) => m.recipientId === userId)
-                    .map((m) => {
-                      const decrypted = decryptMessage(m);
-                      const handleReply = () => {
-                        setRecipientId(m.senderId);
-                        setActiveTab("send");
-                      };
-                      return (
-                        <div
-                          key={m.id}
-                          className="rounded-md border border-gray-800 bg-gray-900/80 p-3 text-sm"
-                        >
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                            <div>
-                              <span className="text-cyan-600">From:</span>
-                              <p className="font-mono text-xs break-all">{m.senderId}</p>
-                            </div>
-                            <div className="md:col-span-2">
-                              <span className="text-cyan-600">Decrypted Message:</span>
-                              <p className="break-words mt-1">{decrypted}</p>
-                            </div>
-                          </div>
-                          <div className="mt-3 pt-3 border-t border-gray-700">
-                            <button
-                              onClick={handleReply}
-                              className="inline-flex items-center justify-center rounded-md bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 px-4 py-1.5 text-xs font-medium text-white shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20 transition-all duration-300 transform hover:scale-105"
-                            >
-                              Reply
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <footer className="mt-10 text-center text-xs text-gray-600">
-          Privacy-first encrypted messaging on Solana • Proof of Concept
-        </footer>
       </div>
     </div>
   );

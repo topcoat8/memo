@@ -8,7 +8,7 @@
  */
 
 import nacl from 'tweetnacl';
-import { compressMessage, decompressMessage } from './compression';
+import { compressMessage, decompressMessage } from './compression.js';
 
 const naclInstance = nacl;
 
@@ -76,21 +76,19 @@ export function encryptMessageForChain(plaintext, recipientId) {
     throw new Error('Recipient ID must be a non-empty string');
   }
 
-  // Step 1: Compress the message
   const compressed = compressMessage(plaintext);
 
-  // Step 2: Encrypt the compressed data
   const key = deriveKeyFromIdentifier(recipientId);
   const nonce = naclInstance.randomBytes(naclInstance.secretbox.nonceLength);
   const boxed = naclInstance.secretbox(compressed, nonce, key);
-  
+
   if (!boxed) {
     throw new Error('Encryption failed');
   }
 
   return {
     encryptedData: boxed,
-    nonce: Array.from(nonce), // Convert to array for Anchor serialization
+    nonce: Array.from(nonce),
   };
 }
 
@@ -114,7 +112,7 @@ export function encryptMessage(plaintext, recipientId) {
   const key = deriveKeyFromIdentifier(recipientId);
   const nonce = naclInstance.randomBytes(naclInstance.secretbox.nonceLength);
   const boxed = naclInstance.secretbox(utf8ToUint8Array(plaintext), nonce, key);
-  
+
   if (!boxed) {
     throw new Error('Encryption failed');
   }
@@ -146,24 +144,21 @@ export function decryptMessageFromChain(encryptedData, nonce, recipientId) {
   }
 
   try {
-    // Convert nonce to Uint8Array if it's an array
     const nonceBytes = Array.isArray(nonce) ? new Uint8Array(nonce) : nonce;
-    
+
     if (nonceBytes.length !== naclInstance.secretbox.nonceLength) {
       return "[Decryption failed: Invalid nonce length]";
     }
-    
-    // Step 1: Decrypt
+
     const key = deriveKeyFromIdentifier(recipientId);
     const opened = naclInstance.secretbox.open(encryptedData, nonceBytes, key);
-    
+
     if (!opened) {
       return "[Decryption failed: Authentication failed]";
     }
-    
-    // Step 2: Decompress
+
     const plaintext = decompressMessage(opened);
-    
+
     return plaintext;
   } catch (error) {
     return `[Decryption failed: ${error.message}]`;
@@ -189,20 +184,20 @@ export function decryptMessage(encryptedBase64, recipientId) {
   try {
     const combined = base64ToUint8Array(encryptedBase64);
     const nonceLen = naclInstance.secretbox.nonceLength;
-    
+
     if (combined.length < nonceLen) {
       return "[Decryption failed: Invalid ciphertext length]";
     }
-    
+
     const nonce = combined.slice(0, nonceLen);
     const boxed = combined.slice(nonceLen);
     const key = deriveKeyFromIdentifier(recipientId);
     const opened = naclInstance.secretbox.open(boxed, nonce, key);
-    
+
     if (!opened) {
       return "[Decryption failed: Authentication failed]";
     }
-    
+
     return new TextDecoder().decode(opened);
   } catch (error) {
     return `[Decryption failed: ${error.message}]`;
@@ -220,9 +215,83 @@ export function isValidWalletAddress(address) {
   if (!address || typeof address !== 'string') {
     return false;
   }
-  // Solana addresses are base58 encoded and typically 32-44 characters
-  // This is a basic check - full validation would require base58 decoding
   const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
   return base58Regex.test(address);
+}
+
+// --- Asymmetric Encryption (Curve25519) ---
+
+/**
+ * Derives a Curve25519 keypair from a signature (or any high-entropy 32+ byte source).
+ * This allows users to deterministically regenerate their encryption keys from a wallet signature.
+ * 
+ * @param {Uint8Array} signature - The signature to use as a seed
+ * @returns {nacl.BoxKeyPair} - The generated keypair
+ */
+export function deriveKeyPairFromSignature(signature) {
+  if (!signature || signature.length < 32) {
+    throw new Error('Signature must be at least 32 bytes');
+  }
+  const seed = signature.slice(0, 32);
+  return naclInstance.box.keyPair.fromSecretKey(seed);
+}
+
+/**
+ * Encrypts a message using asymmetric encryption (Sender Priv + Recipient Pub).
+ * 
+ * @param {string} plaintext - Message to encrypt
+ * @param {Uint8Array} recipientPublicKey - Recipient's Curve25519 public key
+ * @param {Uint8Array} senderSecretKey - Sender's Curve25519 private key
+ * @returns {Object} - { encryptedData: Uint8Array, nonce: Uint8Array }
+ */
+export function encryptMessageAsymmetric(plaintext, recipientPublicKey, senderSecretKey) {
+  if (!plaintext) throw new Error("Missing plaintext");
+  if (!recipientPublicKey) throw new Error("Missing recipient public key");
+  if (!senderSecretKey) throw new Error("Missing sender secret key");
+
+  const compressed = compressMessage(plaintext);
+  const nonce = naclInstance.randomBytes(naclInstance.box.nonceLength);
+
+  const boxed = naclInstance.box(
+    compressed,
+    nonce,
+    recipientPublicKey,
+    senderSecretKey
+  );
+
+  return {
+    encryptedData: boxed,
+    nonce: Array.from(nonce)
+  };
+}
+
+/**
+ * Decrypts a message using asymmetric encryption.
+ * 
+ * @param {Uint8Array} encryptedData - The encrypted bytes
+ * @param {Uint8Array} nonce - The nonce used
+ * @param {Uint8Array} senderPublicKey - The sender's Curve25519 public key
+ * @param {Uint8Array} recipientSecretKey - The recipient's Curve25519 private key
+ * @returns {string} - Decrypted plaintext
+ */
+export function decryptMessageAsymmetric(encryptedData, nonce, senderPublicKey, recipientSecretKey) {
+  if (!encryptedData || !nonce || !senderPublicKey || !recipientSecretKey) {
+    throw new Error("Missing decryption parameters");
+  }
+
+  const nonceBytes = Array.isArray(nonce) ? new Uint8Array(nonce) : nonce;
+
+  const opened = naclInstance.box.open(
+    encryptedData,
+    nonceBytes,
+    senderPublicKey,
+    recipientSecretKey
+  );
+
+  if (!opened) {
+    throw new Error("Decryption failed (Asymmetric)");
+  }
+
+  return decompressMessage(opened);
 }
 

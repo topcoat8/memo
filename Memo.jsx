@@ -2,40 +2,38 @@ import React, { useEffect, useState } from "react";
 import { MemoProvider, useMemoContext, useMemo, useMemoMessages, decryptMessageFromChain } from './src/sdk/index';
 import MemoUI from './MemoUI';
 
-// Solana network configuration - use mainnet for real pump.fun token
 const network = import.meta.env.VITE_SOLANA_NETWORK || 'mainnet-beta';
-const tokenMint = import.meta.env.VITE_TOKEN_MINT; // Your pump.fun token mint address
+const tokenMint = import.meta.env.VITE_TOKEN_MINT;
 
-// Inner app component that uses the SDK
 function MemoApp() {
-  const { connection, publicKey, userId, isReady, error: contextError, wallet, tokenMint: contextTokenMint } = useMemoContext();
+  const { connection, publicKey, userId, isReady, error: contextError, wallet, tokenMint: contextTokenMint, encryptionKeys, login, logout } = useMemoContext();
   const [recipientId, setRecipientId] = useState("");
   const [message, setMessage] = useState("");
   const [globalError, setGlobalError] = useState(null);
 
-  // Use SDK hooks
-  const { sendMemo: sendMemoSDK, isLoading, error, successMessage } = useMemo({
+  const { memos, loading: messagesLoading, publicKeyRegistry, decrypt } = useMemoMessages({
+    connection: isReady ? connection : null,
+    publicKey,
+    userId: isReady ? userId : null,
+    isReady,
+    tokenMint: contextTokenMint,
+    encryptionKeys,
+    sortOrder: 'desc',
+    limit: 200,
+    autoDecrypt: true,
+  });
+
+  const { sendMemo: sendMemoSDK, announceIdentity, isLoading, error, successMessage } = useMemo({
     connection,
     publicKey,
     userId,
     isReady,
     wallet,
     tokenMint: contextTokenMint,
+    encryptionKeys,
+    publicKeyRegistry,
   });
 
-  // Get all messages - only fetch when ready
-  const { memos, loading: messagesLoading } = useMemoMessages({
-    connection: isReady ? connection : null,
-    publicKey,
-    userId: isReady ? userId : null,
-    isReady,
-    tokenMint: contextTokenMint,
-    sortOrder: 'desc',
-    limit: 200,
-    autoDecrypt: false, // We'll decrypt manually in the UI
-  });
-
-  // Global error handler for runtime errors
   useEffect(() => {
     function handleError(message, source, lineno, colno, error) {
       setGlobalError({
@@ -65,33 +63,13 @@ function MemoApp() {
     };
   }, []);
 
-  // Wrapper for sendMemo that matches the UI's expected signature
   async function handleSendMemo() {
     const result = await sendMemoSDK({
       recipientId,
       message,
     });
-    // Clear message on success
     if (result?.success) {
       setMessage("");
-    }
-  }
-
-  // Decrypt message helper for UI
-  function decryptMessageHelper(memo) {
-    if (!memo || !userId) return "[Not available]";
-    if (memo.decryptedContent) return memo.decryptedContent;
-    if (memo.recipientId !== userId) return "[Cannot decrypt: Not the recipient]";
-    if (!memo.encryptedContent || !memo.nonce) return "[Invalid message data]";
-
-    try {
-      return decryptMessageFromChain(
-        new Uint8Array(memo.encryptedContent),
-        memo.nonce,
-        userId
-      );
-    } catch (err) {
-      return `[Decryption failed: ${err.message}]`;
     }
   }
 
@@ -119,7 +97,7 @@ function MemoApp() {
       <MemoUI
         isAuthReady={isReady}
         userId={userId}
-        wallet={null} // Wallet is now in context
+        wallet={null}
         recipientId={recipientId}
         setRecipientId={setRecipientId}
         message={message}
@@ -129,13 +107,17 @@ function MemoApp() {
         successMessage={successMessage}
         sendMemo={handleSendMemo}
         memos={memos}
-        decryptMessage={decryptMessageHelper}
+        decryptMessage={decrypt}
+        encryptionKeys={encryptionKeys}
+        login={login}
+        logout={logout}
+        announceIdentity={announceIdentity}
+        publicKeyRegistry={publicKeyRegistry}
       />
     </>
   );
 }
 
-// Main app component with provider
 export default function App() {
   return (
     <MemoProvider network={network} tokenMint={tokenMint}>

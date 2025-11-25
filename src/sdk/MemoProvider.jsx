@@ -26,6 +26,8 @@ export function MemoProvider({ network = 'mainnet-beta', tokenMint, children }) 
   const [error, setError] = useState(null);
   const wallet = useWallet();
 
+  const [encryptionKeys, setEncryptionKeys] = useState(null);
+
   // Initialize Solana connection
   useEffect(() => {
     try {
@@ -44,6 +46,7 @@ export function MemoProvider({ network = 'mainnet-beta', tokenMint, children }) 
       setIsReady(true);
     } else {
       setIsReady(false);
+      setEncryptionKeys(null); // Reset keys on disconnect
     }
   }, [connection, wallet, wallet?.publicKey]);
 
@@ -51,6 +54,32 @@ export function MemoProvider({ network = 'mainnet-beta', tokenMint, children }) 
   const userId = useMemo(() => {
     return wallet?.publicKey?.toString() || '';
   }, [wallet?.publicKey]);
+
+  // Login: Sign message to derive encryption keys
+  const login = async () => {
+    if (!wallet || !wallet.signMessage) {
+      throw new Error("Wallet does not support message signing");
+    }
+
+    try {
+      const message = new TextEncoder().encode("Login to Memo Protocol");
+      const signature = await wallet.signMessage(message);
+
+      // Dynamically import to avoid circular dependencies if any
+      const { deriveKeyPairFromSignature } = await import('./utils/encryption');
+      const keys = deriveKeyPairFromSignature(signature);
+
+      setEncryptionKeys(keys);
+      return keys;
+    } catch (err) {
+      console.error("Login failed:", err);
+      throw err;
+    }
+  };
+
+  const logout = () => {
+    setEncryptionKeys(null);
+  };
 
   const value = useMemo(() => ({
     connection,
@@ -60,7 +89,10 @@ export function MemoProvider({ network = 'mainnet-beta', tokenMint, children }) 
     isReady,
     error,
     tokenMint,
-  }), [connection, wallet, userId, isReady, error, tokenMint]);
+    encryptionKeys,
+    login,
+    logout,
+  }), [connection, wallet, userId, isReady, error, tokenMint, encryptionKeys]);
 
   return (
     <MemoContext.Provider value={value}>

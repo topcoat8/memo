@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
-import { decryptMessageFromChain } from '../utils/encryption';
+import { decryptMessageFromChain, decryptMessageAsymmetric, base64ToUint8Array } from '../utils/encryption';
 
 /**
  * Filters messages for a conversation between two wallets
@@ -23,6 +23,16 @@ function filterConversation(messages, wallet1, wallet2) {
 
 /**
  * Hook for retrieving memo messages from on-chain transactions
+ * 
+ * Logic:
+ * 1. Gets user's token account.
+ * 2. Fetches transaction signatures for the token account.
+ * 3. Fetches and parses each transaction to find Memo instructions.
+ * 4. Extracts Identity announcements and builds a Public Key Registry.
+ * 5. Filters messages (by recipient, sender, conversation).
+ * 6. Sorts messages by timestamp.
+ * 7. Auto-decrypts messages if encryption keys are available.
+ * 8. Sets up polling to refresh messages.
  *
  * @param {Object} options - Hook options
  * @param {Connection} options.connection - Solana connection
@@ -30,6 +40,7 @@ function filterConversation(messages, wallet1, wallet2) {
  * @param {string} options.userId - Current user's wallet address
  * @param {boolean} options.isReady - Whether wallet is connected
  * @param {string} options.tokenMint - Token mint address to query
+ * @param {Object} options.encryptionKeys - User's Curve25519 keypair (optional)
  * @param {string} options.recipientId - Filter by recipient (optional)
  * @param {string} options.senderId - Filter by sender (optional)
  * @param {string} options.conversationWith - Filter conversation with specific wallet (optional)
@@ -44,6 +55,7 @@ export function useMemoMessages({
   userId,
   isReady,
   tokenMint,
+  encryptionKeys = null,
   recipientId = null,
   senderId = null,
   conversationWith = null,
@@ -52,10 +64,10 @@ export function useMemoMessages({
   autoDecrypt = true,
 }) {
   const [memos, setMemos] = useState([]);
+  const [publicKeyRegistry, setPublicKeyRegistry] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch messages from on-chain transactions
   useEffect(() => {
     if (!connection || !publicKey || !userId || !isReady || !tokenMint) {
       setLoading(false);
@@ -70,13 +82,11 @@ export function useMemoMessages({
       try {
         const TOKEN_MINT = new PublicKey(tokenMint);
 
-        // Step 1: Get user's token account
         const tokenAccount = await getAssociatedTokenAddress(
           TOKEN_MINT,
           publicKey
         );
 
-        // Check if token account exists
         try {
           const accountInfo = await connection.getAccountInfo(tokenAccount);
           if (!accountInfo) {
@@ -90,13 +100,11 @@ export function useMemoMessages({
           // Token account doesn't exist yet
         }
 
-        // Step 2: Get transaction signatures for this token account
         const signatures = await connection.getSignaturesForAddress(
           tokenAccount,
-          { limit: limitCount * 2 } // Get extra to account for filtering
+          { limit: limitCount * 2 }
         );
 
-        // Step 3: Fetch and parse transactions
         const txPromises = signatures.map(async (sigInfo) => {
           try {
             const tx = await connection.getParsedTransaction(sigInfo.signature, {
@@ -107,14 +115,11 @@ export function useMemoMessages({
               return null;
             }
 
-            // Find memo instruction - check both parsed and raw
             let memoInstruction = tx.transaction.message.instructions.find(
               (ix) => {
-                // For parsed instructions
                 if (ix.programId?.toString() === 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr') {
                   return true;
                 }
-                // For raw instructions
                 if (ix.program === 'spl-memo') {
                   return true;
                 }
@@ -126,13 +131,10 @@ export function useMemoMessages({
               return null;
             }
 
-            // Parse memo data - handle both formats
             let memoData;
             if (memoInstruction.parsed) {
-              // Parsed format
               memoData = memoInstruction.parsed;
             } else if (memoInstruction.data) {
-              // Base64 format
               memoData = Buffer.from(memoInstruction.data, 'base64').toString('utf-8');
             } else {
               return null;
@@ -142,13 +144,19 @@ export function useMemoMessages({
             try {
               parsedMemo = typeof memoData === 'string' ? JSON.parse(memoData) : memoData;
             } catch (err) {
-              return null; // Not our format
+              return null;
             }
 
-            // Find token transfer to get sender/recipient
-            const tokenTransfer = tx.meta.postTokenBalances?.find(
-              (bal) => bal.mint === TOKEN_MINT.toString()
-            );
+            if (parsedMemo.type === 'IDENTITY' && parsedMemo.publicKey) {
+              return {
+                id: sigInfo.signature,
+                senderId: tx.transaction.message.accountKeys[0].pubkey.toString(),
+                type: 'IDENTITY',
+                identityKey: parsedMemo.publicKey,
+                timestamp: tx.blockTime || 0,
+                createdAt: new Date((tx.blockTime || 0) * 1000),
+              };
+            }
 
             return {
               id: sigInfo.signature,
@@ -156,6 +164,7 @@ export function useMemoMessages({
               recipientId: parsedMemo.recipient,
               encryptedContent: new Uint8Array(parsedMemo.encrypted),
               nonce: new Uint8Array(parsedMemo.nonce),
+              isAsymmetric: !!parsedMemo.isAsymmetric,
               timestamp: tx.blockTime || 0,
               createdAt: new Date((tx.blockTime || 0) * 1000),
               signature: sigInfo.signature,
@@ -165,9 +174,23 @@ export function useMemoMessages({
           }
         });
 
-        const messages = (await Promise.all(txPromises)).filter(msg => msg !== null);
+        const rawMessages = (await Promise.all(txPromises)).filter(msg => msg !== null);
 
-        // Step 4: Apply filters
+        const registry = {};
+        rawMessages.forEach(msg => {
+          if (msg.type === 'IDENTITY' && msg.senderId && msg.identityKey) {
+            if (!registry[msg.senderId]) {
+              registry[msg.senderId] = msg.identityKey;
+            }
+          }
+        });
+
+        if (isMounted) {
+          setPublicKeyRegistry(registry);
+        }
+
+        const messages = rawMessages.filter(msg => msg.type !== 'IDENTITY');
+
         let filteredMessages = messages;
 
         if (recipientId) {
@@ -182,28 +205,42 @@ export function useMemoMessages({
           filteredMessages = filterConversation(filteredMessages, userId, conversationWith);
         }
 
-        // Step 5: Sort messages
         filteredMessages.sort((a, b) => {
           const timeA = a.timestamp || 0;
           const timeB = b.timestamp || 0;
           return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
         });
 
-        // Step 6: Apply limit
         if (limitCount > 0) {
           filteredMessages = filteredMessages.slice(0, limitCount);
         }
 
-        // Step 7: Auto-decrypt messages for current user
         if (autoDecrypt && userId) {
           filteredMessages = filteredMessages.map(memo => {
             if (memo.recipientId === userId) {
               try {
-                const decrypted = decryptMessageFromChain(
-                  memo.encryptedContent,
-                  memo.nonce,
-                  userId
-                );
+                let decrypted;
+
+                if (memo.isAsymmetric) {
+                  if (encryptionKeys && registry[memo.senderId]) {
+                    const senderPub = base64ToUint8Array(registry[memo.senderId]);
+                    decrypted = decryptMessageAsymmetric(
+                      memo.encryptedContent,
+                      memo.nonce,
+                      senderPub,
+                      encryptionKeys.secretKey
+                    );
+                  } else {
+                    decrypted = "[Encrypted Message - Login to View]";
+                  }
+                } else {
+                  decrypted = decryptMessageFromChain(
+                    memo.encryptedContent,
+                    memo.nonce,
+                    userId
+                  );
+                }
+
                 return {
                   ...memo,
                   decryptedContent: decrypted,
@@ -212,7 +249,7 @@ export function useMemoMessages({
               } catch (err) {
                 return {
                   ...memo,
-                  decryptedContent: '[Decryption failed]',
+                  decryptedContent: `[Decryption failed: ${err.message}]`,
                   isDecrypted: false,
                 };
               }
@@ -236,32 +273,28 @@ export function useMemoMessages({
 
     fetchMessages();
 
-    // Set up polling to refresh messages periodically
     const pollInterval = setInterval(() => {
       if (isMounted) {
         fetchMessages();
       }
-    }, 10000); // Poll every 10 seconds
+    }, 10000);
 
     return () => {
       isMounted = false;
       clearInterval(pollInterval);
     };
-  }, [connection, publicKey, userId, isReady, tokenMint, recipientId, senderId, conversationWith, sortOrder, limitCount, autoDecrypt]);
+  }, [connection, publicKey, userId, isReady, tokenMint, recipientId, senderId, conversationWith, sortOrder, limitCount, autoDecrypt, encryptionKeys]);
 
-  // Get messages sent to current user
   const inboxMessages = useMemo(() => {
     if (!userId) return [];
     return memos.filter(m => m.recipientId === userId);
   }, [memos, userId]);
 
-  // Get messages sent by current user
   const sentMessages = useMemo(() => {
     if (!userId) return [];
     return memos.filter(m => m.senderId === userId);
   }, [memos, userId]);
 
-  // Decrypt a specific message
   const decrypt = useCallback((memo) => {
     if (!userId || memo.recipientId !== userId) {
       return "[Cannot decrypt: Not the recipient]";
@@ -270,20 +303,35 @@ export function useMemoMessages({
       return memo.decryptedContent;
     }
     try {
-      return decryptMessageFromChain(
-        new Uint8Array(memo.encryptedContent),
-        memo.nonce,
-        userId
-      );
+      if (memo.isAsymmetric) {
+        if (!encryptionKeys) return "[Login required to decrypt]";
+        const senderIdentityKey = publicKeyRegistry[memo.senderId];
+        if (!senderIdentityKey) return "[Unknown Sender Identity]";
+
+        const senderPub = base64ToUint8Array(senderIdentityKey);
+        return decryptMessageAsymmetric(
+          memo.encryptedContent,
+          memo.nonce,
+          senderPub,
+          encryptionKeys.secretKey
+        );
+      } else {
+        return decryptMessageFromChain(
+          new Uint8Array(memo.encryptedContent),
+          memo.nonce,
+          userId
+        );
+      }
     } catch (err) {
       return `[Decryption failed: ${err.message}]`;
     }
-  }, [userId]);
+  }, [userId, encryptionKeys, publicKeyRegistry]);
 
   return {
     memos,
     inboxMessages,
     sentMessages,
+    publicKeyRegistry,
     loading,
     error,
     decrypt,
