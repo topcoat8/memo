@@ -5,7 +5,7 @@
  * Queries RPC for token transfers and parses attached memos.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PublicKey } from '@solana/web3.js';
 import { decryptMessageFromChain, decryptMessageAsymmetric, base64ToUint8Array } from '../utils/encryption';
 
@@ -67,6 +67,12 @@ export function useMemoMessages({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const encryptionKeysRef = useRef(encryptionKeys);
+
+  useEffect(() => {
+    encryptionKeysRef.current = encryptionKeys;
+  }, [encryptionKeys]);
+
   useEffect(() => {
     if (!connection || !publicKey || !userId || !isReady || !tokenMint) {
       setLoading(false);
@@ -74,7 +80,8 @@ export function useMemoMessages({
     }
 
     let isMounted = true;
-    setLoading(true);
+    // Don't reset loading to true on every dependency change to avoid flashing
+    // setLoading(true); 
     setError(null);
 
     async function fetchMessages() {
@@ -223,13 +230,13 @@ export function useMemoMessages({
                 if (memo.isAsymmetric) {
                   const otherPartyId = isSender ? memo.recipientId : memo.senderId;
 
-                  if (encryptionKeys && registry[otherPartyId]) {
+                  if (encryptionKeysRef.current && registry[otherPartyId]) {
                     const otherPub = base64ToUint8Array(registry[otherPartyId]);
                     decrypted = decryptMessageAsymmetric(
                       memo.encryptedContent,
                       memo.nonce,
                       otherPub,
-                      encryptionKeys.secretKey
+                      encryptionKeysRef.current.secretKey
                     );
                   } else {
                     decrypted = "[Encrypted Message - Key Not Found]";
@@ -291,7 +298,8 @@ export function useMemoMessages({
       isMounted = false;
       clearInterval(pollInterval);
     };
-  }, [connection, publicKey, userId, isReady, tokenMint, recipientId, senderId, conversationWith, sortOrder, limitCount, autoDecrypt, encryptionKeys]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connection, publicKey, userId, isReady, tokenMint, recipientId, senderId, conversationWith, sortOrder, limitCount, autoDecrypt]);
 
   const inboxMessages = useMemo(() => {
     if (!userId) return [];

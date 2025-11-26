@@ -201,13 +201,13 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
 
       const transaction = new Transaction();
 
-      // Add a 0 SOL transfer instruction. 
+      // Add a tiny transfer instruction (1000 lamports = 0.000001 SOL).
       // This ensures the transaction shows up in the recipient's wallet history 
-      // and allows us to query signatures for the wallet address.
+      // and avoids "Malicious dApp" warnings from wallets that flag 0-value transfers.
       const transferIx = SystemProgram.transfer({
         fromPubkey: publicKey,
         toPubkey: recipientPubkey,
-        lamports: 0,
+        lamports: 1000,
       });
       transaction.add(transferIx);
 
