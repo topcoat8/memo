@@ -6,7 +6,7 @@
 
 import { useState, useCallback } from 'react';
 import { PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
-import { getAssociatedTokenAddress } from '@solana/spl-token';
+import { getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, createTransferInstruction } from '@solana/spl-token';
 import { encryptMessageForChain, isValidWalletAddress, encryptMessageAsymmetric, uint8ArrayToBase64, base64ToUint8Array } from '../utils/encryption';
 
 const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
@@ -204,34 +204,75 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
 
       const transaction = new Transaction();
 
-      // Smart Transfer Logic:
-      // 1. Check if recipient account exists.
-      // 2. If NO: We must transfer minimum rent (~0.00089 SOL) to create it.
-      // 3. If YES: We transfer 0 SOL (free).
-      // This ensures the transaction always succeeds and is indexed by the recipient's wallet.
+      // Check if we are using a custom token mint (Pump.fun token)
+      if (tokenMint) {
+        console.log("Using token mint:", tokenMint);
+        const mintPubkey = new PublicKey(tokenMint);
 
-      const minRent = await connection.getMinimumBalanceForRentExemption(0);
-      const recipientAccountInfo = await connection.getAccountInfo(recipientPubkey);
+        // Get Associated Token Accounts
+        const senderATA = await getAssociatedTokenAddress(
+          mintPubkey,
+          publicKey
+        );
 
-      let lamports = 0;
-      if (!recipientAccountInfo) {
-        lamports = minRent;
-        console.log(`Recipient account is new. Transferring ${lamports} lamports for rent exemption.`);
+        const recipientATA = await getAssociatedTokenAddress(
+          mintPubkey,
+          recipientPubkey
+        );
+
+        // Check if recipient ATA exists
+        const recipientAccountInfo = await connection.getAccountInfo(recipientATA);
+
+        if (!recipientAccountInfo) {
+          console.log("Creating recipient token account...");
+          const createATAIx = createAssociatedTokenAccountInstruction(
+            publicKey, // payer
+            recipientATA, // associated token account address
+            recipientPubkey, // owner
+            mintPubkey // mint
+          );
+          transaction.add(createATAIx);
+        }
+
+        // Add Token Transfer Instruction (1 token = 1000000 decimals usually, but let's assume 1 unit for now or 1000000?)
+        // Pump.fun tokens usually have 6 decimals. 1 token = 1_000_000.
+        // Let's send 1 whole token? Or a tiny amount? 
+        // The request says "attaching the message to a pumpfun token".
+        // Usually this means sending 1 unit (smallest unit) or 1 whole token.
+        // Let's send 1000 units (0.001 token if 6 decimals) to be safe and visible?
+        // Or just 1 unit. Let's stick to 1 unit to minimize cost, or maybe 1000.
+        // Let's assume 1000000 (1 whole token) might be too expensive if the token is valuable.
+        // Let's send 1 unit of the token (smallest denomination).
+        const amount = 1;
+
+        const transferIx = createTransferInstruction(
+          senderATA,
+          recipientATA,
+          publicKey,
+          amount
+        );
+        transaction.add(transferIx);
+
       } else {
-        // Optional: Send 1 lamport or 0. 0 is fine for existing accounts.
-        lamports = 0;
-      }
+        // Fallback to SOL transfer (original logic)
+        const minRent = await connection.getMinimumBalanceForRentExemption(0);
+        const recipientAccountInfo = await connection.getAccountInfo(recipientPubkey);
 
-      // Add Transfer Instruction
-      // This serves two purposes:
-      // 1. Creates the account if needed (paying rent).
-      // 2. Indexes the transaction under the recipient's address (so they see it).
-      const transferIx = SystemProgram.transfer({
-        fromPubkey: publicKey,
-        toPubkey: recipientPubkey,
-        lamports: lamports,
-      });
-      transaction.add(transferIx);
+        let lamports = 0;
+        if (!recipientAccountInfo) {
+          lamports = minRent;
+          console.log(`Recipient account is new. Transferring ${lamports} lamports for rent exemption.`);
+        } else {
+          lamports = 0;
+        }
+
+        const transferIx = SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: recipientPubkey,
+          lamports: lamports,
+        });
+        transaction.add(transferIx);
+      }
 
       // Memo Instruction
       // CRITICAL: Memo Program v2 requires ALL keys in the 'keys' array to be Signers.
@@ -284,7 +325,7 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
     } finally {
       setIsLoading(false);
     }
-  }, [connection, publicKey, userId, isReady, wallet, encryptionKeys, publicKeyRegistry]);
+  }, [connection, publicKey, userId, isReady, wallet, encryptionKeys, publicKeyRegistry, tokenMint]);
 
   /**
    * Clears error and success messages

@@ -88,10 +88,12 @@ export function useMemoMessages({
     async function fetchMessages() {
       try {
         // Fetch signatures for the user's main wallet address
-        // Since we use SystemProgram.transfer for indexing, the transaction will be associated with the main wallet.
+        // Optimization: We fetch up to 50 signatures but strictly filter them by time (3 days)
+        // before fetching transaction details. This saves RPC resources by avoiding 
+        // unnecessary getParsedTransaction calls for old history.
         const signatures = await connection.getSignaturesForAddress(
           publicKey,
-          { limit: 20 },
+          { limit: 50 },
           'confirmed'
         );
 
@@ -103,31 +105,51 @@ export function useMemoMessages({
           return;
         }
 
-        // Fetch transactions in chunks to avoid hitting RPC rate limits (429s)
-        // Public RPCs often throttle if you fire 100 requests at once.
-        const CONCURRENCY_LIMIT = 5;
+        // Filter signatures older than 3 days
+        const THREE_DAYS_IN_SECONDS = 3 * 24 * 60 * 60;
+        const nowInSeconds = Math.floor(Date.now() / 1000);
+        const cutoffTime = nowInSeconds - THREE_DAYS_IN_SECONDS;
+
+        // Stop processing as soon as we hit the time limit (since signatures are ordered new -> old)
+        const recentSignatures = [];
+        for (const sig of signatures) {
+          if (sig.blockTime && sig.blockTime > cutoffTime) {
+            recentSignatures.push(sig);
+          } else if (sig.blockTime && sig.blockTime <= cutoffTime) {
+            // Optimization: Stop searching once we hit a transaction older than 3 days
+            break;
+          }
+        }
+
+        if (recentSignatures.length === 0) {
+          if (isMounted) {
+            setMemos([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Fetch transactions sequentially with delays to avoid hitting RPC rate limits (429)
+        // and to avoid using batch requests which are not supported on free tier (403).
         const allTransactions = [];
 
-        for (let i = 0; i < signatures.length; i += CONCURRENCY_LIMIT) {
-          const chunk = signatures.slice(i, i + CONCURRENCY_LIMIT);
-          const chunkPromises = chunk.map(async (sigInfo) => {
-            try {
-              const tx = await connection.getParsedTransaction(sigInfo.signature, {
-                maxSupportedTransactionVersion: 0,
-              });
+        for (const sigInfo of recentSignatures) {
+          try {
+            // Add a delay before each request to respect rate limits
+            // 250ms delay = ~4 requests per second max
+            await new Promise(resolve => setTimeout(resolve, 250));
 
-              if (!tx || !tx.meta || tx.meta.err) {
-                return null;
-              }
+            const tx = await connection.getParsedTransaction(sigInfo.signature, {
+              maxSupportedTransactionVersion: 0,
+            });
 
-              return { tx, signature: sigInfo.signature };
-            } catch (err) {
-              return null;
+            if (tx && tx.meta && !tx.meta.err) {
+              allTransactions.push({ tx, signature: sigInfo.signature });
             }
-          });
-
-          const chunkResults = await Promise.all(chunkPromises);
-          allTransactions.push(...chunkResults.filter(r => r !== null));
+          } catch (err) {
+            console.error(`Failed to fetch transaction ${sigInfo.signature}:`, err);
+            // Continue with other transactions
+          }
         }
 
         // Map transactions back to their signatures for ID consistency
