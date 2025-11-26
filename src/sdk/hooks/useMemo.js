@@ -5,8 +5,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
-import { getAssociatedTokenAddress, createTransferInstruction, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
+import { PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
 import { encryptMessageForChain, isValidWalletAddress, encryptMessageAsymmetric, uint8ArrayToBase64, base64ToUint8Array } from '../utils/encryption';
 
 const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
@@ -102,6 +101,20 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
    * @param {string} params.message - Plaintext message to send
    * @returns {Promise<{success: boolean, error?: string, signature?: string}>}
    */
+  /**
+   * Sends an encrypted memo with a 0 SOL transfer (System Program) to a recipient
+   * 
+   * Logic:
+   * 1. Validates inputs and wallet connection.
+   * 2. Encrypts message (Asymmetric if recipient key found, else Legacy).
+   * 3. Builds transaction: System Transfer (0 SOL) + Memo Instruction.
+   * 4. Sends and confirms transaction.
+   *
+   * @param {Object} params - Send parameters
+   * @param {string} params.recipientId - Recipient's wallet address
+   * @param {string} params.message - Plaintext message to send
+   * @returns {Promise<{success: boolean, error?: string, signature?: string}>}
+   */
   const sendMemo = useCallback(async ({ recipientId, message }) => {
     setError("");
     setSuccessMessage("");
@@ -155,32 +168,6 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
     try {
       setIsLoading(true);
 
-      if (!tokenMint) {
-        setError("Token mint not configured. Please set VITE_TOKEN_MINT in your environment.");
-        return { success: false, error: "Token mint not configured" };
-      }
-
-      const TOKEN_MINT = new PublicKey(tokenMint);
-
-      const senderTokenAccount = await getAssociatedTokenAddress(
-        TOKEN_MINT,
-        publicKey
-      );
-
-      let senderBalance = 0;
-      try {
-        const accountInfo = await connection.getTokenAccountBalance(senderTokenAccount);
-        senderBalance = accountInfo.value.uiAmount || 0;
-      } catch (err) {
-        setError("You don't have any tokens. Please acquire some tokens first.");
-        return { success: false, error: "No token account found" };
-      }
-
-      if (senderBalance < 1) {
-        setError(`Insufficient balance. You have ${senderBalance} tokens, need at least 1.`);
-        return { success: false, error: "Insufficient tokens" };
-      }
-
       let memoDataObj;
 
       const recipientIdentityKey = publicKeyRegistry ? publicKeyRegistry[trimmedRecipient] : null;
@@ -212,32 +199,16 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
 
       const memoData = JSON.stringify(memoDataObj);
 
-      const recipientTokenAccount = await getAssociatedTokenAddress(
-        TOKEN_MINT,
-        recipientPubkey
-      );
-
       const transaction = new Transaction();
 
-      try {
-        await connection.getTokenAccountBalance(recipientTokenAccount);
-      } catch (err) {
-        const createAtaIx = createAssociatedTokenAccountInstruction(
-          publicKey,
-          recipientTokenAccount,
-          recipientPubkey,
-          TOKEN_MINT
-        );
-        transaction.add(createAtaIx);
-      }
-
-      const transferIx = createTransferInstruction(
-        senderTokenAccount,
-        recipientTokenAccount,
-        publicKey,
-        1,
-        []
-      );
+      // Add a 0 SOL transfer instruction. 
+      // This ensures the transaction shows up in the recipient's wallet history 
+      // and allows us to query signatures for the wallet address.
+      const transferIx = SystemProgram.transfer({
+        fromPubkey: publicKey,
+        toPubkey: recipientPubkey,
+        lamports: 0,
+      });
       transaction.add(transferIx);
 
       const memoIx = new TransactionInstruction({
@@ -262,7 +233,7 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
         lastValidBlockHeight,
       }, 'confirmed');
 
-      setSuccessMessage("Message sent successfully with 1 token transfer!");
+      setSuccessMessage("Message sent successfully!");
       return { success: true, signature };
     } catch (err) {
       console.error('Send memo error:', err);
@@ -285,7 +256,7 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
     } finally {
       setIsLoading(false);
     }
-  }, [connection, publicKey, userId, isReady, wallet, tokenMint, encryptionKeys, publicKeyRegistry]);
+  }, [connection, publicKey, userId, isReady, wallet, encryptionKeys, publicKeyRegistry]);
 
   /**
    * Clears error and success messages

@@ -7,7 +7,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { PublicKey } from '@solana/web3.js';
-import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { decryptMessageFromChain, decryptMessageAsymmetric, base64ToUint8Array } from '../utils/encryption';
 
 /**
@@ -80,28 +79,9 @@ export function useMemoMessages({
 
     async function fetchMessages() {
       try {
-        const TOKEN_MINT = new PublicKey(tokenMint);
-
-        const tokenAccount = await getAssociatedTokenAddress(
-          TOKEN_MINT,
-          publicKey
-        );
-
-        try {
-          const accountInfo = await connection.getAccountInfo(tokenAccount);
-          if (!accountInfo) {
-            if (isMounted) {
-              setMemos([]);
-              setLoading(false);
-            }
-            return;
-          }
-        } catch (err) {
-          // Token account doesn't exist yet
-        }
-
+        // We now fetch signatures for the main wallet address, as we are using SystemProgram transfers
         const signatures = await connection.getSignaturesForAddress(
-          tokenAccount,
+          publicKey,
           { limit: limitCount * 2 }
         );
 
