@@ -85,16 +85,34 @@ export function useMemoMessages({
           { limit: limitCount * 2 }
         );
 
-        const txPromises = signatures.map(async (sigInfo) => {
+        // Batch fetch parsed transactions to reduce RPC roundtrips
+        // getParsedTransactions accepts an array of signatures
+        const signatureList = signatures.map(s => s.signature);
+
+        // Split into chunks of 100 to avoid hitting RPC limits if limitCount is large
+        const chunkSize = 100;
+        const chunks = [];
+        for (let i = 0; i < signatureList.length; i += chunkSize) {
+          chunks.push(signatureList.slice(i, i + chunkSize));
+        }
+
+        const allTransactions = [];
+        for (const chunk of chunks) {
+          const txs = await connection.getParsedTransactions(chunk, {
+            maxSupportedTransactionVersion: 0,
+          });
+          allTransactions.push(...txs);
+        }
+
+        // Map transactions back to their signatures for ID consistency
+        const rawMessages = allTransactions.map((tx, index) => {
+          if (!tx || !tx.meta || tx.meta.err) {
+            return null;
+          }
+
+          const signature = signatureList[index];
+
           try {
-            const tx = await connection.getParsedTransaction(sigInfo.signature, {
-              maxSupportedTransactionVersion: 0,
-            });
-
-            if (!tx || !tx.meta || tx.meta.err) {
-              return null;
-            }
-
             let memoInstruction = tx.transaction.message.instructions.find(
               (ix) => {
                 if (ix.programId?.toString() === 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr') {
@@ -129,7 +147,7 @@ export function useMemoMessages({
 
             if (parsedMemo.type === 'IDENTITY' && parsedMemo.publicKey) {
               return {
-                id: sigInfo.signature,
+                id: signature,
                 senderId: tx.transaction.message.accountKeys[0].pubkey.toString(),
                 type: 'IDENTITY',
                 identityKey: parsedMemo.publicKey,
@@ -139,7 +157,7 @@ export function useMemoMessages({
             }
 
             return {
-              id: sigInfo.signature,
+              id: signature,
               senderId: tx.transaction.message.accountKeys[0].pubkey.toString(),
               recipientId: parsedMemo.recipient,
               encryptedContent: new Uint8Array(parsedMemo.encrypted),
@@ -147,14 +165,12 @@ export function useMemoMessages({
               isAsymmetric: !!parsedMemo.isAsymmetric,
               timestamp: tx.blockTime || 0,
               createdAt: new Date((tx.blockTime || 0) * 1000),
-              signature: sigInfo.signature,
+              signature: signature,
             };
           } catch (err) {
             return null;
           }
-        });
-
-        const rawMessages = (await Promise.all(txPromises)).filter(msg => msg !== null);
+        }).filter(msg => msg !== null);
 
         const registry = {};
         rawMessages.forEach(msg => {
