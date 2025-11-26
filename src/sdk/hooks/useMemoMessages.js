@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PublicKey } from '@solana/web3.js';
+import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { decryptMessageFromChain, decryptMessageAsymmetric, base64ToUint8Array } from '../utils/encryption';
 
 /**
@@ -86,38 +87,57 @@ export function useMemoMessages({
 
     async function fetchMessages() {
       try {
-        // We now fetch signatures for the main wallet address, as we are using SystemProgram transfers
+        const TOKEN_MINT = new PublicKey(tokenMint);
+
+        // We revert to using the Token Account for indexing to filter out irrelevant transactions.
+        // Even though we don't transfer tokens, we will reference this account in the transaction.
+        const tokenAccount = await getAssociatedTokenAddress(
+          TOKEN_MINT,
+          publicKey
+        );
+
+        // Check if account exists to avoid unnecessary signature lookups
+        // REMOVED: We don't check if the account exists on-chain because we are using it as an index key.
+        // Even if the account has 0 lamports and no data (doesn't exist), getSignaturesForAddress 
+        // will still return transactions that referenced this address in their keys.
+
         const signatures = await connection.getSignaturesForAddress(
-          publicKey,
+          tokenAccount,
           { limit: limitCount * 2 }
         );
 
-        // Batch fetch parsed transactions to reduce RPC roundtrips
-        // getParsedTransactions accepts an array of signatures
-        const signatureList = signatures.map(s => s.signature);
-
-        // Split into chunks of 100 to avoid hitting RPC limits if limitCount is large
-        const chunkSize = 100;
-        const chunks = [];
-        for (let i = 0; i < signatureList.length; i += chunkSize) {
-          chunks.push(signatureList.slice(i, i + chunkSize));
-        }
-
+        // Fetch transactions in chunks to avoid hitting RPC rate limits (429s)
+        // Public RPCs often throttle if you fire 100 requests at once.
+        const CONCURRENCY_LIMIT = 5;
         const allTransactions = [];
-        for (const chunk of chunks) {
-          const txs = await connection.getParsedTransactions(chunk, {
-            maxSupportedTransactionVersion: 0,
+
+        for (let i = 0; i < signatures.length; i += CONCURRENCY_LIMIT) {
+          const chunk = signatures.slice(i, i + CONCURRENCY_LIMIT);
+          const chunkPromises = chunk.map(async (sigInfo) => {
+            try {
+              const tx = await connection.getParsedTransaction(sigInfo.signature, {
+                maxSupportedTransactionVersion: 0,
+              });
+
+              if (!tx || !tx.meta || tx.meta.err) {
+                return null;
+              }
+
+              return { tx, signature: sigInfo.signature };
+            } catch (err) {
+              return null;
+            }
           });
-          allTransactions.push(...txs);
+
+          const chunkResults = await Promise.all(chunkPromises);
+          allTransactions.push(...chunkResults.filter(r => r !== null));
         }
 
         // Map transactions back to their signatures for ID consistency
-        const rawMessages = allTransactions.map((tx, index) => {
+        const rawMessages = allTransactions.map(({ tx, signature }) => {
           if (!tx || !tx.meta || tx.meta.err) {
             return null;
           }
-
-          const signature = signatureList[index];
 
           try {
             let memoInstruction = tx.transaction.message.instructions.find(
@@ -170,6 +190,7 @@ export function useMemoMessages({
               encryptedContent: new Uint8Array(parsedMemo.encrypted),
               nonce: new Uint8Array(parsedMemo.nonce),
               isAsymmetric: !!parsedMemo.isAsymmetric,
+              senderPublicKey: parsedMemo.senderPublicKey, // Extract embedded key
               timestamp: tx.blockTime || 0,
               createdAt: new Date((tx.blockTime || 0) * 1000),
               signature: signature,
@@ -230,8 +251,11 @@ export function useMemoMessages({
                 if (memo.isAsymmetric) {
                   const otherPartyId = isSender ? memo.recipientId : memo.senderId;
 
-                  if (encryptionKeysRef.current && registry[otherPartyId]) {
-                    const otherPub = base64ToUint8Array(registry[otherPartyId]);
+                  // Use embedded key if available (for new messages), otherwise fallback to registry
+                  const otherIdentityKey = memo.senderPublicKey || registry[otherPartyId];
+
+                  if (encryptionKeysRef.current && otherIdentityKey) {
+                    const otherPub = base64ToUint8Array(otherIdentityKey);
                     decrypted = decryptMessageAsymmetric(
                       memo.encryptedContent,
                       memo.nonce,
@@ -326,7 +350,9 @@ export function useMemoMessages({
         if (!encryptionKeys) return "[Login required to decrypt]";
 
         const otherPartyId = isSender ? memo.recipientId : memo.senderId;
-        const otherIdentityKey = publicKeyRegistry[otherPartyId];
+
+        // Use embedded key if available, otherwise fallback to registry
+        const otherIdentityKey = memo.senderPublicKey || publicKeyRegistry[otherPartyId];
 
         if (!otherIdentityKey) return "[Unknown Identity Key]";
 

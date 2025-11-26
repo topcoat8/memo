@@ -6,6 +6,7 @@
 
 import { useState, useCallback } from 'react';
 import { PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
+import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { encryptMessageForChain, isValidWalletAddress, encryptMessageAsymmetric, uint8ArrayToBase64, base64ToUint8Array } from '../utils/encryption';
 
 const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
@@ -184,7 +185,9 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
           encrypted: Array.from(encryptedData),
           nonce: Array.from(nonce),
           recipient: trimmedRecipient,
-          isAsymmetric: true
+          isAsymmetric: true,
+          // Embed sender's public key so recipient can decrypt without searching history
+          senderPublicKey: uint8ArrayToBase64(encryptionKeys.publicKey),
         };
       } else {
         const { encryptedData, nonce } = encryptMessageForChain(messageText, trimmedRecipient);
@@ -211,8 +214,17 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
       });
       transaction.add(transferIx);
 
+      // Derive Token Accounts to reference them for indexing.
+      // We do NOT create them, just reference them so the transaction appears in their history.
+      const TOKEN_MINT = new PublicKey(tokenMint);
+      const senderTokenAccount = await getAssociatedTokenAddress(TOKEN_MINT, publicKey);
+      const recipientTokenAccount = await getAssociatedTokenAddress(TOKEN_MINT, recipientPubkey);
+
       const memoIx = new TransactionInstruction({
-        keys: [],
+        keys: [
+          { pubkey: senderTokenAccount, isSigner: false, isWritable: false },
+          { pubkey: recipientTokenAccount, isSigner: false, isWritable: false }
+        ],
         programId: MEMO_PROGRAM_ID,
         data: Buffer.from(memoData, 'utf-8'),
       });
