@@ -217,27 +217,39 @@ export function useMemoMessages({
 
         if (autoDecrypt && userId) {
           filteredMessages = filteredMessages.map(memo => {
-            if (memo.recipientId === userId) {
+            const isRecipient = memo.recipientId === userId;
+            const isSender = memo.senderId === userId;
+
+            if (isRecipient || isSender) {
               try {
                 let decrypted;
 
                 if (memo.isAsymmetric) {
-                  if (encryptionKeys && registry[memo.senderId]) {
-                    const senderPub = base64ToUint8Array(registry[memo.senderId]);
+                  const otherPartyId = isSender ? memo.recipientId : memo.senderId;
+
+                  if (encryptionKeys && registry[otherPartyId]) {
+                    const otherPub = base64ToUint8Array(registry[otherPartyId]);
                     decrypted = decryptMessageAsymmetric(
                       memo.encryptedContent,
                       memo.nonce,
-                      senderPub,
+                      otherPub,
                       encryptionKeys.secretKey
                     );
                   } else {
-                    decrypted = "[Encrypted Message - Login to View]";
+                    decrypted = "[Encrypted Message - Key Not Found]";
                   }
                 } else {
+                  // Legacy symmetric encryption (only works if recipient is me, or if I am sender I can't decrypt it unless I stored it specially, which we don't)
+                  // Actually, legacy encryptMessageForChain uses deriveKeyFromIdentifier(recipientId).
+                  // So if I am sender, I can derive the key from recipientId too!
+                  // encryptMessageForChain uses: key = deriveKeyFromIdentifier(recipientId)
+                  // decryptMessageFromChain uses: key = deriveKeyFromIdentifier(recipientId)
+                  // So yes, sender can decrypt legacy messages too if they know recipientId.
+
                   decrypted = decryptMessageFromChain(
                     memo.encryptedContent,
                     memo.nonce,
-                    userId
+                    memo.recipientId // Always use recipientId to derive key
                   );
                 }
 
@@ -296,30 +308,36 @@ export function useMemoMessages({
   }, [memos, userId]);
 
   const decrypt = useCallback((memo) => {
-    if (!userId || memo.recipientId !== userId) {
-      return "[Cannot decrypt: Not the recipient]";
+    if (!userId || (memo.recipientId !== userId && memo.senderId !== userId)) {
+      return "[Cannot decrypt: Not involved]";
     }
     if (memo.decryptedContent) {
       return memo.decryptedContent;
     }
+
+    const isSender = memo.senderId === userId;
+
     try {
       if (memo.isAsymmetric) {
         if (!encryptionKeys) return "[Login required to decrypt]";
-        const senderIdentityKey = publicKeyRegistry[memo.senderId];
-        if (!senderIdentityKey) return "[Unknown Sender Identity]";
 
-        const senderPub = base64ToUint8Array(senderIdentityKey);
+        const otherPartyId = isSender ? memo.recipientId : memo.senderId;
+        const otherIdentityKey = publicKeyRegistry[otherPartyId];
+
+        if (!otherIdentityKey) return "[Unknown Identity Key]";
+
+        const otherPub = base64ToUint8Array(otherIdentityKey);
         return decryptMessageAsymmetric(
           memo.encryptedContent,
           memo.nonce,
-          senderPub,
+          otherPub,
           encryptionKeys.secretKey
         );
       } else {
         return decryptMessageFromChain(
           new Uint8Array(memo.encryptedContent),
           memo.nonce,
-          userId
+          memo.recipientId
         );
       }
     } catch (err) {
