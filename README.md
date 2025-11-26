@@ -62,16 +62,42 @@ Messages are stored directly in the transaction history via the **Solana Memo Pr
 
 ## Architecture
 
-```mermaid
-graph TD
-    A[User Client] -->|Encrypts Message| B(TweetNaCl)
-    B -->|Constructs Transaction| C{Smart Transfer Logic}
-    C -->|New Wallet?| D[Attach Rent (~0.001 SOL)]
-    C -->|Existing Wallet?| E[Attach 0 SOL]
-    D --> F[Solana Network]
-    E --> F
-    F -->|Memo Program| G[On-Chain Ledger]
-    G -->|Indexing| H[Recipient Inbox]
+```
+┌─────────────┐       ┌─────────────┐
+│ User Client │──────►│  TweetNaCl  │
+└─────────────┘       └─────────────┘
+       │                     │
+       ▼                     ▼
+┌───────────────────────────────────┐
+│       Smart Transfer Logic        │
+└───────────────────────────────────┘
+       │                     │
+       │ (New Wallet)        │ (Existing)
+       ▼                     ▼
+┌────────────────┐    ┌─────────────┐
+│ Attach Rent    │    │ Attach 0    │
+│ (~0.001 SOL)   │    │ SOL         │
+└────────────────┘    └─────────────┘
+       │                     │
+       ▼                     ▼
+┌───────────────────────────────────┐
+│          Solana Network           │
+└───────────────────────────────────┘
+                 │
+                 ▼
+        ┌─────────────────┐
+        │  Memo Program   │
+        └─────────────────┘
+                 │
+                 ▼
+        ┌─────────────────┐
+        │ On-Chain Ledger │
+        └─────────────────┘
+                 │
+                 ▼
+        ┌─────────────────┐
+        │ Recipient Inbox │
+        └─────────────────┘
 ```
 
 ---
