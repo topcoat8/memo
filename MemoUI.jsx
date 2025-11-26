@@ -26,6 +26,7 @@ export default function MemoUI({
   const [showImageInput, setShowImageInput] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -130,8 +131,73 @@ export default function MemoUI({
     setShowImageInput(false);
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Helper to compress image
+    const compressImage = (file) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 100; // Tiny max width for on-chain storage
+            const MAX_HEIGHT = 100;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Low quality JPEG
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+            resolve(dataUrl);
+          };
+          img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+      });
+    };
+
+    try {
+      const compressedDataUrl = await compressImage(file);
+
+      // Check size (approx 800 bytes safe limit for memo instruction overhead)
+      if (compressedDataUrl.length > 800) {
+        alert("Image is too complex to fit on-chain even after compression. Please use a simpler image or a URL.");
+        return;
+      }
+
+      setImageUrl(compressedDataUrl);
+      // Automatically add it to message input view so user sees it
+      // But we keep it in imageUrl state until they click Add or Send
+    } catch (err) {
+      console.error("Image compression failed", err);
+      alert("Failed to process image.");
+    }
+  };
+
   const renderMessageContent = (text) => {
-    const imgRegex = /(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp))/i;
+    // Updated regex to include data:image URIs
+    const imgRegex = /(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp)|data:image\/[a-zA-Z]+;base64,[^\s]+)/i;
     const match = text.match(imgRegex);
 
     if (match) {
@@ -287,10 +353,10 @@ export default function MemoUI({
                   type="text"
                   placeholder="Wallet Address"
                   className={`bg-slate-900 border text-slate-200 text-xs p-2 w-32 sm:w-64 outline-none rounded-md transition-all ${recipientId && !isValidRecipient
-                      ? 'border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
-                      : recipientId && isValidRecipient
-                        ? 'border-emerald-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'
-                        : 'border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                    ? 'border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
+                    : recipientId && isValidRecipient
+                      ? 'border-emerald-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'
+                      : 'border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
                     }`}
                   value={recipientId}
                   onChange={(e) => setRecipientId(e.target.value)}
@@ -362,7 +428,7 @@ export default function MemoUI({
           )}
 
           {showImageInput && (
-            <div className="mb-3 p-3 bg-slate-900 rounded-lg border border-slate-800 flex gap-2 animate-in fade-in slide-in-from-bottom-2">
+            <div className="mb-3 p-3 bg-slate-900 rounded-lg border border-slate-800 flex gap-2 animate-in fade-in slide-in-from-bottom-2 items-center">
               <input
                 type="text"
                 placeholder="Paste image URL..."
@@ -371,9 +437,25 @@ export default function MemoUI({
                 onChange={(e) => setImageUrl(e.target.value)}
                 autoFocus
               />
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleFileUpload}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-2 rounded-md font-medium border border-slate-700"
+                title="Upload File"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                </svg>
+              </button>
               <button
                 onClick={handleAddImage}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 rounded-md font-medium"
+                className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-md font-medium"
               >
                 Add
               </button>
