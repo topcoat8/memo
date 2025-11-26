@@ -204,26 +204,42 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
 
       const transaction = new Transaction();
 
-      // Add a tiny transfer instruction (1000 lamports = 0.000001 SOL).
-      // This ensures the transaction shows up in the recipient's wallet history 
-      // and avoids "Malicious dApp" warnings from wallets that flag 0-value transfers.
+      // Smart Transfer Logic:
+      // 1. Check if recipient account exists.
+      // 2. If NO: We must transfer minimum rent (~0.00089 SOL) to create it.
+      // 3. If YES: We transfer 0 SOL (free).
+      // This ensures the transaction always succeeds and is indexed by the recipient's wallet.
+
+      const minRent = await connection.getMinimumBalanceForRentExemption(0);
+      const recipientAccountInfo = await connection.getAccountInfo(recipientPubkey);
+
+      let lamports = 0;
+      if (!recipientAccountInfo) {
+        lamports = minRent;
+        console.log(`Recipient account is new. Transferring ${lamports} lamports for rent exemption.`);
+      } else {
+        // Optional: Send 1 lamport or 0. 0 is fine for existing accounts.
+        lamports = 0;
+      }
+
+      // Add Transfer Instruction
+      // This serves two purposes:
+      // 1. Creates the account if needed (paying rent).
+      // 2. Indexes the transaction under the recipient's address (so they see it).
       const transferIx = SystemProgram.transfer({
         fromPubkey: publicKey,
         toPubkey: recipientPubkey,
-        lamports: 1000,
+        lamports: lamports,
       });
       transaction.add(transferIx);
 
-      // Derive Token Accounts to reference them for indexing.
-      // We do NOT create them, just reference them so the transaction appears in their history.
-      const TOKEN_MINT = new PublicKey(tokenMint);
-      const senderTokenAccount = await getAssociatedTokenAddress(TOKEN_MINT, publicKey);
-      const recipientTokenAccount = await getAssociatedTokenAddress(TOKEN_MINT, recipientPubkey);
-
+      // Memo Instruction
+      // CRITICAL: Memo Program v2 requires ALL keys in the 'keys' array to be Signers.
+      // We cannot include the recipient here because they cannot sign.
+      // We only include the Sender (publicKey) and mark them as a Signer.
       const memoIx = new TransactionInstruction({
         keys: [
-          { pubkey: senderTokenAccount, isSigner: false, isWritable: false },
-          { pubkey: recipientTokenAccount, isSigner: false, isWritable: false }
+          { pubkey: publicKey, isSigner: true, isWritable: false }
         ],
         programId: MEMO_PROGRAM_ID,
         data: Buffer.from(memoData, 'utf-8'),

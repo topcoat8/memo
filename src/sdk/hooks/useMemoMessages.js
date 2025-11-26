@@ -87,24 +87,21 @@ export function useMemoMessages({
 
     async function fetchMessages() {
       try {
-        const TOKEN_MINT = new PublicKey(tokenMint);
-
-        // We revert to using the Token Account for indexing to filter out irrelevant transactions.
-        // Even though we don't transfer tokens, we will reference this account in the transaction.
-        const tokenAccount = await getAssociatedTokenAddress(
-          TOKEN_MINT,
-          publicKey
-        );
-
-        // Check if account exists to avoid unnecessary signature lookups
-        // REMOVED: We don't check if the account exists on-chain because we are using it as an index key.
-        // Even if the account has 0 lamports and no data (doesn't exist), getSignaturesForAddress 
-        // will still return transactions that referenced this address in their keys.
-
+        // Fetch signatures for the user's main wallet address
+        // Since we use SystemProgram.transfer for indexing, the transaction will be associated with the main wallet.
         const signatures = await connection.getSignaturesForAddress(
-          tokenAccount,
-          { limit: limitCount * 2 }
+          publicKey,
+          { limit: 20 },
+          'confirmed'
         );
+
+        if (signatures.length === 0) {
+          if (isMounted) {
+            setMemos([]);
+            setLoading(false);
+          }
+          return;
+        }
 
         // Fetch transactions in chunks to avoid hitting RPC rate limits (429s)
         // Public RPCs often throttle if you fire 100 requests at once.
@@ -266,17 +263,11 @@ export function useMemoMessages({
                     decrypted = "[Encrypted Message - Key Not Found]";
                   }
                 } else {
-                  // Legacy symmetric encryption (only works if recipient is me, or if I am sender I can't decrypt it unless I stored it specially, which we don't)
-                  // Actually, legacy encryptMessageForChain uses deriveKeyFromIdentifier(recipientId).
-                  // So if I am sender, I can derive the key from recipientId too!
-                  // encryptMessageForChain uses: key = deriveKeyFromIdentifier(recipientId)
-                  // decryptMessageFromChain uses: key = deriveKeyFromIdentifier(recipientId)
-                  // So yes, sender can decrypt legacy messages too if they know recipientId.
-
+                  // Legacy symmetric encryption
                   decrypted = decryptMessageFromChain(
                     memo.encryptedContent,
                     memo.nonce,
-                    memo.recipientId // Always use recipientId to derive key
+                    memo.recipientId
                   );
                 }
 
