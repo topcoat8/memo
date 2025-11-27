@@ -5,8 +5,8 @@
  */
 
 import { useState, useCallback } from 'react';
-import { PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
-import { getAssociatedTokenAddress, createAssociatedTokenAccountIdempotentInstruction, createTransferInstruction } from '@solana/spl-token';
+import { PublicKey, Transaction, TransactionInstruction, SystemProgram, ComputeBudgetProgram } from '@solana/web3.js';
+import { getAssociatedTokenAddress, createAssociatedTokenAccountIdempotentInstruction, createTransferInstruction, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { Buffer } from 'buffer';
 import { encryptMessageForChain, isValidWalletAddress, encryptMessageAsymmetric, uint8ArrayToBase64, base64ToUint8Array } from '../utils/encryption';
 import { MEMO_PROGRAM_ID } from '../constants';
@@ -203,17 +203,39 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
 
       const transaction = new Transaction();
 
+      // Add Compute Budget instructions for better reliability
+      const priorityFeeIx = ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 1000
+      });
+      const computeLimitIx = ComputeBudgetProgram.setComputeUnitLimit({
+        units: 200000
+      });
+      transaction.add(priorityFeeIx);
+      transaction.add(computeLimitIx);
+
       if (tokenMint) {
         const mintPubkey = new PublicKey(tokenMint);
 
+        // Use Token-2022 Program ID directly as requested
+        const tokenProgramId = TOKEN_2022_PROGRAM_ID;
+
         const senderATA = await getAssociatedTokenAddress(
           mintPubkey,
-          publicKey
+          publicKey,
+          false,
+          tokenProgramId
         );
+
+        console.log('Debug - Token Mint:', tokenMint);
+        console.log('Debug - Sender Public Key:', publicKey.toString());
+        console.log('Debug - Derived Sender ATA:', senderATA.toString());
+        console.log('Debug - Token Program ID:', tokenProgramId.toString());
 
         const recipientATA = await getAssociatedTokenAddress(
           mintPubkey,
-          recipientPubkey
+          recipientPubkey,
+          false,
+          tokenProgramId
         );
 
         const recipientAccountInfo = await connection.getAccountInfo(recipientATA);
@@ -223,7 +245,9 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
             publicKey,
             recipientATA,
             recipientPubkey,
-            mintPubkey
+            mintPubkey,
+            tokenProgramId,
+            ASSOCIATED_TOKEN_PROGRAM_ID
           );
           transaction.add(createATAIx);
         }
@@ -234,7 +258,9 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
           senderATA,
           recipientATA,
           publicKey,
-          amount
+          amount,
+          [],
+          tokenProgramId
         );
         transaction.add(transferIx);
 
@@ -259,7 +285,8 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
 
       const memoIx = new TransactionInstruction({
         keys: [
-          { pubkey: publicKey, isSigner: true, isWritable: false }
+          { pubkey: publicKey, isSigner: true, isWritable: false },
+          { pubkey: recipientPubkey, isSigner: false, isWritable: false }
         ],
         programId: MEMO_PROGRAM_ID,
         data: Buffer.from(memoData, 'utf-8'),

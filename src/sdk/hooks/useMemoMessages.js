@@ -5,7 +5,9 @@
  * Queries RPC for token transfers and parses attached memos.
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { PublicKey } from '@solana/web3.js';
+import { getAssociatedTokenAddress, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { Buffer } from 'buffer';
 import { decryptMessageFromChain, decryptMessageAsymmetric, base64ToUint8Array } from '../utils/encryption';
 import { MEMO_PROGRAM_ID, THREE_DAYS_IN_SECONDS } from '../constants';
@@ -81,35 +83,60 @@ export function useMemoMessages({
     }
 
     let isMounted = true;
-    // Don't reset loading to true on every dependency change to avoid flashing
-    // setLoading(true); 
     setError(null);
 
     async function fetchMessages() {
       try {
-        const signatures = await connection.getSignaturesForAddress(
-          publicKey,
+        // 1. Main Wallet Signatures
+        const mainSignatures = await connection.getSignaturesForAddress(
+          new PublicKey(publicKey),
           { limit: 50 },
           'confirmed'
         );
 
-        if (signatures.length === 0) {
-          if (isMounted) {
-            setMemos([]);
-            setLoading(false);
+        // 2. ATA Signatures
+        let ataSignatures = [];
+        if (tokenMint) {
+          try {
+            const ataAddress = await getAssociatedTokenAddress(
+              new PublicKey(tokenMint),
+              new PublicKey(publicKey),
+              false,
+              TOKEN_2022_PROGRAM_ID
+            );
+            ataSignatures = await connection.getSignaturesForAddress(
+              ataAddress,
+              { limit: 50 },
+              'confirmed'
+            );
+          } catch (e) {
+            console.warn("Failed to fetch ATA signatures:", e);
           }
-          return;
         }
 
-        // Filter signatures older than 3 days
+        // 3. Merge and Deduplicate
+        const allSignatures = [...mainSignatures, ...ataSignatures];
+        const uniqueSignaturesMap = new Map();
+
+        allSignatures.forEach(sig => {
+          uniqueSignaturesMap.set(sig.signature, sig);
+        });
+
+        const uniqueSignatures = Array.from(uniqueSignaturesMap.values());
+
+        // 4. Sort by blockTime desc
+        uniqueSignatures.sort((a, b) => (b.blockTime || 0) - (a.blockTime || 0));
+
+        // 5. Filter by time (3 days)
         const nowInSeconds = Math.floor(Date.now() / 1000);
         const cutoffTime = nowInSeconds - THREE_DAYS_IN_SECONDS;
 
         const recentSignatures = [];
-        for (const sig of signatures) {
+        for (const sig of uniqueSignatures) {
           if (sig.blockTime && sig.blockTime > cutoffTime) {
             recentSignatures.push(sig);
           } else if (sig.blockTime && sig.blockTime <= cutoffTime) {
+            // Since it's sorted, we can stop early
             break;
           }
         }
@@ -152,14 +179,12 @@ export function useMemoMessages({
               try {
                 localStorage.setItem(cacheKey, JSON.stringify(tx));
               } catch (e) {
-                // Handle quota exceeded or other storage errors silently
                 console.warn('Failed to cache transaction:', e);
               }
               allTransactions.push({ tx, signature: sigInfo.signature });
             }
           } catch (err) {
             console.error(`Failed to fetch transaction ${sigInfo.signature}:`, err);
-            // Continue with other transactions
           }
         }
 
@@ -280,8 +305,6 @@ export function useMemoMessages({
 
                 if (memo.isAsymmetric) {
                   const otherPartyId = isSender ? memo.recipientId : memo.senderId;
-
-                  // Use embedded key if available (for new messages), otherwise fallback to registry
                   const otherIdentityKey = memo.senderPublicKey || registry[otherPartyId];
 
                   if (encryptionKeysRef.current && otherIdentityKey) {
@@ -296,7 +319,6 @@ export function useMemoMessages({
                     decrypted = "[Encrypted Message - Key Not Found]";
                   }
                 } else {
-                  // Legacy symmetric encryption
                   decrypted = decryptMessageFromChain(
                     memo.encryptedContent,
                     memo.nonce,
@@ -336,9 +358,7 @@ export function useMemoMessages({
 
     fetchMessages();
 
-    fetchMessages();
-
-    // Poll every 30 seconds + random jitter (0-10s) to prevent thundering herd
+    // Poll every 30 seconds + random jitter (0-10s)
     const getPollInterval = () => 30000 + Math.random() * 10000;
 
     let timeoutId;
