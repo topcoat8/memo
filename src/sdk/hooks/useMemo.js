@@ -238,20 +238,20 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
           tokenProgramId
         );
 
-        const recipientAccountInfo = await connection.getAccountInfo(recipientATA);
-
-        if (!recipientAccountInfo) {
-          const createATAIx = createAssociatedTokenAccountIdempotentInstruction(
-            publicKey,
-            recipientATA,
-            recipientPubkey,
-            mintPubkey,
-            tokenProgramId,
-            ASSOCIATED_TOKEN_PROGRAM_ID
-          );
-          transaction.add(createATAIx);
-        }
-
+        // Always add the idempotent ATA creation instruction.
+        // 1. It ensures the recipient's Main Wallet address is included in the transaction keys (as the owner).
+        //    This guarantees the transaction is indexed for the recipient and visible in their inbox.
+        // 2. It handles ATA creation if it doesn't exist.
+        // Always add the idempotent ATA creation instruction to ensure visibility
+        const createATAIx = createAssociatedTokenAccountIdempotentInstruction(
+          publicKey,
+          recipientATA,
+          recipientPubkey,
+          mintPubkey,
+          tokenProgramId,
+          ASSOCIATED_TOKEN_PROGRAM_ID
+        );
+        transaction.add(createATAIx);
         const amount = 1;
 
         const transferIx = createTransferInstruction(
@@ -285,8 +285,7 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
 
       const memoIx = new TransactionInstruction({
         keys: [
-          { pubkey: publicKey, isSigner: true, isWritable: false },
-          { pubkey: recipientPubkey, isSigner: false, isWritable: false }
+          { pubkey: publicKey, isSigner: true, isWritable: false }
         ],
         programId: MEMO_PROGRAM_ID,
         data: Buffer.from(memoData, 'utf-8'),
