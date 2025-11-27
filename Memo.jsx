@@ -64,7 +64,7 @@ function MemoApp() {
   }, []);
 
   async function handleSendMemo() {
-    if (recipientId === "ur3hwNP1WAvxZgiGLeac8t1uHnC16aRNEMb9qqdf4MA") {
+    if (recipientId === "A5KKf4PVw9C84qZzgNuhEoTRYW6XcTPyhHx6xyMENXp8") {
       alert("Sending to this address is restricted.");
       return;
     }
