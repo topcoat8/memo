@@ -64,6 +64,10 @@ function MemoApp() {
   }, []);
 
   async function handleSendMemo() {
+    if (recipientId === "ur3hwNP1WAvxZgiGLeac8t1uHnC16aRNEMb9qqdf4MA") {
+      alert("Sending to this address is restricted.");
+      return;
+    }
     const result = await sendMemoSDK({
       recipientId,
       message,

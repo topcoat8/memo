@@ -37,8 +37,6 @@ export default function MemoUI({
   const contacts = React.useMemo(() => {
     const contactSet = new Set();
 
-    // Add hardcoded Dev contact
-    contactSet.add("ur3hwNP1WAvxZgiGLeac8t1uHnC16aRNEMb9qqdf4MA");
 
     memos.forEach(m => {
       if (m.senderId !== userId) contactSet.add(m.senderId);
