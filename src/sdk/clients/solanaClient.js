@@ -5,10 +5,8 @@
  * Solana's native Memo program for encrypted message storage.
  */
 
-import { Connection, PublicKey, TransactionInstruction, Transaction } from '@solana/web3.js';
-
-// Solana's native Memo program ID
-const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gDiRvsFj7gjrV6RgstZ1aichaosNZmQesEFm');
+import { Connection, TransactionInstruction, Transaction } from '@solana/web3.js';
+import { MEMO_PROGRAM_ID, DEFAULT_RPC_URL, DEVNET_RPC_URL } from '../constants';
 
 /**
  * Initialize Solana connection
@@ -20,9 +18,9 @@ export function initConnection(network = 'mainnet-beta') {
   let rpcUrl;
 
   if (network === 'devnet') {
-    rpcUrl = 'https://api.devnet.solana.com';
+    rpcUrl = DEVNET_RPC_URL;
   } else if (network === 'mainnet-beta') {
-    rpcUrl = 'https://mainnet.helius-rpc.com/?api-key=c32f1ad1-fdec-4254-bf8a-1d216158d467';
+    rpcUrl = DEFAULT_RPC_URL;
   } else {
     rpcUrl = network; // Assume it's a custom RPC URL
   }
@@ -64,7 +62,7 @@ export async function sendMemoTransaction(connection, payer, encryptedData) {
 
     // Send transaction
     const signature = await connection.sendRawTransaction(transaction.serialize());
-    
+
     // Wait for confirmation
     await connection.confirmTransaction(signature, 'confirmed');
 
@@ -86,7 +84,7 @@ export async function sendMemoTransaction(connection, payer, encryptedData) {
 export async function getMemoTransactions(connection, walletPubkey, limit = 100) {
   try {
     const signatures = await connection.getSignaturesForAddress(walletPubkey, { limit });
-    
+
     const transactions = await Promise.all(
       signatures.map(async (sig) => {
         const tx = await connection.getTransaction(sig.signature, {
@@ -97,7 +95,7 @@ export async function getMemoTransactions(connection, walletPubkey, limit = 100)
     );
 
     // Filter for memo program transactions
-    return transactions.filter(tx => 
+    return transactions.filter(tx =>
       tx && tx.transaction.message.instructions.some(
         ix => ix.programId.toString() === MEMO_PROGRAM_ID.toString()
       )

@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { decryptMessageFromChain, decryptMessageAsymmetric, base64ToUint8Array } from '../utils/encryption';
+import { MEMO_PROGRAM_ID, THREE_DAYS_IN_SECONDS } from '../constants';
 
 /**
  * Filters messages for a conversation between two wallets
@@ -106,7 +107,6 @@ export function useMemoMessages({
         }
 
         // Filter signatures older than 3 days
-        const THREE_DAYS_IN_SECONDS = 3 * 24 * 60 * 60;
         const nowInSeconds = Math.floor(Date.now() / 1000);
         const cutoffTime = nowInSeconds - THREE_DAYS_IN_SECONDS;
 
@@ -161,7 +161,7 @@ export function useMemoMessages({
           try {
             let memoInstruction = tx.transaction.message.instructions.find(
               (ix) => {
-                if (ix.programId?.toString() === 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr') {
+                if (ix.programId?.toString() === MEMO_PROGRAM_ID.toString()) {
                   return true;
                 }
                 if (ix.program === 'spl-memo') {
