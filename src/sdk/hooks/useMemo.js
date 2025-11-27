@@ -6,7 +6,7 @@
 
 import { useState, useCallback } from 'react';
 import { PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
-import { getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, createTransferInstruction } from '@solana/spl-token';
+import { getAssociatedTokenAddress, createAssociatedTokenAccountIdempotentInstruction, createTransferInstruction } from '@solana/spl-token';
 import { Buffer } from 'buffer';
 import { encryptMessageForChain, isValidWalletAddress, encryptMessageAsymmetric, uint8ArrayToBase64, base64ToUint8Array } from '../utils/encryption';
 import { MEMO_PROGRAM_ID } from '../constants';
@@ -219,7 +219,7 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
         const recipientAccountInfo = await connection.getAccountInfo(recipientATA);
 
         if (!recipientAccountInfo) {
-          const createATAIx = createAssociatedTokenAccountInstruction(
+          const createATAIx = createAssociatedTokenAccountIdempotentInstruction(
             publicKey,
             recipientATA,
             recipientPubkey,
