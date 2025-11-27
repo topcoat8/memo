@@ -126,13 +126,35 @@ export function useMemoMessages({
 
         for (const sigInfo of recentSignatures) {
           try {
-            await new Promise(resolve => setTimeout(resolve, 250));
+            // Check local cache first
+            const cacheKey = `memo_tx_${sigInfo.signature}`;
+            const cachedTx = localStorage.getItem(cacheKey);
+
+            if (cachedTx) {
+              try {
+                const parsedTx = JSON.parse(cachedTx);
+                allTransactions.push({ tx: parsedTx, signature: sigInfo.signature });
+                continue; // Skip RPC call
+              } catch (e) {
+                localStorage.removeItem(cacheKey); // Clear invalid cache
+              }
+            }
+
+            // Increase delay to 1000ms to stay well under 10 req/s limit
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
             const tx = await connection.getParsedTransaction(sigInfo.signature, {
               maxSupportedTransactionVersion: 0,
             });
 
             if (tx && tx.meta && !tx.meta.err) {
+              // Cache the successful transaction
+              try {
+                localStorage.setItem(cacheKey, JSON.stringify(tx));
+              } catch (e) {
+                // Handle quota exceeded or other storage errors silently
+                console.warn('Failed to cache transaction:', e);
+              }
               allTransactions.push({ tx, signature: sigInfo.signature });
             }
           } catch (err) {
@@ -314,15 +336,27 @@ export function useMemoMessages({
 
     fetchMessages();
 
-    const pollInterval = setInterval(() => {
-      if (isMounted) {
-        fetchMessages();
-      }
-    }, 10000);
+    fetchMessages();
+
+    // Poll every 30 seconds + random jitter (0-10s) to prevent thundering herd
+    const getPollInterval = () => 30000 + Math.random() * 10000;
+
+    let timeoutId;
+    const schedulePoll = () => {
+      timeoutId = setTimeout(() => {
+        if (isMounted) {
+          fetchMessages().then(() => {
+            if (isMounted) schedulePoll();
+          });
+        }
+      }, getPollInterval());
+    };
+
+    schedulePoll();
 
     return () => {
       isMounted = false;
-      clearInterval(pollInterval);
+      clearTimeout(timeoutId);
     };
   }, [connection, publicKey, userId, isReady, tokenMint, recipientId, senderId, conversationWith, sortOrder, limitCount, autoDecrypt]);
 
