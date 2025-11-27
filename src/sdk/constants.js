@@ -4,7 +4,8 @@ import { PublicKey } from '@solana/web3.js';
 export const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
 
 // RPC Configuration
-export const DEFAULT_RPC_URL = 'https://mainnet.helius-rpc.com/?api-key=c32f1ad1-fdec-4254-bf8a-1d216158d467';
+// RPC Configuration
+export const DEFAULT_RPC_URL = import.meta.env.VITE_SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
 export const DEVNET_RPC_URL = 'https://api.devnet.solana.com';
 
 // Time Constants

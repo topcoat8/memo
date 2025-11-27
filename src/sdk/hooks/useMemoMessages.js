@@ -6,8 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { PublicKey } from '@solana/web3.js';
-import { getAssociatedTokenAddress } from '@solana/spl-token';
+import { Buffer } from 'buffer';
 import { decryptMessageFromChain, decryptMessageAsymmetric, base64ToUint8Array } from '../utils/encryption';
 import { MEMO_PROGRAM_ID, THREE_DAYS_IN_SECONDS } from '../constants';
 
@@ -88,10 +87,6 @@ export function useMemoMessages({
 
     async function fetchMessages() {
       try {
-        // Fetch signatures for the user's main wallet address
-        // Optimization: We fetch up to 50 signatures but strictly filter them by time (3 days)
-        // before fetching transaction details. This saves RPC resources by avoiding 
-        // unnecessary getParsedTransaction calls for old history.
         const signatures = await connection.getSignaturesForAddress(
           publicKey,
           { limit: 50 },
@@ -110,13 +105,11 @@ export function useMemoMessages({
         const nowInSeconds = Math.floor(Date.now() / 1000);
         const cutoffTime = nowInSeconds - THREE_DAYS_IN_SECONDS;
 
-        // Stop processing as soon as we hit the time limit (since signatures are ordered new -> old)
         const recentSignatures = [];
         for (const sig of signatures) {
           if (sig.blockTime && sig.blockTime > cutoffTime) {
             recentSignatures.push(sig);
           } else if (sig.blockTime && sig.blockTime <= cutoffTime) {
-            // Optimization: Stop searching once we hit a transaction older than 3 days
             break;
           }
         }
@@ -129,14 +122,10 @@ export function useMemoMessages({
           return;
         }
 
-        // Fetch transactions sequentially with delays to avoid hitting RPC rate limits (429)
-        // and to avoid using batch requests which are not supported on free tier (403).
         const allTransactions = [];
 
         for (const sigInfo of recentSignatures) {
           try {
-            // Add a delay before each request to respect rate limits
-            // 250ms delay = ~4 requests per second max
             await new Promise(resolve => setTimeout(resolve, 250));
 
             const tx = await connection.getParsedTransaction(sigInfo.signature, {
@@ -335,7 +324,6 @@ export function useMemoMessages({
       isMounted = false;
       clearInterval(pollInterval);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connection, publicKey, userId, isReady, tokenMint, recipientId, senderId, conversationWith, sortOrder, limitCount, autoDecrypt]);
 
   const inboxMessages = useMemo(() => {

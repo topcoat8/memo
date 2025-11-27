@@ -5,6 +5,7 @@
  * Solana's native Memo program for encrypted message storage.
  */
 
+import { Buffer } from 'buffer';
 import { Connection, TransactionInstruction, Transaction } from '@solana/web3.js';
 import { MEMO_PROGRAM_ID, DEFAULT_RPC_URL, DEVNET_RPC_URL } from '../constants';
 
@@ -42,7 +43,6 @@ export async function sendMemoTransaction(connection, payer, encryptedData) {
   }
 
   try {
-    // Create memo instruction with encrypted data
     const memoInstruction = new TransactionInstruction({
       keys: [],
       programId: MEMO_PROGRAM_ID,

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { MemoProvider, useMemoContext, useMemo, useMemoMessages, decryptMessageFromChain } from './src/sdk/index';
+import { useEffect, useState } from "react";
+import { MemoProvider, useMemoContext, useMemo as useMemoProtocol, useMemoMessages } from './src/sdk/index';
 import MemoUI from './MemoUI';
 
 const network = import.meta.env.VITE_SOLANA_NETWORK || 'mainnet-beta';
@@ -23,7 +23,7 @@ function MemoApp() {
     autoDecrypt: true,
   });
 
-  const { sendMemo: sendMemoSDK, announceIdentity, isLoading, error, successMessage } = useMemo({
+  const { sendMemo: sendMemoSDK, announceIdentity, isLoading, error, successMessage } = useMemoProtocol({
     connection,
     publicKey,
     userId,

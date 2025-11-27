@@ -5,9 +5,8 @@
  * Manages Solana connection and wallet integration.
  */
 
-import React, { createContext, useContext, useMemo, useEffect, useState } from 'react';
+import { createContext, useContext, useMemo, useEffect, useState, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { Connection, PublicKey } from '@solana/web3.js';
 import { initConnection } from './clients/solanaClient';
 
 const MemoContext = createContext(null);
@@ -56,7 +55,7 @@ export function MemoProvider({ network = 'mainnet-beta', tokenMint, children }) 
   }, [wallet?.publicKey]);
 
   // Login: Sign message to derive encryption keys
-  const login = async () => {
+  const login = useCallback(async () => {
     if (!wallet || !wallet.signMessage) {
       throw new Error("Wallet does not support message signing");
     }
@@ -75,11 +74,11 @@ export function MemoProvider({ network = 'mainnet-beta', tokenMint, children }) 
       console.error("Login failed:", err);
       throw err;
     }
-  };
+  }, [wallet]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setEncryptionKeys(null);
-  };
+  }, []);
 
   const value = useMemo(() => ({
     connection,
@@ -92,7 +91,7 @@ export function MemoProvider({ network = 'mainnet-beta', tokenMint, children }) 
     encryptionKeys,
     login,
     logout,
-  }), [connection, wallet, userId, isReady, error, tokenMint, encryptionKeys]);
+  }), [connection, wallet, userId, isReady, error, tokenMint, encryptionKeys, login, logout]);
 
   return (
     <MemoContext.Provider value={value}>
@@ -106,6 +105,7 @@ export function MemoProvider({ network = 'mainnet-beta', tokenMint, children }) 
  * 
  * @returns {Object} - Memo context value
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useMemoContext() {
   const context = useContext(MemoContext);
   if (!context) {

@@ -5,10 +5,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "start": "vite"
+    "start": "vite",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "format": "prettier --write .",
+    "test": "vitest"
   },
   "dependencies": {
-    "@solana/spl-token": "^0.3.9",
+    "@solana/spl-token": "^0.4.14",
     "@solana/wallet-adapter-react": "^0.15.39",
     "@solana/wallet-adapter-react-ui": "^0.9.39",
     "@solana/wallet-adapter-wallets": "^0.19.37",
@@ -20,13 +23,20 @@
     "tweetnacl": "1.0.3"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^24.10.1",
     "@types/pako": "^2.0.0",
+    "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
     "postcss": "^8.4.0",
+    "prettier": "^3.2.5",
     "tailwindcss": "^3.4.0",
     "ts-mocha": "^10.0.0",
     "typescript": "^5.0.0",
-    "vite": "5.1.0"
+    "vite": "^7.2.4",
+    "vitest": "^4.0.14"
   }
 }

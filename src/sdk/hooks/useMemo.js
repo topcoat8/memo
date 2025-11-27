@@ -7,6 +7,7 @@
 import { useState, useCallback } from 'react';
 import { PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
 import { getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, createTransferInstruction } from '@solana/spl-token';
+import { Buffer } from 'buffer';
 import { encryptMessageForChain, isValidWalletAddress, encryptMessageAsymmetric, uint8ArrayToBase64, base64ToUint8Array } from '../utils/encryption';
 import { MEMO_PROGRAM_ID } from '../constants';
 
@@ -185,7 +186,6 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
           nonce: Array.from(nonce),
           recipient: trimmedRecipient,
           isAsymmetric: true,
-          // Embed sender's public key so recipient can decrypt without searching history
           senderPublicKey: uint8ArrayToBase64(encryptionKeys.publicKey),
         };
       } else {
@@ -203,12 +203,9 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
 
       const transaction = new Transaction();
 
-      // Check if we are using a custom token mint (Pump.fun token)
       if (tokenMint) {
-        console.log("Using token mint:", tokenMint);
         const mintPubkey = new PublicKey(tokenMint);
 
-        // Get Associated Token Accounts
         const senderATA = await getAssociatedTokenAddress(
           mintPubkey,
           publicKey
@@ -219,29 +216,18 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
           recipientPubkey
         );
 
-        // Check if recipient ATA exists
         const recipientAccountInfo = await connection.getAccountInfo(recipientATA);
 
         if (!recipientAccountInfo) {
-          console.log("Creating recipient token account...");
           const createATAIx = createAssociatedTokenAccountInstruction(
-            publicKey, // payer
-            recipientATA, // associated token account address
-            recipientPubkey, // owner
-            mintPubkey // mint
+            publicKey,
+            recipientATA,
+            recipientPubkey,
+            mintPubkey
           );
           transaction.add(createATAIx);
         }
 
-        // Add Token Transfer Instruction (1 token = 1000000 decimals usually, but let's assume 1 unit for now or 1000000?)
-        // Pump.fun tokens usually have 6 decimals. 1 token = 1_000_000.
-        // Let's send 1 whole token? Or a tiny amount? 
-        // The request says "attaching the message to a pumpfun token".
-        // Usually this means sending 1 unit (smallest unit) or 1 whole token.
-        // Let's send 1000 units (0.001 token if 6 decimals) to be safe and visible?
-        // Or just 1 unit. Let's stick to 1 unit to minimize cost, or maybe 1000.
-        // Let's assume 1000000 (1 whole token) might be too expensive if the token is valuable.
-        // Let's send 1 unit of the token (smallest denomination).
         const amount = 1;
 
         const transferIx = createTransferInstruction(
@@ -253,14 +239,12 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
         transaction.add(transferIx);
 
       } else {
-        // Fallback to SOL transfer (original logic)
         const minRent = await connection.getMinimumBalanceForRentExemption(0);
         const recipientAccountInfo = await connection.getAccountInfo(recipientPubkey);
 
         let lamports = 0;
         if (!recipientAccountInfo) {
           lamports = minRent;
-          console.log(`Recipient account is new. Transferring ${lamports} lamports for rent exemption.`);
         } else {
           lamports = 0;
         }
@@ -273,10 +257,6 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
         transaction.add(transferIx);
       }
 
-      // Memo Instruction
-      // CRITICAL: Memo Program v2 requires ALL keys in the 'keys' array to be Signers.
-      // We cannot include the recipient here because they cannot sign.
-      // We only include the Sender (publicKey) and mark them as a Signer.
       const memoIx = new TransactionInstruction({
         keys: [
           { pubkey: publicKey, isSigner: true, isWritable: false }
