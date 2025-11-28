@@ -114,9 +114,10 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
    * @param {Object} params - Send parameters
    * @param {string} params.recipientId - Recipient's wallet address
    * @param {string} params.message - Plaintext message to send
+   * @param {boolean} [params.forceLegacy] - Force legacy symmetric encryption (for public chats)
    * @returns {Promise<{success: boolean, error?: string, signature?: string}>}
    */
-  const sendMemo = useCallback(async ({ recipientId, message }) => {
+  const sendMemo = useCallback(async ({ recipientId, message, forceLegacy = false }) => {
     setError("");
     setSuccessMessage("");
 
@@ -173,7 +174,9 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
 
       const recipientIdentityKey = publicKeyRegistry ? publicKeyRegistry[trimmedRecipient] : null;
 
-      if (encryptionKeys && recipientIdentityKey) {
+      // If forceLegacy is true, we skip asymmetric encryption even if keys are available.
+      // This is used for public community chats where we want the message to be decryptable by anyone who knows the address.
+      if (!forceLegacy && encryptionKeys && recipientIdentityKey) {
         const recipientPub = base64ToUint8Array(recipientIdentityKey);
         const { encryptedData, nonce } = encryptMessageAsymmetric(
           messageText,

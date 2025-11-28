@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { isValidWalletAddress } from './src/sdk/utils/encryption';
+import CommunityChat from './src/components/CommunityChat';
+import communityIcon from './assets/pfp.jpg';
 
 export default function MemoUI({
   isAuthReady,
@@ -25,6 +27,7 @@ export default function MemoUI({
   const [showMobileChat, setShowMobileChat] = useState(false);
   const [showImageInput, setShowImageInput] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const [viewMode, setViewMode] = useState('personal'); // 'personal' | 'community'
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -60,6 +63,7 @@ export default function MemoUI({
     setShowImageInput(false);
     setImageUrl("");
     setMessage("");
+    setViewMode('personal');
   };
 
   const handleBackToContacts = () => {
@@ -76,6 +80,13 @@ export default function MemoUI({
     setMessage("");
     setImageUrl("");
     setShowImageInput(false);
+    setShowMobileChat(true);
+    setViewMode('personal');
+  };
+
+  const handleCommunitySelect = () => {
+    setViewMode('community');
+    setActiveContact(null);
     setShowMobileChat(true);
   };
 
@@ -320,7 +331,25 @@ export default function MemoUI({
         </div>
 
         <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-          <div className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 px-2 mt-2">Contacts</div>
+          <div className="px-2 mb-2 mt-2">
+            <button
+              onClick={handleCommunitySelect}
+              className={`w-full text-left p-2.5 text-sm rounded-md transition-all flex items-center gap-3 ${viewMode === 'community'
+                ? 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20'
+                : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border border-transparent'
+                }`}
+            >
+              <div className="w-8 h-8 rounded-full overflow-hidden shadow-lg shadow-indigo-500/20 border border-indigo-500/30">
+                <img src={communityIcon} alt="Community" className="w-full h-full object-cover" />
+              </div>
+              <div>
+                <div className="font-medium text-slate-200">Community Wall</div>
+                <div className="text-[10px] text-slate-500">Public Chat</div>
+              </div>
+            </button>
+          </div>
+
+          <div className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 px-2 mt-4">Contacts</div>
           {contacts.map(contact => (
             <button
               key={contact}
@@ -352,196 +381,215 @@ export default function MemoUI({
       </div>
 
       <div className={`${showMobileChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-slate-950 relative w-full`}>
-        <div className="h-16 border-b border-slate-800 flex items-center justify-between px-4 md:px-6 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-10">
-          <div className="flex items-center gap-3 overflow-hidden">
-            {activeContact && (
+        {viewMode === 'community' ? (
+          <>
+            <div className="md:hidden h-16 border-b border-slate-800 flex items-center px-4 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-20">
               <button
                 onClick={handleBackToContacts}
-                className="md:hidden p-1.5 -ml-2 text-slate-400 hover:text-slate-200"
+                className="p-1.5 -ml-2 text-slate-400 hover:text-slate-200 mr-2"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                 </svg>
               </button>
-            )}
-
-            <div className="flex-1 min-w-0">
-              {activeContact ? (
-                <div>
-                  <div className="text-sm font-medium text-slate-200 flex items-center gap-2">
-                    <span className="text-slate-500 font-normal hidden sm:inline">To:</span>
-                    <span className="font-mono text-slate-300 truncate">{activeContact}</span>
-                  </div>
-                  <div className="text-[10px] text-slate-500 mt-0.5 truncate">
-                    {publicKeyRegistry && publicKeyRegistry[activeContact] ? '🔒 End-to-End Encrypted' : '🔓 Standard Encryption'}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-slate-500 text-sm">Select a contact</div>
-              )}
+              <span className="font-medium text-slate-200">Community Wall</span>
             </div>
-          </div>
-
-          {!activeContact && (
-            <div className="flex gap-2 ml-2 items-center">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Wallet Address"
-                  className={`bg-slate-900 border text-slate-200 text-xs p-2 w-32 sm:w-64 outline-none rounded-md transition-all ${recipientId && !isValidRecipient
-                    ? 'border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
-                    : recipientId && isValidRecipient
-                      ? 'border-emerald-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'
-                      : 'border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
-                    }`}
-                  value={recipientId}
-                  onChange={(e) => setRecipientId(e.target.value)}
-                />
-                {recipientId && isValidRecipient && (
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 text-emerald-500 pointer-events-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                      <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  if (recipientId && isValidRecipient) {
-                    setActiveContact(recipientId);
-                    setShowMobileChat(true);
-                  }
-                }}
-                disabled={!recipientId || !isValidRecipient}
-                className="bg-slate-800 border border-slate-700 text-slate-300 text-xs px-3 hover:bg-slate-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Start
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 min-h-0">
-          {activeMessages.map((msg) => {
-            const isMe = msg.senderId === userId;
-            const decrypted = decryptMessage(msg);
-
-            return (
-              <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] md:max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
-                  <div className="text-[10px] text-slate-500 mb-1">
-                    {isMe ? 'You' : msg.senderId.slice(0, 8)} • {msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                  <div
-                    className={`p-3.5 rounded-2xl shadow-sm ${isMe
-                      ? 'bg-indigo-600 text-white rounded-br-sm'
-                      : 'bg-slate-800 text-slate-200 rounded-bl-sm'
-                      }`}
+            <CommunityChat />
+          </>
+        ) : (
+          <>
+            <div className="h-16 border-b border-slate-800 flex items-center justify-between px-4 md:px-6 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-10">
+              <div className="flex items-center gap-3 overflow-hidden">
+                {activeContact && (
+                  <button
+                    onClick={handleBackToContacts}
+                    className="md:hidden p-1.5 -ml-2 text-slate-400 hover:text-slate-200"
                   >
-                    <div className="text-sm break-words whitespace-pre-wrap leading-relaxed">
-                      {renderMessageContent(decrypted)}
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                    </svg>
+                  </button>
+                )}
+
+                <div className="flex-1 min-w-0">
+                  {activeContact ? (
+                    <div>
+                      <div className="text-sm font-medium text-slate-200 flex items-center gap-2">
+                        <span className="text-slate-500 font-normal hidden sm:inline">To:</span>
+                        <span className="font-mono text-slate-300 truncate">{activeContact}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-0.5 truncate">
+                        {publicKeyRegistry && publicKeyRegistry[activeContact] ? '🔒 End-to-End Encrypted' : '🔓 Standard Encryption'}
+                      </div>
                     </div>
-                  </div>
-                  {msg.isAsymmetric && (
-                    <div className="mt-1 text-[9px] text-emerald-500/70 flex items-center justify-end gap-1">
-                      <span className="w-1 h-1 bg-emerald-500 rounded-full"></span>
-                      Encrypted
-                    </div>
+                  ) : (
+                    <div className="text-slate-500 text-sm">Select a contact</div>
                   )}
                 </div>
               </div>
-            );
-          })}
-          <div ref={messagesEndRef} />
-        </div>
 
-        <div className="p-4 border-t border-slate-800 bg-slate-950">
-          {(error || successMessage) && (
-            <div className="mb-3 text-xs px-1">
-              {error && <span className="text-rose-400">Error: {error}</span>}
-              {successMessage && <span className="text-emerald-400">Success: {successMessage}</span>}
+              {!activeContact && (
+                <div className="flex gap-2 ml-2 items-center">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Wallet Address"
+                      className={`bg-slate-900 border text-slate-200 text-xs p-2 w-32 sm:w-64 outline-none rounded-md transition-all ${recipientId && !isValidRecipient
+                        ? 'border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
+                        : recipientId && isValidRecipient
+                          ? 'border-emerald-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'
+                          : 'border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                        }`}
+                      value={recipientId}
+                      onChange={(e) => setRecipientId(e.target.value)}
+                    />
+                    {recipientId && isValidRecipient && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 text-emerald-500 pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                          <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (recipientId && isValidRecipient) {
+                        setActiveContact(recipientId);
+                        setShowMobileChat(true);
+                      }
+                    }}
+                    disabled={!recipientId || !isValidRecipient}
+                    className="bg-slate-800 border border-slate-700 text-slate-300 text-xs px-3 hover:bg-slate-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Start
+                  </button>
+                </div>
+              )}
             </div>
-          )}
 
-          {showImageInput && (
-            <div className="mb-3 p-3 bg-slate-900 rounded-lg border border-slate-800 flex gap-2 animate-in fade-in slide-in-from-bottom-2 items-center">
-              <input
-                type="text"
-                placeholder="Paste image URL..."
-                className="flex-1 bg-slate-950 border border-slate-700 text-slate-200 text-xs p-2 rounded-md focus:border-indigo-500 outline-none"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                autoFocus
-              />
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={handleFileUpload}
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-2 rounded-md font-medium border border-slate-700"
-                title="Upload File"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                </svg>
-              </button>
-              <button
-                onClick={handleAddImage}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-md font-medium"
-              >
-                Add
-              </button>
-              <button
-                onClick={() => setShowImageInput(false)}
-                className="text-slate-500 hover:text-slate-300 p-1"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 min-h-0">
+              {activeMessages.map((msg) => {
+                const isMe = msg.senderId === userId;
+                const decrypted = decryptMessage(msg);
+
+                return (
+                  <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] md:max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
+                      <div className="text-[10px] text-slate-500 mb-1">
+                        {isMe ? 'You' : msg.senderId.slice(0, 8)} • {msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                      <div
+                        className={`p-3.5 rounded-2xl shadow-sm ${isMe
+                          ? 'bg-indigo-600 text-white rounded-br-sm'
+                          : 'bg-slate-800 text-slate-200 rounded-bl-sm'
+                          }`}
+                      >
+                        <div className="text-sm break-words whitespace-pre-wrap leading-relaxed">
+                          {renderMessageContent(decrypted)}
+                        </div>
+                      </div>
+                      {msg.isAsymmetric && (
+                        <div className="mt-1 text-[9px] text-emerald-500/70 flex items-center justify-end gap-1">
+                          <span className="w-1 h-1 bg-emerald-500 rounded-full"></span>
+                          Encrypted
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
             </div>
-          )}
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowImageInput(!showImageInput)}
-              className={`p-2 rounded-lg transition-colors ${showImageInput ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}
-              title="Add Image"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-              </svg>
-            </button>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder={activeContact ? "Type a message..." : "Select a contact first"}
-              disabled={!activeContact || isLoading}
-              className="flex-1 bg-slate-900 border border-slate-700 text-slate-200 p-3 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none h-12 disabled:opacity-50 rounded-lg transition-all"
-            />
-            <button
-              onClick={handleSend}
-              disabled={!activeContact || isLoading || (!message.trim() && !imageUrl.trim())}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 md:px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-lg text-sm shadow-lg shadow-indigo-500/20"
-            >
-              {isLoading ? '...' : 'Send'}
-            </button>
-          </div>
-          <div className="mt-2 text-[10px] text-slate-600 flex justify-between px-1">
-            <span>Memo Protocol v2</span>
-            <span>Fee: ~0.000005 SOL</span>
-          </div>
-        </div>
+            <div className="p-4 border-t border-slate-800 bg-slate-950">
+              {(error || successMessage) && (
+                <div className="mb-3 text-xs px-1">
+                  {error && <span className="text-rose-400">Error: {error}</span>}
+                  {successMessage && <span className="text-emerald-400">Success: {successMessage}</span>}
+                </div>
+              )}
+
+              {showImageInput && (
+                <div className="mb-3 p-3 bg-slate-900 rounded-lg border border-slate-800 flex gap-2 animate-in fade-in slide-in-from-bottom-2 items-center">
+                  <input
+                    type="text"
+                    placeholder="Paste image URL..."
+                    className="flex-1 bg-slate-950 border border-slate-700 text-slate-200 text-xs p-2 rounded-md focus:border-indigo-500 outline-none"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    autoFocus
+                  />
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-2 rounded-md font-medium border border-slate-700"
+                    title="Upload File"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={handleAddImage}
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-md font-medium"
+                  >
+                    Add
+                  </button>
+                  <button
+                    onClick={() => setShowImageInput(false)}
+                    className="text-slate-500 hover:text-slate-300 p-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowImageInput(!showImageInput)}
+                  className={`p-2 rounded-lg transition-colors ${showImageInput ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}
+                  title="Add Image"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                  </svg>
+                </button>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  placeholder={activeContact ? "Type a message..." : "Select a contact first"}
+                  disabled={!activeContact || isLoading}
+                  className="flex-1 bg-slate-900 border border-slate-700 text-slate-200 p-3 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none h-12 disabled:opacity-50 rounded-lg transition-all"
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!activeContact || isLoading || (!message.trim() && !imageUrl.trim())}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 md:px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-lg text-sm shadow-lg shadow-indigo-500/20"
+                >
+                  {isLoading ? '...' : 'Send'}
+                </button>
+              </div>
+              <div className="mt-2 text-[10px] text-slate-600 flex justify-between px-1">
+                <span>Memo Protocol v2</span>
+                <span>Fee: ~0.000005 SOL</span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

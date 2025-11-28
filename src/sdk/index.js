@@ -11,6 +11,7 @@ export { MemoProvider, useMemoContext } from './MemoProvider';
 // Hooks
 export { useMemo } from './hooks/useMemo';
 export { useMemoMessages } from './hooks/useMemoMessages';
+export { useCommunityMessages } from './hooks/useCommunityMessages';
 export { useMemoTokenBalance } from './hooks/useMemoTokenBalance';
 
 // Utilities
