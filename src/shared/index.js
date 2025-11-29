@@ -6,13 +6,14 @@
  */
 
 // Provider and Context
-export { MemoProvider, useMemoContext } from './MemoProvider';
+export { MemoProvider, useMemoContext } from './context/MemoProvider';
 
 // Hooks
 export { useMemo } from './hooks/useMemo';
 export { useMemoMessages } from './hooks/useMemoMessages';
 export { useCommunityMessages } from './hooks/useCommunityMessages';
 export { useMemoTokenBalance } from './hooks/useMemoTokenBalance';
+export * from './hooks/useCommunityRules';
 
 // Utilities
 export {

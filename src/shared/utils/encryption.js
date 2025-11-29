@@ -88,7 +88,7 @@ export function encryptMessageForChain(plaintext, recipientId) {
 
   return {
     encryptedData: boxed,
-    nonce: Array.from(nonce),
+    nonce: nonce,
   };
 }
 
@@ -261,7 +261,7 @@ export function encryptMessageAsymmetric(plaintext, recipientPublicKey, senderSe
 
   return {
     encryptedData: boxed,
-    nonce: Array.from(nonce)
+    nonce: nonce
   };
 }
 

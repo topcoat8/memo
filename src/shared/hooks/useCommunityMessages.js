@@ -9,7 +9,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { Buffer } from 'buffer';
-import { decryptMessageFromChain } from '../utils/encryption';
+import { decryptMessageFromChain, base64ToUint8Array } from '../utils/encryption';
 import { MEMO_PROGRAM_ID, THREE_DAYS_IN_SECONDS, COMMUNITY_ADDRESS } from '../constants';
 
 /**
@@ -24,6 +24,7 @@ import { MEMO_PROGRAM_ID, THREE_DAYS_IN_SECONDS, COMMUNITY_ADDRESS } from '../co
 export function useCommunityMessages({
     connection,
     tokenMint,
+    communityAddress,
     limit: limitCount = 50,
 }) {
     const [memos, setMemos] = useState([]);
@@ -36,18 +37,20 @@ export function useCommunityMessages({
             return;
         }
 
-        // If address is placeholder, don't fetch
-        if (COMMUNITY_ADDRESS === "INSERT_COMMUNITY_ADDRESS_HERE") {
+        // If address is placeholder or missing, don't fetch
+        if (!communityAddress || communityAddress === "INSERT_COMMUNITY_ADDRESS_HERE") {
             setLoading(false);
+            setMemos([]); // Clear memos when no valid address
             return;
         }
 
         let isMounted = true;
+        setLoading(true); // Reset loading state when address changes
         setError(null);
 
         async function fetchMessages() {
             try {
-                const communityPubkey = new PublicKey(COMMUNITY_ADDRESS);
+                const communityPubkey = new PublicKey(communityAddress);
 
                 // 1. Main Wallet Signatures for Community Address
                 const mainSignatures = await connection.getSignaturesForAddress(
@@ -193,7 +196,7 @@ export function useCommunityMessages({
                         }
 
                         // Only include messages sent TO the community address
-                        if (parsedMemo.recipient !== COMMUNITY_ADDRESS) {
+                        if (parsedMemo.recipient !== communityAddress) {
                             return null;
                         }
 
@@ -201,8 +204,8 @@ export function useCommunityMessages({
                             id: signature,
                             senderId: tx.transaction.message.accountKeys[0].pubkey.toString(),
                             recipientId: parsedMemo.recipient,
-                            encryptedContent: new Uint8Array(parsedMemo.encrypted),
-                            nonce: new Uint8Array(parsedMemo.nonce),
+                            encryptedContent: typeof parsedMemo.encrypted === 'string' ? base64ToUint8Array(parsedMemo.encrypted) : new Uint8Array(parsedMemo.encrypted),
+                            nonce: typeof parsedMemo.nonce === 'string' ? base64ToUint8Array(parsedMemo.nonce) : new Uint8Array(parsedMemo.nonce),
                             isAsymmetric: !!parsedMemo.isAsymmetric,
                             timestamp: tx.blockTime || 0,
                             createdAt: new Date((tx.blockTime || 0) * 1000),
@@ -229,7 +232,7 @@ export function useCommunityMessages({
                         const decrypted = decryptMessageFromChain(
                             memo.encryptedContent,
                             memo.nonce,
-                            COMMUNITY_ADDRESS
+                            communityAddress
                         );
 
                         return {
@@ -280,7 +283,7 @@ export function useCommunityMessages({
             isMounted = false;
             clearInterval(intervalId);
         };
-    }, [connection, tokenMint, limitCount]);
+    }, [connection, tokenMint, limitCount, communityAddress]);
 
     return {
         memos,

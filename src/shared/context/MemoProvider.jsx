@@ -7,7 +7,7 @@
 
 import { createContext, useContext, useMemo, useEffect, useState, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { initConnection } from './clients/solanaClient';
+import { initConnection } from '../clients/solanaClient';
 
 const MemoContext = createContext(null);
 
@@ -65,7 +65,7 @@ export function MemoProvider({ network = 'mainnet-beta', tokenMint, children }) 
       const signature = await wallet.signMessage(message);
 
       // Dynamically import to avoid circular dependencies if any
-      const { deriveKeyPairFromSignature } = await import('./utils/encryption');
+      const { deriveKeyPairFromSignature } = await import('../utils/encryption');
       const keys = deriveKeyPairFromSignature(signature);
 
       setEncryptionKeys(keys);

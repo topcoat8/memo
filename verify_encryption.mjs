@@ -4,7 +4,7 @@ import {
     encryptMessageAsymmetric,
     decryptMessageAsymmetric,
     utf8ToUint8Array
-} from './src/sdk/utils/encryption.js';
+} from './src/shared/utils/encryption.js';
 
 // Mock compression to avoid dependency issues in standalone script if pako isn't set up for node
 // We'll just mock it for this test if needed, but let's try to use the real one first.

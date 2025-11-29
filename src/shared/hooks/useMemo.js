@@ -117,9 +117,13 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
    * @param {boolean} [params.forceLegacy] - Force legacy symmetric encryption (for public chats)
    * @returns {Promise<{success: boolean, error?: string, signature?: string}>}
    */
-  const sendMemo = useCallback(async ({ recipientId, message, forceLegacy = false }) => {
+  const sendMemo = useCallback(async ({ recipientId, message, forceLegacy = false, tokenMint: overrideTokenMint }) => {
+    // Determine which token mint to use (if any)
+    // If overrideTokenMint is explicitly passed (even null), use it. Otherwise fallback to context tokenMint.
+    const effectiveTokenMint = overrideTokenMint !== undefined ? overrideTokenMint : tokenMint;
     setError("");
     setSuccessMessage("");
+    console.log("DEBUG: sendMemo called", { recipientId, message, forceLegacy });
 
     if (!connection) {
       setError("Connection is not initialized. Please refresh the page.");
@@ -169,6 +173,7 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
 
     try {
       setIsLoading(true);
+      console.log("DEBUG: Starting transaction build");
 
       let memoDataObj;
 
@@ -185,8 +190,8 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
         );
 
         memoDataObj = {
-          encrypted: Array.from(encryptedData),
-          nonce: Array.from(nonce),
+          encrypted: uint8ArrayToBase64(encryptedData),
+          nonce: uint8ArrayToBase64(nonce),
           recipient: trimmedRecipient,
           isAsymmetric: true,
           senderPublicKey: uint8ArrayToBase64(encryptionKeys.publicKey),
@@ -195,14 +200,15 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
         const { encryptedData, nonce } = encryptMessageForChain(messageText, trimmedRecipient);
 
         memoDataObj = {
-          encrypted: Array.from(encryptedData),
-          nonce: Array.from(nonce),
+          encrypted: uint8ArrayToBase64(encryptedData),
+          nonce: uint8ArrayToBase64(nonce),
           recipient: trimmedRecipient,
           isAsymmetric: false
         };
       }
 
       const memoData = JSON.stringify(memoDataObj);
+      console.log("DEBUG: Memo data prepared", memoData);
 
       const transaction = new Transaction();
 
@@ -216,8 +222,9 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
       transaction.add(priorityFeeIx);
       transaction.add(computeLimitIx);
 
-      if (tokenMint) {
-        const mintPubkey = new PublicKey(tokenMint);
+      if (effectiveTokenMint) {
+        console.log("DEBUG: Using token mint", effectiveTokenMint);
+        const mintPubkey = new PublicKey(effectiveTokenMint);
 
         // Use Token-2022 Program ID directly as requested
         const tokenProgramId = TOKEN_2022_PROGRAM_ID;
@@ -229,7 +236,7 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
           tokenProgramId
         );
 
-        console.log('Debug - Token Mint:', tokenMint);
+        console.log('Debug - Token Mint:', effectiveTokenMint);
         console.log('Debug - Sender Public Key:', publicKey.toString());
         console.log('Debug - Derived Sender ATA:', senderATA.toString());
         console.log('Debug - Token Program ID:', tokenProgramId.toString());
@@ -299,6 +306,7 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
 
+      console.log("DEBUG: Requesting wallet signature...");
       const signature = await wallet.sendTransaction(transaction, connection, {
         skipPreflight: false,
         maxRetries: 3,
@@ -314,6 +322,7 @@ export function useMemo({ connection, publicKey, userId, isReady, wallet, tokenM
       return { success: true, signature };
     } catch (err) {
       console.error('Send memo error:', err);
+      console.log("DEBUG: sendMemo caught error", err);
       let errorMessage = "Failed to send memo. Please try again.";
 
       if (err.message) {

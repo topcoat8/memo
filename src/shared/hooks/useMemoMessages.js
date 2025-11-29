@@ -242,8 +242,8 @@ export function useMemoMessages({
               id: signature,
               senderId: tx.transaction.message.accountKeys[0].pubkey.toString(),
               recipientId: parsedMemo.recipient,
-              encryptedContent: new Uint8Array(parsedMemo.encrypted),
-              nonce: new Uint8Array(parsedMemo.nonce),
+              encryptedContent: typeof parsedMemo.encrypted === 'string' ? base64ToUint8Array(parsedMemo.encrypted) : new Uint8Array(parsedMemo.encrypted),
+              nonce: typeof parsedMemo.nonce === 'string' ? base64ToUint8Array(parsedMemo.nonce) : new Uint8Array(parsedMemo.nonce),
               isAsymmetric: !!parsedMemo.isAsymmetric,
               senderPublicKey: parsedMemo.senderPublicKey, // Extract embedded key
               timestamp: tx.blockTime || 0,
@@ -420,7 +420,7 @@ export function useMemoMessages({
         );
       } else {
         return decryptMessageFromChain(
-          new Uint8Array(memo.encryptedContent),
+          typeof memo.encryptedContent === 'string' ? base64ToUint8Array(memo.encryptedContent) : new Uint8Array(memo.encryptedContent),
           memo.nonce,
           memo.recipientId
         );
