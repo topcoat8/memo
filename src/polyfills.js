@@ -1,12 +1,21 @@
 // Polyfills that must run before any other client code
 import { Buffer } from 'buffer';
-if (typeof window !== 'undefined' && !window.Buffer) {
-  window.Buffer = Buffer;
-}
 
-// Provide a minimal process.env for libs that read it
-if (typeof window !== 'undefined' && !window.process) {
-  window.process = { env: {} };
+if (typeof window !== 'undefined') {
+  // Polyfill Buffer
+  if (!window.Buffer) {
+    window.Buffer = Buffer;
+  }
+
+  // Polyfill global
+  if (!window.global) {
+    window.global = window;
+  }
+
+  // Polyfill process
+  if (!window.process) {
+    window.process = { env: {} };
+  }
 }
 
 // Prevent crashes from libs trying to access window.ethereum when it doesn't exist
