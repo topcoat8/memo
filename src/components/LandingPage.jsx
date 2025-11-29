@@ -10,23 +10,23 @@ export default function LandingPage({ onSelect }) {
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-full blur-[120px]" />
             </div>
 
-            <div className="max-w-5xl w-full z-10 flex flex-col items-center gap-12">
+            <div className="max-w-5xl w-full z-10 flex flex-col items-center gap-8 md:gap-12">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8 }}
-                    className="text-center space-y-6"
+                    className="text-center space-y-4 md:space-y-6"
                 >
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-indigo-500/30 text-indigo-300 text-sm font-medium mb-4">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-indigo-500/30 text-indigo-300 text-sm font-medium mb-2 md:mb-4">
                         <Zap className="w-4 h-4 fill-indigo-400" />
                         <span>Powered by Solana</span>
                     </div>
 
-                    <h1 className="text-6xl md:text-7xl font-bold tracking-tighter">
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter px-4">
                         <span className="text-white">Memo</span>
-                        <span className="gradient-text ml-4">Protocol</span>
+                        <span className="gradient-text ml-2 md:ml-4">Protocol</span>
                     </h1>
-                    <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                    <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed px-4">
                         The next generation of secure, immutable communication.
                         Choose your workspace to begin.
                     </p>
@@ -36,7 +36,7 @@ export default function LandingPage({ onSelect }) {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="w-full max-w-2xl mx-auto glass-card p-8 rounded-3xl text-center border-amber-500/20 bg-amber-500/5"
+                        className="w-full max-w-2xl mx-auto glass-card p-6 md:p-8 rounded-3xl text-center border-amber-500/20 bg-amber-500/5 mx-4"
                     >
                         <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                             <Shield className="w-8 h-8 text-amber-400" />
@@ -48,14 +48,14 @@ export default function LandingPage({ onSelect }) {
                         </p>
                     </motion.div>
                 ) : (
-                    <div className="grid md:grid-cols-2 gap-8 w-full">
+                    <div className="grid md:grid-cols-2 gap-6 md:gap-8 w-full px-4">
                         {/* Enterprise Card */}
                         <motion.button
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.2 }}
                             onClick={() => onSelect('enterprise')}
-                            className="group relative glass-card p-8 rounded-3xl text-left transition-all hover:scale-[1.02] hover:shadow-indigo-500/20"
+                            className="group relative glass-card p-6 md:p-8 rounded-3xl text-left transition-all hover:scale-[1.02] hover:shadow-indigo-500/20"
                         >
                             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
 
@@ -64,8 +64,8 @@ export default function LandingPage({ onSelect }) {
                                     <Shield className="w-7 h-7 text-indigo-400" />
                                 </div>
 
-                                <h2 className="text-3xl font-bold text-white mb-3">Enterprise</h2>
-                                <p className="text-slate-400 mb-8 leading-relaxed">
+                                <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">Enterprise</h2>
+                                <p className="text-slate-400 mb-8 leading-relaxed text-sm md:text-base">
                                     Bank-grade security for high-stakes environments.
                                     Immutable records, legal admissibility, and strict access control.
                                 </p>
@@ -83,7 +83,7 @@ export default function LandingPage({ onSelect }) {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.3 }}
                             onClick={() => onSelect('social')}
-                            className="group relative glass-card p-8 rounded-3xl text-left transition-all hover:scale-[1.02] hover:shadow-emerald-500/20"
+                            className="group relative glass-card p-6 md:p-8 rounded-3xl text-left transition-all hover:scale-[1.02] hover:shadow-emerald-500/20"
                         >
                             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
 
@@ -92,8 +92,8 @@ export default function LandingPage({ onSelect }) {
                                     <Users className="w-7 h-7 text-emerald-400" />
                                 </div>
 
-                                <h2 className="text-3xl font-bold text-white mb-3">Social</h2>
-                                <p className="text-slate-400 mb-8 leading-relaxed">
+                                <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">Social</h2>
+                                <p className="text-slate-400 mb-8 leading-relaxed text-sm md:text-base">
                                     Your wallet is your social graph. Connect with communities,
                                     token-gated chats, and direct messaging.
                                 </p>
