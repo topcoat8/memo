@@ -1,0 +1,112 @@
+import { motion } from 'framer-motion';
+import { Shield, Users, ArrowRight, Zap, Globe } from 'lucide-react';
+
+export default function LandingPage({ onSelect }) {
+    return (
+        <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden">
+            {/* Background Effects */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[120px]" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-full blur-[120px]" />
+            </div>
+
+            <div className="max-w-5xl w-full z-10 flex flex-col items-center gap-12">
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8 }}
+                    className="text-center space-y-6"
+                >
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-indigo-500/30 text-indigo-300 text-sm font-medium mb-4">
+                        <Zap className="w-4 h-4 fill-indigo-400" />
+                        <span>Powered by Solana</span>
+                    </div>
+
+                    <h1 className="text-6xl md:text-7xl font-bold tracking-tighter">
+                        <span className="text-white">Memo</span>
+                        <span className="gradient-text ml-4">Protocol</span>
+                    </h1>
+                    <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                        The next generation of secure, immutable communication.
+                        Choose your workspace to begin.
+                    </p>
+                </motion.div>
+
+                {import.meta.env.VITE_BETA === "CLOSED" ? (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="w-full max-w-2xl mx-auto glass-card p-8 rounded-3xl text-center border-amber-500/20 bg-amber-500/5"
+                    >
+                        <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Shield className="w-8 h-8 text-amber-400" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-white mb-3">Beta Access Closed</h2>
+                        <p className="text-slate-400 leading-relaxed">
+                            We are currently at capacity for our beta testing phase.
+                            Please check back soon for the next wave of invites.
+                        </p>
+                    </motion.div>
+                ) : (
+                    <div className="grid md:grid-cols-2 gap-8 w-full">
+                        {/* Enterprise Card */}
+                        <motion.button
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.2 }}
+                            onClick={() => onSelect('enterprise')}
+                            className="group relative glass-card p-8 rounded-3xl text-left transition-all hover:scale-[1.02] hover:shadow-indigo-500/20"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
+
+                            <div className="relative z-10">
+                                <div className="w-14 h-14 bg-indigo-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform">
+                                    <Shield className="w-7 h-7 text-indigo-400" />
+                                </div>
+
+                                <h2 className="text-3xl font-bold text-white mb-3">Enterprise</h2>
+                                <p className="text-slate-400 mb-8 leading-relaxed">
+                                    Bank-grade security for high-stakes environments.
+                                    Immutable records, legal admissibility, and strict access control.
+                                </p>
+
+                                <div className="flex items-center gap-2 text-indigo-400 font-medium group-hover:gap-4 transition-all">
+                                    <span>Access Workspace</span>
+                                    <ArrowRight className="w-4 h-4" />
+                                </div>
+                            </div>
+                        </motion.button>
+
+                        {/* Social Card */}
+                        <motion.button
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.3 }}
+                            onClick={() => onSelect('social')}
+                            className="group relative glass-card p-8 rounded-3xl text-left transition-all hover:scale-[1.02] hover:shadow-emerald-500/20"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
+
+                            <div className="relative z-10">
+                                <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:-rotate-6 transition-transform">
+                                    <Users className="w-7 h-7 text-emerald-400" />
+                                </div>
+
+                                <h2 className="text-3xl font-bold text-white mb-3">Social</h2>
+                                <p className="text-slate-400 mb-8 leading-relaxed">
+                                    Your wallet is your social graph. Connect with communities,
+                                    token-gated chats, and direct messaging.
+                                </p>
+
+                                <div className="flex items-center gap-2 text-emerald-400 font-medium group-hover:gap-4 transition-all">
+                                    <span>Launch App</span>
+                                    <ArrowRight className="w-4 h-4" />
+                                </div>
+                            </div>
+                        </motion.button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

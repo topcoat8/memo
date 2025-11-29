@@ -1,22 +1,14 @@
 import React from 'react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { Plus, Users, Shield, LogOut, Key } from 'lucide-react';
 import communityIcon from '../../../assets/pfp.jpg';
 
 export default function Sidebar({
     isAuthReady,
-    handleNewChat,
     encryptionKeys,
     announceIdentity,
     logout,
     login,
-    handleCommunitySelect,
-    viewMode,
-    contacts,
-    handleContactSelect,
-    activeContact,
-    publicKeyRegistry,
-    showMobileChat,
-    showCommunity = true,
     communities = [],
     activeCommunityId,
     onSelectCommunity,
@@ -24,145 +16,139 @@ export default function Sidebar({
     onCreateCommunity,
 }) {
     return (
-        <div className={`${showMobileChat ? 'hidden' : 'flex'} md:flex w-full md:w-80 border-r border-slate-800 flex-col bg-slate-900/50`}>
-            <div className="p-4 border-b border-slate-800 flex justify-between items-center">
-                <div>
-                    <h1 className="text-lg font-semibold tracking-tight text-white">
-                        Memo Protocol
+        <div className="flex flex-col h-full w-full bg-slate-900/40 backdrop-blur-xl border-r border-white/5">
+            {/* Header */}
+            <div className="p-6 border-b border-white/5">
+                <div className="flex items-center gap-3 mb-1">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                        <Shield className="w-4 h-4 text-white" />
+                    </div>
+                    <h1 className="text-lg font-bold tracking-tight text-white">
+                        Memo <span className="text-indigo-400">Social</span>
                     </h1>
-                    <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-400">
-                        <div className={`w-2 h-2 rounded-full ${isAuthReady ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                </div>
+                <div className="flex items-center gap-2 ml-11">
+                    <div className={`w-1.5 h-1.5 rounded-full ${isAuthReady ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500'}`}></div>
+                    <span className="text-xs text-slate-400 font-medium">
                         {isAuthReady ? 'Connected' : 'Disconnected'}
+                    </span>
+                </div>
+            </div>
+
+            {/* Security Status */}
+            <div className="px-4 py-4">
+                <div className="glass p-3 rounded-xl border-white/5 bg-white/5">
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <Key className="w-3 h-3" /> Security
+                        </span>
+                        {encryptionKeys ? (
+                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                                ENCRYPTED
+                            </span>
+                        ) : (
+                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                                UNSECURED
+                            </span>
+                        )}
+                    </div>
+
+                    {isAuthReady ? (
+                        encryptionKeys ? (
+                            <div className="space-y-2">
+                                <button
+                                    onClick={announceIdentity}
+                                    className="w-full text-xs font-medium bg-white/5 hover:bg-white/10 text-slate-300 py-2 px-3 rounded-lg transition-all text-left flex justify-between items-center group"
+                                >
+                                    <span className="group-hover:text-white transition-colors">Announce Key</span>
+                                    <span className="text-[10px] text-slate-500 bg-black/20 px-1.5 py-0.5 rounded">On-chain</span>
+                                </button>
+                                <button
+                                    onClick={logout}
+                                    className="w-full text-xs font-medium text-slate-500 hover:text-rose-400 py-1.5 px-1 transition-colors text-left flex items-center gap-2"
+                                >
+                                    <LogOut className="w-3 h-3" />
+                                    Lock Identity
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={login}
+                                className="w-full text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 px-3 rounded-lg transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2"
+                            >
+                                <Key className="w-3 h-3" />
+                                Initialize Encryption
+                            </button>
+                        )
+                    ) : (
+                        <div className="opacity-50 pointer-events-none scale-95 origin-top">
+                            <WalletMultiButton />
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Communities List */}
+            <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1 custom-scrollbar">
+                <div className="flex justify-between items-center mb-4 px-1">
+                    <span className="text-xs font-medium text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Users className="w-3 h-3" /> Communities
+                    </span>
+                    <div className="flex gap-1">
+                        <button
+                            onClick={onAddCommunity}
+                            className="p-1.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                            title="Join Community"
+                        >
+                            <Plus className="w-4 h-4" />
+                        </button>
                     </div>
                 </div>
+
+                {communities.map(community => (
+                    <button
+                        key={community.id}
+                        onClick={() => onSelectCommunity(community.id)}
+                        className={`w-full text-left p-3 rounded-xl transition-all flex items-center gap-3 group relative overflow-hidden ${activeCommunityId === community.id
+                                ? 'bg-indigo-600/20 border border-indigo-500/30 shadow-[0_0_15px_rgba(79,70,229,0.1)]'
+                                : 'hover:bg-white/5 border border-transparent hover:border-white/5'
+                            }`}
+                    >
+                        {activeCommunityId === community.id && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent pointer-events-none" />
+                        )}
+
+                        <div className={`w-10 h-10 rounded-full overflow-hidden shrink-0 border-2 transition-colors ${activeCommunityId === community.id ? 'border-indigo-500 shadow-lg shadow-indigo-500/20' : 'border-white/5 group-hover:border-white/10'
+                            }`}>
+                            <img src={communityIcon} alt="Community" className="w-full h-full object-cover" />
+                        </div>
+
+                        <div className="min-w-0 relative z-10">
+                            <div className={`font-medium truncate transition-colors ${activeCommunityId === community.id ? 'text-white' : 'text-slate-300 group-hover:text-white'
+                                }`}>
+                                {community.name}
+                            </div>
+                            <div className="text-[10px] text-slate-500 truncate font-mono">
+                                {community.id.slice(0, 4)}...{community.id.slice(-4)}
+                            </div>
+                        </div>
+                    </button>
+                ))}
+
                 <button
-                    onClick={handleNewChat}
-                    className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-colors shadow-lg shadow-indigo-500/20"
-                    title="New Chat"
+                    onClick={onCreateCommunity}
+                    className="w-full mt-4 p-3 rounded-xl border border-dashed border-slate-700 hover:border-indigo-500/50 hover:bg-indigo-500/5 text-slate-500 hover:text-indigo-400 transition-all flex items-center justify-center gap-2 text-xs font-medium group"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
+                    <div className="w-6 h-6 rounded-full bg-slate-800 group-hover:bg-indigo-500/20 flex items-center justify-center transition-colors">
+                        <Plus className="w-3 h-3" />
+                    </div>
+                    Create New Community
                 </button>
             </div>
 
-            <div className="p-4 border-b border-slate-800 bg-slate-900/30">
-                <div className="flex justify-between items-center mb-3">
-                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Security</span>
-                    {encryptionKeys ? (
-                        <span className="text-[10px] font-medium text-emerald-400 bg-emerald-950/30 px-2 py-0.5 rounded-full border border-emerald-900/50">Encrypted</span>
-                    ) : (
-                        <span className="text-[10px] font-medium text-amber-400 bg-amber-950/30 px-2 py-0.5 rounded-full border border-amber-900/50">Unsecured</span>
-                    )}
-                </div>
-
-                {isAuthReady ? (
-                    encryptionKeys ? (
-                        <div className="space-y-2">
-                            <button
-                                onClick={announceIdentity}
-                                className="w-full text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 px-3 rounded-md transition-colors text-left flex justify-between items-center"
-                            >
-                                <span>Announce Public Key</span>
-                                <span className="text-[10px] text-slate-500">On-chain</span>
-                            </button>
-                            <button
-                                onClick={logout}
-                                className="w-full text-xs font-medium text-slate-500 hover:text-rose-400 py-1.5 px-1 transition-colors text-left"
-                            >
-                                Lock Identity
-                            </button>
-                        </div>
-                    ) : (
-                        <button
-                            onClick={login}
-                            className="w-full text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-3 rounded-md transition-all shadow-sm shadow-indigo-500/20"
-                        >
-                            Initialize Encryption
-                        </button>
-                    )
-                ) : (
-                    <div className="opacity-50 pointer-events-none">
-                        <WalletMultiButton />
-                    </div>
-                )}
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-                {showCommunity && (
-                    <div className="px-2 mb-2 mt-2">
-                        <div className="flex justify-between items-center px-2 mb-2">
-                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Communities</span>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={onCreateCommunity}
-                                    className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-                                >
-                                    Create
-                                </button>
-                                <button
-                                    onClick={onAddCommunity}
-                                    className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-                                >
-                                    Join
-                                </button>
-                            </div>
-                        </div>
-
-                        {communities && communities.length > 0 ? (
-                            communities.map(community => (
-                                <button
-                                    key={community.id}
-                                    onClick={() => onSelectCommunity(community.id)}
-                                    className={`w-full text-left p-2.5 text-sm rounded-md transition-all flex items-center gap-3 mb-1 ${activeCommunityId === community.id && viewMode === 'community'
-                                        ? 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20'
-                                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border border-transparent'
-                                        }`}
-                                >
-                                    <div className="w-8 h-8 rounded-full overflow-hidden shadow-lg shadow-indigo-500/20 border border-indigo-500/30 shrink-0">
-                                        <img src={communityIcon} alt="Community" className="w-full h-full object-cover" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div className="font-medium text-slate-200 truncate">{community.name}</div>
-                                        <div className="text-[10px] text-slate-500 truncate">{community.id.slice(0, 4)}...{community.id.slice(-4)}</div>
-                                    </div>
-                                </button>
-                            ))
-                        ) : (
-                            <div className="p-3 text-xs text-slate-600 text-center italic bg-slate-900/30 rounded-lg border border-slate-800/50 mb-2">
-                                No communities joined
-                            </div>
-                        )}
-                    </div>
-                )}
-                <div className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 px-2 mt-4">Contacts</div>
-                {contacts.map(contact => (
-                    <button
-                        key={contact}
-                        onClick={() => handleContactSelect(contact)}
-                        className={`w-full text-left p-2.5 text-sm rounded-md transition-all ${activeContact === contact
-                            ? 'bg-indigo-500/10 text-indigo-300'
-                            : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
-                            }`}
-                    >
-                        <div className="truncate font-mono text-xs">{contact}</div>
-                        {publicKeyRegistry && publicKeyRegistry[contact] && (
-                            <div className="text-[10px] text-emerald-500/80 mt-0.5 flex items-center gap-1">
-                                <span className="w-1 h-1 bg-emerald-500 rounded-full"></span>
-                                Secure
-                            </div>
-                        )}
-                    </button>
-                ))}
-                {contacts.length === 0 && (
-                    <div className="p-4 text-xs text-slate-600 text-center italic">
-                        No contacts yet
-                    </div>
-                )}
-            </div>
-
-            <div className="p-4 border-t border-slate-800">
-                <WalletMultiButton className="!bg-slate-800 hover:!bg-slate-700 !text-slate-200 !font-medium !text-sm !h-10 !w-full !justify-center !rounded-md !transition-colors" />
+            {/* Footer */}
+            <div className="p-4 border-t border-white/5 bg-black/20">
+                <WalletMultiButton className="!bg-white/5 hover:!bg-white/10 !text-slate-300 hover:!text-white !font-medium !text-sm !h-11 !w-full !justify-center !rounded-xl !transition-all !border !border-white/5" />
             </div>
         </div>
     );

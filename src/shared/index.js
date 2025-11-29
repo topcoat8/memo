@@ -13,6 +13,7 @@ export { useMemo } from './hooks/useMemo';
 export { useMemoMessages } from './hooks/useMemoMessages';
 export { useCommunityMessages } from './hooks/useCommunityMessages';
 export { useMemoTokenBalance } from './hooks/useMemoTokenBalance';
+export { useChatTokenBalances } from './hooks/useChatTokenBalances';
 export * from './hooks/useCommunityRules';
 
 // Utilities
