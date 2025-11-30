@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { isValidWalletAddress } from '../../../shared/utils/encryption';
 import { PublicKey, Keypair } from '@solana/web3.js';
-import { useMemoContext, useMemo as useMemoProtocol } from '../../../shared/index';
+import { useMemoContext, useMemo as useMemoProtocol, useMemoTokenBalance } from '../../../shared/index';
 import { X, Users, Wallet, Coins, Shield, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function CreateCommunityModal({ isOpen, onClose, onCreated }) {
@@ -15,6 +15,17 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreated }) {
         tokenMint,
         encryptionKeys
     });
+
+    // Fetch MEMO balance
+    const { balance: memoBalance, loading: balanceLoading } = useMemoTokenBalance({
+        connection,
+        publicKey,
+        memoMint: tokenMint,
+        isReady
+    });
+
+    const MIN_REQUIRED_MEMO = 500000;
+    const hasEnoughMemo = memoBalance >= MIN_REQUIRED_MEMO;
 
     const [name, setName] = useState('');
     // Address is now automatically generated
@@ -76,6 +87,11 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreated }) {
 
         if (!name.trim()) {
             setError('Community Name is required');
+            return;
+        }
+
+        if (!hasEnoughMemo) {
+            setError(`You need at least ${MIN_REQUIRED_MEMO.toLocaleString()} MEMO to create a community.`);
             return;
         }
 
@@ -142,6 +158,28 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreated }) {
                             <X className="w-5 h-5" />
                         </button>
                     </div>
+
+                    {!balanceLoading && (
+                        <div className={`mb-6 p-3 rounded-xl border ${hasEnoughMemo ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/10 border-rose-500/20'} flex items-center justify-between`}>
+                            <div className="flex items-center gap-2">
+                                <div className={`p-1.5 rounded-lg ${hasEnoughMemo ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+                                    <Shield className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <p className={`text-xs font-medium ${hasEnoughMemo ? 'text-emerald-300' : 'text-rose-300'}`}>
+                                        {hasEnoughMemo ? 'Requirement Met' : 'Insufficient Balance'}
+                                    </p>
+                                    <p className="text-[10px] text-slate-400">
+                                        Requires {MIN_REQUIRED_MEMO.toLocaleString()} MEMO
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-xs font-bold text-white">{memoBalance.toLocaleString()}</p>
+                                <p className="text-[10px] text-slate-500">Your Balance</p>
+                            </div>
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
@@ -292,8 +330,8 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreated }) {
                             </button>
                             <button
                                 type="submit"
-                                disabled={isLoading}
-                                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition-all text-sm shadow-lg shadow-indigo-500/20 disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
+                                disabled={isLoading || !hasEnoughMemo}
+                                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition-all text-sm shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
                             >
                                 {isLoading ? 'Creating...' : 'Create & Save Rules'}
                             </button>
