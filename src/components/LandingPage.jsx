@@ -42,10 +42,22 @@ export default function LandingPage({ onSelect }) {
                             <Shield className="w-8 h-8 text-amber-400" />
                         </div>
                         <h2 className="text-2xl font-bold text-white mb-3">Beta Access Closed</h2>
-                        <p className="text-slate-400 leading-relaxed">
+                        <p className="text-slate-400 leading-relaxed mb-6">
                             We are currently at capacity for our beta testing phase.
                             Please check back soon for the next wave of invites.
                         </p>
+
+                        <a
+                            href="https://x.com/MemoOnSol"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white rounded-xl transition-all border border-white/5 hover:border-white/10 group"
+                        >
+                            <svg viewBox="0 0 24 24" aria-hidden="true" className="w-4 h-4 fill-current text-slate-400 group-hover:text-white transition-colors">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                            </svg>
+                            <span className="text-sm font-medium">Follow for Updates</span>
+                        </a>
                     </motion.div>
                 ) : (
                     <div className="grid md:grid-cols-2 gap-6 md:gap-8 w-full px-4">

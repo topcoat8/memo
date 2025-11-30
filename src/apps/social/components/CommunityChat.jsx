@@ -159,10 +159,10 @@ export default function CommunityChat({ communityAddress, communityName = "Commu
                 </div>
             </div>
 
-            {/* Pinned Rules */}
+            {/* Pinned Rules - Static at top */}
             {
                 memos.find(m => m.decryptedContent && m.decryptedContent.includes('COMMUNITY_RULES')) && (
-                    <div className="bg-indigo-900/10 border-b border-indigo-500/10 p-3 flex items-start gap-3 backdrop-blur-md sticky top-20 z-10">
+                    <div className="bg-indigo-900/10 border-b border-indigo-500/10 p-3 flex items-start gap-3 backdrop-blur-md z-10 shrink-0">
                         <div className="text-indigo-400 mt-0.5 bg-indigo-500/10 p-1.5 rounded-lg">
                             <Info className="w-4 h-4" />
                         </div>
@@ -177,46 +177,50 @@ export default function CommunityChat({ communityAddress, communityName = "Commu
             }
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 min-h-0 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 min-h-0 custom-scrollbar flex flex-col">
                 {loading && memos.length === 0 ? (
                     <div className="flex justify-center py-12">
                         <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
                     </div>
                 ) : (
-                    memos.filter(m => !m.decryptedContent || !m.decryptedContent.includes('COMMUNITY_RULES')).map((msg) => {
-                        const isMe = msg.senderId === userId;
-                        const content = msg.decryptedContent || "[Encrypted]";
+                    // Reverse memos to show Oldest -> Newest (Top -> Bottom)
+                    [...memos]
+                        .reverse()
+                        .filter(m => !m.decryptedContent || !m.decryptedContent.includes('COMMUNITY_RULES'))
+                        .map((msg) => {
+                            const isMe = msg.senderId === userId;
+                            const content = msg.decryptedContent || "[Encrypted]";
 
-                        return (
-                            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
-                                <div className={`max-w-[85%] md:max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
-                                    <div className="text-[10px] text-slate-500 mb-1.5 flex items-center gap-2 px-1">
-                                        <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded ${isMe ? 'bg-indigo-500/10 text-indigo-300' : 'bg-slate-800 text-slate-400'}`}>
-                                            {msg.senderId.slice(0, 4)}...{msg.senderId.slice(-4)}
-                                        </span>
-                                        {showBalancesRule && balances[msg.senderId] !== undefined && (
-                                            <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                                                <Coins className="w-2 h-2" />
-                                                {(balances[msg.senderId] / 1000000).toLocaleString(undefined, { maximumFractionDigits: 1, minimumFractionDigits: 0 })}M
+                            return (
+                                <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
+                                    <div className={`max-w-[85%] md:max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
+                                        <div className="text-[10px] text-slate-500 mb-1.5 flex items-center gap-2 px-1">
+                                            <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded ${isMe ? 'bg-indigo-500/10 text-indigo-300' : 'bg-slate-800 text-slate-400'}`}>
+                                                {msg.senderId.slice(0, 4)}...{msg.senderId.slice(-4)}
                                             </span>
-                                        )}
-                                        <span className="opacity-50">•</span>
-                                        <span className="opacity-70">{msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                    </div>
-                                    <div
-                                        className={`p-4 rounded-2xl shadow-sm backdrop-blur-sm border transition-all ${isMe
-                                            ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white rounded-br-sm border-indigo-500/50 shadow-indigo-500/20'
-                                            : 'bg-slate-800/80 text-slate-200 rounded-bl-sm border-white/5 hover:border-white/10'
-                                            }`}
-                                    >
-                                        <div className="text-sm break-all whitespace-pre-wrap leading-relaxed">
-                                            {renderMessageContent(content)}
+                                            {showBalancesRule && balances[msg.senderId] !== undefined && (
+                                                <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                                                    <Coins className="w-2 h-2" />
+                                                    {(balances[msg.senderId] / 1000000).toLocaleString(undefined, { maximumFractionDigits: 1, minimumFractionDigits: 0 })}M
+                                                </span>
+                                            )}
+                                            <span className="opacity-50">•</span>
+                                            <span className="opacity-70">{msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+                                        <div
+                                            className={`p-4 rounded-2xl shadow-sm backdrop-blur-sm border transition-all ${isMe
+                                                ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white rounded-br-sm border-indigo-500/50 shadow-indigo-500/20'
+                                                : 'bg-slate-800/80 text-slate-200 rounded-bl-sm border-white/5 hover:border-white/10'
+                                                }`}
+                                        >
+                                            <div className="text-sm break-all whitespace-pre-wrap leading-relaxed">
+                                                {renderMessageContent(content)}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })
+                            );
+                        })
                 )}
                 <div ref={messagesEndRef} />
             </div>
