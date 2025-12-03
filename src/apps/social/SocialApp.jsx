@@ -5,6 +5,7 @@ import JoinCommunityModal from './components/JoinCommunityModal';
 import CreateCommunityModal from './components/CreateCommunityModal';
 import Sidebar from '../../shared/components/Sidebar';
 import EncryptionLock from '../../shared/components/EncryptionLock';
+import CommunityAgent from './components/CommunityAgent';
 
 export default function SocialApp({
     isAuthReady,
@@ -114,6 +115,9 @@ export default function SocialApp({
                 <CommunityChat
                     communityAddress={activeCommunityId}
                     communityName={activeCommunity?.name}
+                />
+                <CommunityAgent
+                    communityAddress={activeCommunityId}
                 />
             </div>
         </div>

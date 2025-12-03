@@ -36,8 +36,9 @@ export function useMemoTokenBalance({ connection, publicKey, memoMint, isReady }
       setError(null);
 
       // Find the associated token account
+      const mintKey = typeof memoMint === 'string' ? new PublicKey(memoMint) : memoMint;
       const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
-        mint: memoMint,
+        mint: mintKey,
       });
 
       if (tokenAccounts.value.length > 0) {
