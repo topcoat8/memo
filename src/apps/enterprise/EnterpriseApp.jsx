@@ -73,6 +73,18 @@ export default function EnterpriseApp({
         return <EncryptionLock login={login} />;
     }
 
+    const handleSignContract = async (contractData) => {
+        if (!contractData || !contractData.timestamp) return;
+
+        const signaturePayload = JSON.stringify({
+            type: 'contract_signature',
+            contractTimestamp: contractData.timestamp,
+            timestamp: Date.now()
+        });
+
+        await sendMemo(signaturePayload);
+    };
+
     return (
         <div className="flex h-screen w-full bg-slate-950 text-slate-200 overflow-hidden font-sans selection:bg-indigo-500/30">
             <div className={`${showMobileChat ? 'hidden' : 'flex'} md:flex w-full md:w-80 flex-col h-full`}>
@@ -167,6 +179,7 @@ export default function EnterpriseApp({
                     messages={activeMessages}
                     userId={userId}
                     decryptMessage={decryptMessage}
+                    onSignContract={handleSignContract}
                 />
 
                 <MessageInput
