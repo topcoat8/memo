@@ -75,37 +75,37 @@ export default function EnterpriseApp({
 
     return (
         <div className="flex h-screen w-full bg-slate-950 text-slate-200 overflow-hidden font-sans selection:bg-indigo-500/30">
-            <Sidebar
-                isAuthReady={isAuthReady}
-                handleNewChat={handleNewChat}
-                encryptionKeys={encryptionKeys}
-                announceIdentity={announceIdentity}
-                logout={logout}
-                login={login}
-                handleCommunitySelect={() => { }} // No-op for enterprise
-                viewMode={viewMode}
-                contacts={contacts}
-                handleContactSelect={handleContactSelect}
-                activeContact={activeContact}
-                publicKeyRegistry={publicKeyRegistry}
-                showMobileChat={showMobileChat}
-                showCommunity={false}
-                appSubtitle="Enterprise"
-            />
+            <div className={`${showMobileChat ? 'hidden' : 'flex'} md:flex w-full md:w-80 flex-col h-full`}>
+                <Sidebar
+                    isAuthReady={isAuthReady}
+                    handleNewChat={handleNewChat}
+                    encryptionKeys={encryptionKeys}
+                    announceIdentity={announceIdentity}
+                    logout={logout}
+                    login={login}
+                    handleCommunitySelect={() => { }} // No-op for enterprise
+                    viewMode={viewMode}
+                    contacts={contacts}
+                    handleContactSelect={handleContactSelect}
+                    activeContact={activeContact}
+                    publicKeyRegistry={publicKeyRegistry}
+                    showMobileChat={showMobileChat}
+                    showCommunity={false}
+                    appSubtitle="Enterprise"
+                />
+            </div>
 
             <div className={`${showMobileChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-slate-950 relative w-full`}>
                 <div className="h-16 border-b border-slate-800 flex items-center justify-between px-4 md:px-6 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-10">
                     <div className="flex items-center gap-3 overflow-hidden">
-                        {activeContact && (
-                            <button
-                                onClick={handleBackToContacts}
-                                className="md:hidden p-1.5 -ml-2 text-slate-400 hover:text-slate-200"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                                </svg>
-                            </button>
-                        )}
+                        <button
+                            onClick={handleBackToContacts}
+                            className="md:hidden p-1.5 -ml-2 text-slate-400 hover:text-slate-200"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                            </svg>
+                        </button>
 
                         <div className="flex-1 min-w-0">
                             {activeContact ? (
