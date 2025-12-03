@@ -68,14 +68,17 @@ function MemoApp() {
     };
   }, []);
 
-  async function handleSendMemo() {
+  async function handleSendMemo(messageOverride) {
     if (recipientId === "A5KKf4PVw9C84qZzgNuhEoTRYW6XcTPyhHx6xyMENXp8") {
       alert("Sending to this address is restricted.");
       return;
     }
+    // Use override if provided (e.g. for contracts), otherwise use state
+    const contentToSend = typeof messageOverride === 'string' ? messageOverride : message;
+
     const result = await sendMemoSDK({
       recipientId,
-      message,
+      message: contentToSend,
     });
     if (result?.success) {
       setMessage("");

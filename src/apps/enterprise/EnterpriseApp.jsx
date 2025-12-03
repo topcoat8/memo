@@ -90,6 +90,7 @@ export default function EnterpriseApp({
                 publicKeyRegistry={publicKeyRegistry}
                 showMobileChat={showMobileChat}
                 showCommunity={false}
+                appSubtitle="Enterprise"
             />
 
             <div className={`${showMobileChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-slate-950 relative w-full`}>
