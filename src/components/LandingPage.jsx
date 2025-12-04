@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
-import { Shield, Users, ArrowRight, Zap, Globe } from 'lucide-react';
+import { Shield, Users, ArrowRight, Zap, Globe, FileText } from 'lucide-react';
+import coinmunIcon from '../../assets/coinmun.svg';
+import orcaIcon from '../../assets/Orca_Logo.webp';
 
 export default function LandingPage({ onSelect }) {
     return (
@@ -118,6 +120,63 @@ export default function LandingPage({ onSelect }) {
                         </motion.button>
                     </div>
                 )}
+
+                {/* Resources & Socials */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-4xl px-4"
+                >
+                    {/* X (Twitter) */}
+                    <a
+                        href="https://x.com/MemoOnSol"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-white/5 transition-all group border-slate-800/50 hover:border-slate-700"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" className="w-6 h-6 fill-slate-400 group-hover:fill-white transition-colors">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                        </svg>
+                        <span className="text-sm font-medium text-slate-400 group-hover:text-white">Follow Updates</span>
+                    </a>
+
+                    {/* CoinMun */}
+                    <a
+                        href="https://coinmun.com/coins/memo-protocol"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-white/5 transition-all group border-slate-800/50 hover:border-slate-700"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors p-1.5">
+                            <img src={coinmunIcon} alt="CoinMun" className="w-full h-full object-contain" />
+                        </div>
+                        <span className="text-sm font-medium text-slate-400 group-hover:text-white">CoinMun</span>
+                    </a>
+
+                    {/* Orca */}
+                    <a
+                        href="https://www.orca.so/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-white/5 transition-all group border-slate-800/50 hover:border-slate-700"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-yellow-400/10 flex items-center justify-center group-hover:bg-yellow-400/20 transition-colors p-1">
+                            <img src={orcaIcon} alt="Orca" className="w-full h-full object-contain" />
+                        </div>
+                        <span className="text-sm font-medium text-slate-400 group-hover:text-white">Buy on Orca</span>
+                    </a>
+
+                    {/* Whitepaper */}
+                    <div className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center gap-2 border-slate-800/50 opacity-75 cursor-not-allowed relative overflow-hidden">
+                        <div className="absolute inset-0 bg-slate-900/50 z-10" />
+                        <div className="absolute top-2 right-2 z-20">
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">SOON</span>
+                        </div>
+                        <FileText className="w-6 h-6 text-slate-500" />
+                        <span className="text-sm font-medium text-slate-500">Whitepaper</span>
+                    </div>
+                </motion.div>
             </div>
         </div>
     );
