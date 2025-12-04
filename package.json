@@ -21,6 +21,7 @@
     "buffer": "^6.0.3",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.23.24",
+    "jspdf": "^3.0.4",
     "lucide-react": "^0.555.0",
     "node-fetch": "^2.7.0",
     "pako": "^2.1.0",

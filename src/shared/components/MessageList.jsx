@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useMemo } from 'react';
+import { generateContractPDF } from '../utils/pdfGenerator';
 
 export default function MessageList({ messages, userId, decryptMessage, allowImages = true, onSignContract }) {
     const messagesEndRef = useRef(null);
@@ -53,14 +54,29 @@ export default function MessageList({ messages, userId, decryptMessage, allowIma
                             </svg>
                             <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider">Contract</span>
                         </div>
-                        {isSigned && (
-                            <div className="flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 text-emerald-400">
-                                    <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                        <div className="flex items-center gap-2">
+                            {isSigned && (
+                                <div className="flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 text-emerald-400">
+                                        <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                                    </svg>
+                                    <span className="text-[10px] font-bold text-emerald-400">SIGNED</span>
+                                </div>
+                            )}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    generateContractPDF(data.title, data.content, isSigned ? signature : null);
+                                }}
+                                className="text-indigo-400 hover:text-indigo-300 transition-colors p-1 hover:bg-indigo-500/10 rounded"
+                                title="Download PDF"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                                    <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.965 3.129V2.75z" />
+                                    <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" />
                                 </svg>
-                                <span className="text-[10px] font-bold text-emerald-400">SIGNED</span>
-                            </div>
-                        )}
+                            </button>
+                        </div>
                     </div>
                     <div className="p-4">
                         <h4 className="font-bold text-slate-200 mb-2 text-lg">{data.title}</h4>
