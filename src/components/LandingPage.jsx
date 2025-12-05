@@ -156,7 +156,7 @@ export default function LandingPage({ onSelect }) {
 
                     {/* Orca */}
                     <a
-                        href="https://www.orca.so/"
+                        href="https://www.orca.so/?tokenIn=So11111111111111111111111111111111111111112&tokenOut=8ZQme2xv6prRKkKNA4PTn5DSXUTdY6yeoc5yDkm7pump"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-white/5 transition-all group border-slate-800/50 hover:border-slate-700"

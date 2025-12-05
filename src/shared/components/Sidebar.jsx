@@ -89,8 +89,8 @@ export default function Sidebar({
                             </button>
                         )
                     ) : (
-                        <div className="opacity-50 pointer-events-none scale-95 origin-top">
-                            <WalletMultiButton />
+                        <div className="mt-2">
+                            <WalletMultiButton className="!bg-indigo-600 hover:!bg-indigo-500 !text-white !font-bold !text-xs !h-10 !w-full !justify-center !rounded-lg !transition-all !shadow-lg !shadow-indigo-500/20" />
                         </div>
                     )}
                 </div>
@@ -237,9 +237,11 @@ export default function Sidebar({
             )}
 
             {/* Footer */}
-            <div className="p-4 border-t border-white/5 bg-black/20">
-                <WalletMultiButton className="!bg-white/5 hover:!bg-white/10 !text-slate-300 hover:!text-white !font-medium !text-sm !h-11 !w-full !justify-center !rounded-xl !transition-all !border !border-white/5" />
-            </div>
+            {isAuthReady && (
+                <div className="p-4 border-t border-white/5 bg-black/20">
+                    <WalletMultiButton className="!bg-white/5 hover:!bg-white/10 !text-slate-300 hover:!text-white !font-medium !text-sm !h-11 !w-full !justify-center !rounded-xl !transition-all !border !border-white/5" />
+                </div>
+            )}
         </div>
     );
 }

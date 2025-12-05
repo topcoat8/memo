@@ -57,8 +57,8 @@ export default function SocialApp({
     };
 
     // Lock Screen
-    if (isAuthReady && !encryptionKeys) {
-        return <EncryptionLock login={login} />;
+    if (isAuthReady && !encryptionKeys && userId) {
+        return <EncryptionLock login={login} userId={userId} />;
     }
 
     return (
@@ -115,6 +115,7 @@ export default function SocialApp({
                 <CommunityChat
                     communityAddress={activeCommunityId}
                     communityName={activeCommunity?.name}
+                    readOnly={!userId}
                 />
                 <CommunityAgent
                     communityAddress={activeCommunityId}

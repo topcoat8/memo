@@ -1,6 +1,9 @@
 import React from 'react';
 
-export default function EncryptionLock({ login }) {
+export default function EncryptionLock({ login, userId }) {
+    // If no userId (not connected), we don't show the lock screen
+    if (!userId) return null;
+
     return (
         <div className="flex h-screen w-full bg-slate-950 text-slate-200 items-center justify-center p-4">
             <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-xl p-8 text-center shadow-2xl">

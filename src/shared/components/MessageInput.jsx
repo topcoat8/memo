@@ -9,6 +9,7 @@ export default function MessageInput({
     error,
     successMessage,
     allowImages = true,
+    readOnly = false,
 }) {
     const [isContractMode, setIsContractMode] = useState(false);
     const [contractTitle, setContractTitle] = useState("");
@@ -224,7 +225,7 @@ export default function MessageInput({
                             handleSendClick();
                         }
                     }}
-                    placeholder={!disabled ? (isContractMode ? "Enter contract details..." : "Type a message...") : "Select a contact first"}
+                    placeholder={!disabled ? (isContractMode ? "Enter contract details..." : "Type a message...") : (readOnly ? "Connect wallet to send messages" : "Select a contact first")}
                     disabled={disabled || isLoading}
                     className={`flex-1 bg-slate-900 border text-slate-200 p-3 text-sm focus:ring-1 outline-none resize-none h-12 disabled:opacity-50 rounded-lg transition-all ${isContractMode ? 'border-indigo-500/50 focus:border-indigo-500 focus:ring-indigo-500' : 'border-slate-700 focus:border-indigo-500 focus:ring-indigo-500'}`}
                 />

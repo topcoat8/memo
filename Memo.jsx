@@ -106,13 +106,13 @@ function MemoApp() {
     publicKeyRegistry,
   };
 
+  const isWalletConnected = !!publicKey;
+
   if (!appMode) {
     return <LandingPage onSelect={setAppMode} />;
   }
 
-  if (!publicKey) {
-    return <ConnectWalletPage onBack={() => setAppMode(null)} />;
-  }
+  // Removed blocking ConnectWalletPage check to allow read-only access
 
   return (
     <>
@@ -160,9 +160,9 @@ function MemoApp() {
       </button>
 
       {appMode === 'social' ? (
-        <SocialApp {...commonProps} />
+        <SocialApp {...commonProps} isWalletConnected={isWalletConnected} />
       ) : (
-        <EnterpriseApp {...commonProps} />
+        <EnterpriseApp {...commonProps} isWalletConnected={isWalletConnected} />
       )}
     </>
   );

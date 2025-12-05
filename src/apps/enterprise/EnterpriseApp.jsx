@@ -69,8 +69,8 @@ export default function EnterpriseApp({
     const isValidRecipient = !recipientId || isValidWalletAddress(recipientId);
 
     // Lock Screen
-    if (isAuthReady && !encryptionKeys) {
-        return <EncryptionLock login={login} />;
+    if (isAuthReady && !encryptionKeys && userId) {
+        return <EncryptionLock login={login} userId={userId} />;
     }
 
     const handleSignContract = async (contractData) => {
@@ -187,9 +187,10 @@ export default function EnterpriseApp({
                     setMessage={setMessage}
                     onSend={sendMemo}
                     isLoading={isLoading}
-                    disabled={!activeContact}
+                    disabled={!activeContact || !userId}
                     error={error}
                     successMessage={successMessage}
+                    readOnly={!userId}
                 />
             </div>
         </div>
