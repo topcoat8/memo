@@ -29,14 +29,25 @@ export function useChatTokenBalances({ connection, tokenMint, userIds }) {
                 // Deduplicate user IDs
                 const uniqueIds = [...new Set(userIds)];
 
+                // Ensure tokenMint is a PublicKey
+                let mintKey = tokenMint;
+                if (typeof tokenMint === 'string') {
+                    try {
+                        mintKey = new PublicKey(tokenMint);
+                    } catch (e) {
+                        console.error("Invalid token mint string:", tokenMint);
+                        return;
+                    }
+                }
+
                 // Derive ATAs for all users
                 const ataPromises = uniqueIds.map(async (userId) => {
                     try {
                         const userPubkey = new PublicKey(userId);
-                        const ata = await getAssociatedTokenAddress(tokenMint, userPubkey);
+                        const ata = await getAssociatedTokenAddress(mintKey, userPubkey);
                         return { userId, ata };
                     } catch (e) {
-                        console.warn(`Invalid public key: ${userId}`);
+                        console.warn(`Invalid public key or ATA derivation failed for user: ${userId}`, e);
                         return null;
                     }
                 });
@@ -56,6 +67,9 @@ export function useChatTokenBalances({ connection, tokenMint, userIds }) {
 
                 for (const chunk of chunks) {
                     const accountInfos = await connection.getMultipleAccountsInfo(chunk);
+
+                    // Process batch results
+                    const fallbackPromises = [];
 
                     chunk.forEach((ata, i) => {
                         const info = accountInfos[i];
@@ -97,9 +111,35 @@ export function useChatTokenBalances({ connection, tokenMint, userIds }) {
                                 newBalances[derivedEntry.userId] = 0;
                             }
                         } else {
-                            newBalances[derivedEntry.userId] = 0;
+                            // ATA not found, queue fallback fetch
+                            fallbackPromises.push(async () => {
+                                try {
+                                    const userPubkey = new PublicKey(derivedEntry.userId);
+                                    const accounts = await connection.getParsedTokenAccountsByOwner(userPubkey, {
+                                        mint: mintKey
+                                    });
+
+                                    const total = accounts.value.reduce((acc, accInfo) => {
+                                        return acc + Number(accInfo.account.data.parsed.info.tokenAmount.amount);
+                                    }, 0);
+
+                                    return { userId: derivedEntry.userId, amount: total };
+                                } catch (e) {
+                                    console.warn(`Fallback fetch failed for ${derivedEntry.userId}`, e);
+                                    return { userId: derivedEntry.userId, amount: 0 };
+                                }
+                            });
                         }
                     });
+
+                    // Execute fallbacks in parallel (but limited by chunk size which is 100, might be too many)
+                    // Let's execute them.
+                    if (fallbackPromises.length > 0) {
+                        const results = await Promise.all(fallbackPromises.map(p => p()));
+                        results.forEach(r => {
+                            newBalances[r.userId] = r.amount;
+                        });
+                    }
                 }
 
                 if (mounted) setBalances(newBalances);

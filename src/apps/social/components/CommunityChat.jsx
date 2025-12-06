@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useCommunityMessages, useMemoContext, useMemo as useMemoProtocol, useChatTokenBalances } from '../../../shared/index';
+import { useCommunityMessages, useMemoContext, useMemo as useMemoProtocol, useChatTokenBalances, isValidWalletAddress } from '../../../shared/index';
+import { COMMUNITY_ADDRESS } from '../../../shared/constants';
 import { Send, Info, Hash, Users, Coins } from 'lucide-react';
 import communityIcon from '../../../../assets/pfp.jpg';
 import ReactMarkdown from 'react-markdown';
@@ -30,7 +31,7 @@ export default function CommunityChat({ communityAddress, communityName = "Commu
     // Get unique sender IDs for balance fetching
     const senderIds = React.useMemo(() => {
         if (!memos) return [];
-        return [...new Set(memos.map(m => m.senderId))];
+        return [...new Set(memos.map(m => m.senderId))].filter(id => isValidWalletAddress(id));
     }, [memos]);
 
     const { balances } = useChatTokenBalances({
@@ -41,6 +42,11 @@ export default function CommunityChat({ communityAddress, communityName = "Commu
 
     // Check for showBalances rule
     const showBalancesRule = React.useMemo(() => {
+        // Always show balances for the main community
+        if (communityAddress === COMMUNITY_ADDRESS) {
+            return true;
+        }
+
         const rulesMsg = memos.find(m => m.decryptedContent && m.decryptedContent.includes('COMMUNITY_RULES'));
         if (rulesMsg) {
             try {
@@ -51,7 +57,9 @@ export default function CommunityChat({ communityAddress, communityName = "Commu
             }
         }
         return false;
-    }, [memos]);
+    }, [memos, communityAddress]);
+
+
 
     useEffect(() => {
         if (messagesEndRef.current) {
@@ -108,7 +116,7 @@ export default function CommunityChat({ communityAddress, communityName = "Commu
         return (
             <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
-                className="markdown-content"
+
                 components={{
                     h1: ({ node, ...props }) => <h1 className="text-lg font-bold text-indigo-300 mb-2 mt-2 border-b border-indigo-500/30 pb-1" {...props} />,
                     h2: ({ node, ...props }) => <h2 className="text-base font-bold text-indigo-200 mb-2 mt-2" {...props} />,
@@ -235,7 +243,7 @@ export default function CommunityChat({ communityAddress, communityName = "Commu
                                             {showBalancesRule && balances[msg.senderId] !== undefined && (
                                                 <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
                                                     <Coins className="w-2 h-2" />
-                                                    {(balances[msg.senderId] / 1000000).toLocaleString(undefined, { maximumFractionDigits: 1, minimumFractionDigits: 0 })}M
+                                                    {(balances[msg.senderId] / 1000000).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                                                 </span>
                                             )}
                                             <span className="opacity-50">•</span>
