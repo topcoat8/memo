@@ -28,7 +28,20 @@ import {
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import '@solana/wallet-adapter-react-ui/styles.css';
 
-const wallets = [];
+import { SolanaMobileWalletAdapter } from '@solana-mobile/wallet-adapter-mobile';
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
+
+const wallets = [
+  new SolanaMobileWalletAdapter({
+    appIdentity: {
+      name: 'Memo',
+      uri: 'https://memo.app',
+      icon: '/pfp.jpg',
+    },
+    authorizationResultCache: localStorage,
+  }),
+  new PhantomWalletAdapter(),
+];
 
 import ErrorBoundary from './src/components/ErrorBoundary';
 
