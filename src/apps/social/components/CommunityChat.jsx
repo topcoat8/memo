@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useCommunityMessages, useMemoContext, useMemo as useMemoProtocol, useChatTokenBalances } from '../../../shared/index';
 import { Send, Info, Hash, Users, Coins } from 'lucide-react';
 import communityIcon from '../../../../assets/pfp.jpg';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function CommunityChat({ communityAddress, communityName = "Community Wall" }) {
     const { connection, publicKey, userId, isReady, wallet, tokenMint, encryptionKeys } = useMemoContext();
@@ -103,7 +105,39 @@ export default function CommunityChat({ communityAddress, communityName = "Commu
         } catch (e) {
             // Not JSON or invalid, render as text
         }
-        return text;
+        return (
+            <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                className="markdown-content"
+                components={{
+                    h1: ({ node, ...props }) => <h1 className="text-lg font-bold text-indigo-300 mb-2 mt-2 border-b border-indigo-500/30 pb-1" {...props} />,
+                    h2: ({ node, ...props }) => <h2 className="text-base font-bold text-indigo-200 mb-2 mt-2" {...props} />,
+                    h3: ({ node, ...props }) => <h3 className="text-sm font-bold text-slate-200 mb-1 mt-1" {...props} />,
+                    p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                    ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-2 space-y-1" {...props} />,
+                    ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-2 space-y-1" {...props} />,
+                    li: ({ node, ...props }) => <li className="text-slate-300" {...props} />,
+                    a: ({ node, ...props }) => <a className="text-indigo-400 hover:text-indigo-300 underline decoration-indigo-500/30 hover:decoration-indigo-300 transition-colors" target="_blank" rel="noopener noreferrer" {...props} />,
+                    blockquote: ({ node, ...props }) => <blockquote className="border-l-2 border-indigo-500/50 pl-3 italic text-slate-400 my-2 bg-indigo-500/5 py-1 pr-2 rounded-r" {...props} />,
+                    code: ({ node, inline, className, children, ...props }) => {
+                        return inline ? (
+                            <code className="bg-black/30 px-1.5 py-0.5 rounded text-indigo-300 font-mono text-xs border border-indigo-500/20" {...props}>
+                                {children}
+                            </code>
+                        ) : (
+                            <code className="block bg-black/30 p-3 rounded-lg text-slate-300 font-mono text-xs border border-indigo-500/20 overflow-x-auto my-2" {...props}>
+                                {children}
+                            </code>
+                        );
+                    },
+                    table: ({ node, ...props }) => <div className="overflow-x-auto my-2"><table className="min-w-full divide-y divide-white/10 border border-white/10 rounded-lg" {...props} /></div>,
+                    th: ({ node, ...props }) => <th className="px-3 py-2 text-left text-xs font-medium text-indigo-300 uppercase tracking-wider bg-black/20" {...props} />,
+                    td: ({ node, ...props }) => <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-300 border-t border-white/5" {...props} />,
+                }}
+            >
+                {text}
+            </ReactMarkdown>
+        );
     };
 
     if (!communityAddress || communityAddress === "INSERT_COMMUNITY_ADDRESS_HERE") {
