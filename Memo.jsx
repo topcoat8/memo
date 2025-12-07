@@ -3,6 +3,7 @@ import { MemoProvider, useMemoContext, useMemo as useMemoProtocol, useMemoMessag
 import SocialApp from './src/apps/social/SocialApp';
 import EnterpriseApp from './src/apps/enterprise/EnterpriseApp';
 import LandingPage from './src/components/LandingPage';
+import WhitepaperPage from './src/components/WhitepaperPage';
 import ConnectWalletPage from './src/components/ConnectWalletPage';
 import { XCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 
@@ -14,7 +15,37 @@ function MemoApp() {
   const [recipientId, setRecipientId] = useState("");
   const [message, setMessage] = useState("");
   const [globalError, setGlobalError] = useState(null);
-  const [appMode, setAppMode] = useState(null); // 'social' | 'enterprise' | null
+  // Initialize state based on current URL
+  const [appMode, setAppMode] = useState(() => {
+    if (typeof window !== 'undefined' && window.location.pathname === '/whitepaper') {
+      return 'whitepaper';
+    }
+    return null;
+  });
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      if (window.location.pathname === '/whitepaper') {
+        setAppMode('whitepaper');
+      } else {
+        setAppMode(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Wrapper to update URL when changing modes
+  const handleModeChange = (mode) => {
+    setAppMode(mode);
+    if (mode === 'whitepaper') {
+      window.history.pushState(null, '', '/whitepaper');
+    } else {
+      window.history.pushState(null, '', '/');
+    }
+  };
 
   const { memos, loading: messagesLoading, publicKeyRegistry, decrypt } = useMemoMessages({
     connection: isReady ? connection : null,
@@ -108,8 +139,12 @@ function MemoApp() {
 
   const isWalletConnected = !!publicKey;
 
+  if (appMode === 'whitepaper') {
+    return <WhitepaperPage onBack={() => handleModeChange(null)} />;
+  }
+
   if (!appMode) {
-    return <LandingPage onSelect={setAppMode} />;
+    return <LandingPage onSelect={handleModeChange} />;
   }
 
   // Removed blocking ConnectWalletPage check to allow read-only access
@@ -152,7 +187,7 @@ function MemoApp() {
 
       {/* Back to Home Button (Dev/Demo purpose) */}
       <button
-        onClick={() => setAppMode(null)}
+        onClick={() => handleModeChange(null)}
         className="fixed bottom-6 right-6 z-50 glass p-3 rounded-full text-slate-400 hover:text-white hover:scale-110 transition-all shadow-lg"
         title="Switch App Mode"
       >

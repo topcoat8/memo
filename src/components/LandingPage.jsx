@@ -168,14 +168,13 @@ export default function LandingPage({ onSelect }) {
                     </a>
 
                     {/* Whitepaper */}
-                    <div className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center gap-2 border-slate-800/50 opacity-75 cursor-not-allowed relative overflow-hidden">
-                        <div className="absolute inset-0 bg-slate-900/50 z-10" />
-                        <div className="absolute top-2 right-2 z-20">
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">SOON</span>
-                        </div>
-                        <FileText className="w-6 h-6 text-slate-500" />
-                        <span className="text-sm font-medium text-slate-500">Whitepaper</span>
-                    </div>
+                    <button
+                        onClick={() => onSelect('whitepaper')}
+                        className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-white/5 transition-all group border-slate-800/50 hover:border-slate-700"
+                    >
+                        <FileText className="w-6 h-6 text-slate-400 group-hover:text-white transition-colors" />
+                        <span className="text-sm font-medium text-slate-400 group-hover:text-white">Whitepaper</span>
+                    </button>
                 </motion.div>
             </div>
         </div>
