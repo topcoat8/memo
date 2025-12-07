@@ -1,7 +1,7 @@
 # Memo Protocol: The Immutable Communication Layer for the Solana Ecosystem
 
-**Version:** 1.0
-**Date:** December 2025
+**Version:** 1.0  
+**Date:** December 2025  
 **Status:** Mainnet Beta
 
 ## Abstract
@@ -28,6 +28,7 @@ At the heart of Memo is the Smart Transfer mechanism. This proprietary logic opt
 
 * **New Connections:** When a user messages a new wallet, the protocol automatically detects the empty state. It attaches a Rent Exemption transfer of approximately 0.001 SOL. This initializes the recipient's account on-chain and effectively pays for the postage to guarantee the message inbox exists.
 * **Existing Connections:** Established connections switch to a 0 SOL transfer value. This incurs only the standard Solana network fee of roughly 0.000005 SOL.
+* **Wallet Bundling:** Due to the nature of the protocol, wallets that communicate will appear bundled on-chain as there is a direct transaction between the two parties. This creates a verifiable graph of social connections.
 
 This dynamic switching ensures Memo works as both a user-onboarding tool and a high-frequency messaging layer.
 
@@ -82,7 +83,7 @@ The protocol includes a PDF generator. It compiles the negotiation history and s
 
 The $MEMO token serves as the access key to advanced features.
 
-* **Developer Lock:** 5% of the total token supply is locked by the developer team. This aligns incentives with the long-term success of the protocol.
+* **Developer Lock:** 5% of the total token supply is locked by the developer team until May 26. This aligns incentives with the long-term success of the protocol. [View Lock Contract](https://app.streamflow.finance/contract/solana/mainnet/58Et2ezmVomRBjx9kBRE5q5FeKkUtPStU9Es6sL2nvVa)
 * **Community Creation:** Creating a new token-gated community requires holding 500,000 $MEMO. This ensures only committed project founders can establish official channels.
 * **Governance:** Future updates will allow $MEMO holders to vote on protocol upgrades and fee structures.
 
