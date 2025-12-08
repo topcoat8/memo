@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Wallet, ArrowLeft } from 'lucide-react';
+import { Wallet, ArrowLeft, Shield, Lock, Eye } from 'lucide-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 export default function ConnectWalletPage({ onBack }) {
@@ -43,7 +43,37 @@ export default function ConnectWalletPage({ onBack }) {
                         </div>
                     </div>
 
-                    <p className="mt-8 text-xs text-slate-500">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-left">
+                        <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                            <div className="flex items-center gap-2 mb-1 text-emerald-400">
+                                <Eye className="w-4 h-4" />
+                                <span className="text-xs font-bold uppercase tracking-wider">Read-Only</span>
+                            </div>
+                            <p className="text-[10px] text-slate-400 leading-relaxed">
+                                We only read your public address. We cannot access your private keys.
+                            </p>
+                        </div>
+                        <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                            <div className="flex items-center gap-2 mb-1 text-indigo-400">
+                                <Shield className="w-4 h-4" />
+                                <span className="text-xs font-bold uppercase tracking-wider">Non-Custodial</span>
+                            </div>
+                            <p className="text-[10px] text-slate-400 leading-relaxed">
+                                Your funds stay in your wallet. We cannot move or touch your assets.
+                            </p>
+                        </div>
+                        <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                            <div className="flex items-center gap-2 mb-1 text-purple-400">
+                                <Lock className="w-4 h-4" />
+                                <span className="text-xs font-bold uppercase tracking-wider">Encrypted</span>
+                            </div>
+                            <p className="text-[10px] text-slate-400 leading-relaxed">
+                                Messages are end-to-end encrypted. Only you and the recipient can read them.
+                            </p>
+                        </div>
+                    </div>
+
+                    <p className="mt-4 text-xs text-slate-500">
                         By connecting, you agree to the Terms of Service and Privacy Policy.
                     </p>
                 </div>

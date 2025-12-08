@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { isValidWalletAddress } from '../../../shared/utils/encryption';
 import { PublicKey, Keypair } from '@solana/web3.js';
 import { useMemoContext, useMemo as useMemoProtocol, useMemoTokenBalance } from '../../../shared/index';
-import { X, Users, Wallet, Coins, Shield, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, Users, Wallet, Coins, Shield, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 
 export default function CreateCommunityModal({ isOpen, onClose, onCreated }) {
     const { connection, publicKey, userId, isReady, wallet, tokenMint, encryptionKeys } = useMemoContext();
@@ -39,6 +39,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreated }) {
 
     const [isWhalesOnly, setIsWhalesOnly] = useState(false);
     const [showBalances, setShowBalances] = useState(false);
+    const [retentionPeriod, setRetentionPeriod] = useState(3 * 24 * 60 * 60); // Default 3 days
 
     // Fetch Token Supply when mint changes
     useEffect(() => {
@@ -111,7 +112,8 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreated }) {
             tokenMint: ruleTokenMint.trim(),
             minBalance: minBalance ? parseFloat(minBalance) : 0,
             whalePercentage: isWhalesOnly ? whalePercentage : 0,
-            showBalances: showBalances
+            showBalances: showBalances,
+            retentionPeriod: retentionPeriod
         };
 
         try {
@@ -303,6 +305,38 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreated }) {
                             </div>
                             <p className="text-[10px] text-slate-500 mt-2 ml-6">
                                 If enabled, everyone in the chat will see each other's token balances. This cannot be changed later.
+                            </p>
+                        </div>
+
+                        <div className="pt-4 border-t border-white/5">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="w-4 h-4 text-indigo-400" />
+                                    <h3 className="text-sm font-medium text-slate-300">Message Retention</h3>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                                {[
+                                    { label: '24 Hours', value: 24 * 60 * 60 },
+                                    { label: '3 Days', value: 3 * 24 * 60 * 60 },
+                                    { label: '7 Days', value: 7 * 24 * 60 * 60 },
+                                    { label: 'Forever', value: 0 }
+                                ].map((option) => (
+                                    <button
+                                        key={option.label}
+                                        type="button"
+                                        onClick={() => setRetentionPeriod(option.value)}
+                                        className={`p-2 rounded-lg text-xs font-medium border transition-all ${retentionPeriod === option.value
+                                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                                            : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                                            }`}
+                                    >
+                                        {option.label}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-[10px] text-slate-500 mt-2">
+                                Messages older than this limit will not be loaded for users. "Forever" means no limit (up to 7 days due to RPC constraints).
                             </p>
                         </div>
 

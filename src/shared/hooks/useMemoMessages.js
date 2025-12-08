@@ -10,7 +10,7 @@ import { PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { Buffer } from 'buffer';
 import { decryptMessageFromChain, decryptMessageAsymmetric, base64ToUint8Array } from '../utils/encryption';
-import { MEMO_PROGRAM_ID, THREE_DAYS_IN_SECONDS } from '../constants';
+import { MEMO_PROGRAM_ID, DEFAULT_RETENTION_SECONDS } from '../constants';
 
 /**
  * Filters messages for a conversation between two wallets
@@ -127,9 +127,9 @@ export function useMemoMessages({
         // 4. Sort by blockTime desc
         uniqueSignatures.sort((a, b) => (b.blockTime || 0) - (a.blockTime || 0));
 
-        // 5. Filter by time (3 days)
+        // 5. Filter by time (Default 7 days)
         const nowInSeconds = Math.floor(Date.now() / 1000);
-        const cutoffTime = nowInSeconds - THREE_DAYS_IN_SECONDS;
+        const cutoffTime = nowInSeconds - DEFAULT_RETENTION_SECONDS;
 
         const recentSignatures = [];
         for (const sig of uniqueSignatures) {

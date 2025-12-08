@@ -10,7 +10,7 @@ import { PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { Buffer } from 'buffer';
 import { decryptMessageFromChain, base64ToUint8Array } from '../utils/encryption';
-import { MEMO_PROGRAM_ID, THREE_DAYS_IN_SECONDS, COMMUNITY_ADDRESS } from '../constants';
+import { MEMO_PROGRAM_ID, DEFAULT_RETENTION_SECONDS, COMMUNITY_ADDRESS } from '../constants';
 
 /**
  * Hook for retrieving community messages
@@ -92,9 +92,9 @@ export function useCommunityMessages({
                 // 4. Sort by blockTime desc
                 uniqueSignatures.sort((a, b) => (b.blockTime || 0) - (a.blockTime || 0));
 
-                // 5. Filter by time (3 days)
+                // 5. Filter by time (Default 7 days max fetch)
                 const nowInSeconds = Math.floor(Date.now() / 1000);
-                const cutoffTime = nowInSeconds - THREE_DAYS_IN_SECONDS;
+                const cutoffTime = nowInSeconds - DEFAULT_RETENTION_SECONDS;
 
                 const recentSignatures = [];
                 for (const sig of uniqueSignatures) {
@@ -259,8 +259,35 @@ export function useCommunityMessages({
                     decryptedMessages.splice(limitCount);
                 }
 
+                // 6. Apply Dynamic Retention Rule
+                const rulesMsg = decryptedMessages.find(m => m.decryptedContent && m.decryptedContent.includes('COMMUNITY_RULES'));
+                let retentionSeconds = 3 * 24 * 60 * 60; // Default 3 days if no rule found
+
+                if (rulesMsg) {
+                    try {
+                        const parsed = JSON.parse(rulesMsg.decryptedContent);
+                        if (parsed.retentionPeriod !== undefined) {
+                            retentionSeconds = parsed.retentionPeriod;
+                        }
+                    } catch (e) {
+                        // Keep default
+                    }
+                }
+
+                // If retention is 0 (Forever), we keep everything we fetched (up to 7 days hard limit)
+                // Otherwise, filter based on the rule
+                let finalMessages = decryptedMessages;
+                if (retentionSeconds > 0) {
+                    const dynamicCutoff = nowInSeconds - retentionSeconds;
+                    finalMessages = decryptedMessages.filter(m => {
+                        // Always keep the rules message itself so we know the rules!
+                        if (m.id === rulesMsg?.id) return true;
+                        return (m.timestamp || 0) > dynamicCutoff;
+                    });
+                }
+
                 if (isMounted) {
-                    setMemos(decryptedMessages);
+                    setMemos(finalMessages);
                     setLoading(false);
                 }
             } catch (err) {

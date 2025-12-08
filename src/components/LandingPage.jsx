@@ -62,59 +62,32 @@ export default function LandingPage({ onSelect }) {
                         </a>
                     </motion.div>
                 ) : (
-                    <div className="grid md:grid-cols-2 gap-6 md:gap-8 w-full px-4">
-                        {/* Enterprise Card */}
+                    <div className="w-full max-w-2xl mx-auto px-4">
                         <motion.button
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            onClick={() => onSelect('enterprise')}
-                            className="group relative glass-card p-6 md:p-8 rounded-3xl text-left transition-all hover:scale-[1.02] hover:shadow-indigo-500/20"
+                            onClick={() => onSelect('app')}
+                            className="group relative w-full glass-card p-8 md:p-10 rounded-3xl text-left transition-all hover:scale-[1.02] hover:shadow-indigo-500/20 overflow-hidden"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
+                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                            <div className="relative z-10">
-                                <div className="w-14 h-14 bg-indigo-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform">
-                                    <Shield className="w-7 h-7 text-indigo-400" />
+                            <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
+                                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-300 shrink-0">
+                                    <Shield className="w-8 h-8 text-indigo-400" />
                                 </div>
 
-                                <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">Enterprise</h2>
-                                <p className="text-slate-400 mb-8 leading-relaxed text-sm md:text-base">
-                                    Bank-grade security for high-stakes environments.
-                                    Immutable records, legal admissibility, and strict access control.
-                                </p>
+                                <div className="flex-1">
+                                    <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">Launch Workspace</h2>
+                                    <p className="text-slate-400 mb-6 leading-relaxed text-sm md:text-base">
+                                        Access your unified workspace for secure communication.
+                                        Connect with communities and manage private contracts in one place.
+                                    </p>
 
-                                <div className="flex items-center gap-2 text-indigo-400 font-medium group-hover:gap-4 transition-all">
-                                    <span>Access Workspace</span>
-                                    <ArrowRight className="w-4 h-4" />
-                                </div>
-                            </div>
-                        </motion.button>
-
-                        {/* Social Card */}
-                        <motion.button
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.3 }}
-                            onClick={() => onSelect('social')}
-                            className="group relative glass-card p-6 md:p-8 rounded-3xl text-left transition-all hover:scale-[1.02] hover:shadow-emerald-500/20"
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
-
-                            <div className="relative z-10">
-                                <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:-rotate-6 transition-transform">
-                                    <Users className="w-7 h-7 text-emerald-400" />
-                                </div>
-
-                                <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">Social</h2>
-                                <p className="text-slate-400 mb-8 leading-relaxed text-sm md:text-base">
-                                    Your wallet is your social graph. Connect with communities,
-                                    token-gated chats, and direct messaging.
-                                </p>
-
-                                <div className="flex items-center gap-2 text-emerald-400 font-medium group-hover:gap-4 transition-all">
-                                    <span>Launch App</span>
-                                    <ArrowRight className="w-4 h-4" />
+                                    <div className="inline-flex items-center gap-2 text-indigo-400 font-medium group-hover:gap-4 transition-all bg-white/5 px-6 py-3 rounded-xl group-hover:bg-white/10">
+                                        <span>Enter App</span>
+                                        <ArrowRight className="w-4 h-4" />
+                                    </div>
                                 </div>
                             </div>
                         </motion.button>

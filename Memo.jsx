@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { MemoProvider, useMemoContext, useMemo as useMemoProtocol, useMemoMessages } from './src/shared/index';
-import SocialApp from './src/apps/social/SocialApp';
-import EnterpriseApp from './src/apps/enterprise/EnterpriseApp';
+import UnifiedApp from './src/apps/unified/UnifiedApp';
 import LandingPage from './src/components/LandingPage';
 import WhitepaperPage from './src/components/WhitepaperPage';
 import ConnectWalletPage from './src/components/ConnectWalletPage';
@@ -185,20 +184,9 @@ function MemoApp() {
         </div>
       ) : null}
 
-      {/* Back to Home Button (Dev/Demo purpose) */}
-      <button
-        onClick={() => handleModeChange(null)}
-        className="fixed bottom-6 right-6 z-50 glass p-3 rounded-full text-slate-400 hover:text-white hover:scale-110 transition-all shadow-lg"
-        title="Switch App Mode"
-      >
-        <ArrowLeft className="w-5 h-5" />
-      </button>
 
-      {appMode === 'social' ? (
-        <SocialApp {...commonProps} isWalletConnected={isWalletConnected} />
-      ) : (
-        <EnterpriseApp {...commonProps} isWalletConnected={isWalletConnected} />
-      )}
+
+      <UnifiedApp {...commonProps} isWalletConnected={isWalletConnected} />
     </>
   );
 }

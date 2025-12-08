@@ -168,7 +168,7 @@ export default function CommunityChat({ communityAddress, communityName = "Commu
     return (
         <div className="flex flex-col h-full relative w-full">
             {/* Header */}
-            <div className="h-24 border-b border-white/5 flex items-center justify-between px-6 bg-slate-900/40 backdrop-blur-xl sticky top-0 z-20">
+            <div className="h-24 border-b border-white/5 flex items-center justify-between px-6 glass-panel sticky top-0 z-20">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 shadow-lg shadow-indigo-500/10">
                         <img src={communityIcon} alt="Community" className="w-full h-full object-cover" />
@@ -250,9 +250,9 @@ export default function CommunityChat({ communityAddress, communityName = "Commu
                                             <span className="opacity-70">{msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
                                         <div
-                                            className={`p-4 rounded-2xl shadow-sm backdrop-blur-sm border transition-all ${isMe
-                                                ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white rounded-br-sm border-indigo-500/50 shadow-indigo-500/20'
-                                                : 'bg-slate-800/80 text-slate-200 rounded-bl-sm border-white/5 hover:border-white/10'
+                                            className={`p-4 rounded-2xl shadow-sm backdrop-blur-md border transition-all ${isMe
+                                                ? 'bg-cyan-500/10 text-cyan-50 border-cyan-500/20 rounded-br-sm shadow-[0_0_15px_rgba(6,182,212,0.05)]'
+                                                : 'bg-[#0a0a0f]/60 text-slate-200 rounded-bl-sm border-white/5 hover:border-white/10'
                                                 }`}
                                         >
                                             <div className="text-sm break-all whitespace-pre-wrap leading-relaxed">
@@ -268,7 +268,7 @@ export default function CommunityChat({ communityAddress, communityName = "Commu
             </div>
 
             {/* Input Area */}
-            <div className="p-4 border-t border-white/5 bg-slate-900/60 backdrop-blur-xl">
+            <div className="p-4 border-t border-white/5 glass-panel">
                 {(sendError || fetchError || successMessage) && (
                     <div className="mb-3 text-xs px-1">
                         {(sendError || fetchError) && (
@@ -299,7 +299,7 @@ export default function CommunityChat({ communityAddress, communityName = "Commu
                             }}
                             placeholder={isReady ? `Message #${communityName}...` : "Connect wallet to chat"}
                             disabled={!isReady || isSending}
-                            className="w-full bg-slate-900/50 border border-slate-700/50 text-slate-200 p-4 pr-12 text-sm focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 outline-none resize-none h-[52px] disabled:opacity-50 rounded-xl transition-all placeholder:text-slate-600 focus:bg-slate-900"
+                            className="w-full bg-[#0a0a0f]/50 border border-white/5 text-slate-200 p-4 pr-12 text-sm focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 outline-none resize-none h-[52px] disabled:opacity-50 rounded-xl transition-all placeholder:text-slate-600 focus:bg-[#0a0a0f]/80"
                         />
                         <div className="absolute right-3 bottom-3 text-slate-600 pointer-events-none group-focus-within:text-indigo-500/50 transition-colors">
                             <Hash className="w-4 h-4" />
@@ -308,7 +308,7 @@ export default function CommunityChat({ communityAddress, communityName = "Commu
                     <button
                         onClick={handleSend}
                         disabled={!isReady || isSending || !message.trim()}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white p-3.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-xl shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95"
+                        className="bg-cyan-600 hover:bg-cyan-500 text-white p-3.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-xl shadow-lg shadow-cyan-500/20 hover:scale-105 active:scale-95 hover:shadow-cyan-500/40"
                     >
                         {isSending ? (
                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -321,6 +321,6 @@ export default function CommunityChat({ communityAddress, communityName = "Commu
                     <span className="opacity-70">Markdown Supported</span>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
