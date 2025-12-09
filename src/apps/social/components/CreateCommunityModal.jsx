@@ -24,7 +24,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreated }) {
         isReady
     });
 
-    const MIN_REQUIRED_MEMO = 500000;
+    const MIN_REQUIRED_MEMO = 100000;
     const hasEnoughMemo = memoBalance >= MIN_REQUIRED_MEMO;
 
     const [name, setName] = useState('');
