@@ -31,7 +31,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreated }) {
     // Address is now automatically generated
     const [ruleTokenMint, setRuleTokenMint] = useState('');
     const [minBalance, setMinBalance] = useState('');
-    const [whalePercentage, setWhalePercentage] = useState(0);
+    const [whalePercentage, setWhalePercentage] = useState(0.5);
     const [totalSupply, setTotalSupply] = useState(null);
     const [fetchingSupply, setFetchingSupply] = useState(false);
     const [error, setError] = useState('');
@@ -252,7 +252,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreated }) {
                                     </label>
                                     <input
                                         type="range"
-                                        min="1"
+                                        min="0.5"
                                         max="10"
                                         step="0.1"
                                         value={whalePercentage}
@@ -260,7 +260,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreated }) {
                                         className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
                                     />
                                     <div className="flex justify-between text-[10px] text-slate-500 mt-2 font-mono">
-                                        <span>1%</span>
+                                        <span>0.5%</span>
                                         <span>10%</span>
                                     </div>
                                     {minBalance > 0 && (

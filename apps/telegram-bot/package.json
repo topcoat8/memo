@@ -1,0 +1,24 @@
+{
+    "name": "memo-telegram-bot",
+    "version": "1.0.0",
+    "description": "Telegram bot for Memo Protocol community rules",
+    "main": "src/index.js",
+    "type": "module",
+    "scripts": {
+        "start": "node src/index.js",
+        "dev": "node --watch src/index.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@solana/web3.js": "^1.87.0",
+        "bs58": "^5.0.0",
+        "cors": "^2.8.5",
+        "dotenv": "^16.3.1",
+        "express": "^5.2.1",
+        "pako": "^2.1.0",
+        "telegraf": "^4.15.0",
+        "tweetnacl": "^1.0.3"
+    }
+}

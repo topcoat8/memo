@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Wallet - Memo Bot</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        h1 { margin-bottom: 1.5rem; font-size: 1.5rem; }
+        p { margin-bottom: 1.5rem; color: #666; }
+        button {
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        button:hover { background-color: #0077b5; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        #status { margin-top: 1rem; font-weight: 500; }
+        .error { color: #dc3545; }
+        .success { color: #28a745; }
+    </style>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Verify Wallet</h1>
+        <p>Connect your Solana wallet to verify ownership for the Telegram group.</p>
+        
+        <div id="step1">
+            <button id="connectBtn">Connect Wallet</button>
+        </div>
+
+        <div id="step2" style="display: none;">
+            <p id="walletAddress" style="font-family: monospace; font-size: 0.9em;"></p>
+            <button id="verifyBtn">Sign & Verify</button>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const connectBtn = document.getElementById('connectBtn');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const statusDiv = document.getElementById('status');
+        const step1Div = document.getElementById('step1');
+        const step2Div = document.getElementById('step2');
+        const walletAddressP = document.getElementById('walletAddress');
+
+        // Parse query params
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('userId');
+        const chatId = urlParams.get('chatId');
+
+        if (!userId) {
+            statusDiv.textContent = "Error: Missing User ID. Please open from the Telegram link.";
+            statusDiv.className = "error";
+            connectBtn.disabled = true;
+        }
+
+        let provider = null;
+
+        function getProvider() {
+            if ('phantom' in window && window.phantom.solana.isPhantom) { // Prioritize Phantom
+                 return window.phantom.solana;
+            } else if ('solana' in window) {
+                return window.solana;
+            }
+            return null;
+        }
+
+        connectBtn.addEventListener('click', async () => {
+             provider = getProvider();
+            if (!provider) {
+                statusDiv.textContent = "Solana wallet not found. Please install Phantom.";
+                statusDiv.className = "error";
+                return;
+            }
+
+            try {
+                const resp = await provider.connect();
+                const publicKey = resp.publicKey.toString();
+                walletAddressP.textContent = publicKey.slice(0, 4) + '...' + publicKey.slice(-4);
+                
+                step1Div.style.display = 'none';
+                step2Div.style.display = 'block';
+                statusDiv.textContent = "";
+            } catch (err) {
+                console.error(err);
+                statusDiv.textContent = "Connection failed: " + err.message;
+                statusDiv.className = "error";
+            }
+        });
+
+        verifyBtn.addEventListener('click', async () => {
+            if (!provider) return;
+
+            try {
+                statusDiv.textContent = "Requesting signature...";
+                statusDiv.className = "";
+                
+                const timestamp = Date.now();
+                const messageText = `Sign in to Memo Bot as ${userId}\nTimestamp: ${timestamp}`;
+                const message = new TextEncoder().encode(messageText);
+                
+                const { signature } = await provider.signMessage(message); // Standard wallet adapter format usually returns object, Phantom returns { signature, publicKey? }
+                
+                // Convert signature to base64/bs58 for transport. 
+                // We'll use base58 if possible, but simplest is usually just sending the raw bytes or array.
+                // TextEncoding signature for transport:
+                const signatureArray = Array.from(signature); // Convert Uint8Array to normal array
+
+                const response = await fetch('/api/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId,
+                        publicKey: provider.publicKey.toString(),
+                        signature: signatureArray, // Send as array of numbers
+                        timestamp
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    statusDiv.textContent = "Verification successful! You can now close this window.";
+                    statusDiv.className = "success";
+                    verifyBtn.disabled = true;
+                } else {
+                    statusDiv.textContent = "Verification failed: " + result.error;
+                    statusDiv.className = "error";
+                }
+
+            } catch (err) {
+                console.error(err);
+                statusDiv.textContent = "Verification error: " + err.message;
+                statusDiv.className = "error";
+            }
+        });
+    </script>
+</body>
+</html>
