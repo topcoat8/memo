@@ -111,7 +111,7 @@ export default function LandingPage() {
                                     </button>
                                     <button
                                         onClick={() => navigate('/telegram-bot-details')}
-                                        className="px-8 py-4 bg-transparent text-slate-300 font-semibold rounded-xl hover:bg-white/5 transition-colors flex items-center gap-2"
+                                        className="px-8 py-4 bg-white/5 text-white border border-white/10 font-semibold rounded-xl hover:bg-white/10 transition-colors flex items-center gap-2"
                                     >
                                         Learn More
                                     </button>
