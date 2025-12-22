@@ -103,7 +103,7 @@ export default function LandingPage() {
 
                                 <div className="flex gap-4">
                                     <button
-                                        onClick={() => window.open('https://t.me/MemoProtocolBot', '_blank')}
+                                        onClick={() => window.open('https://t.me/memo_verification_bot', '_blank')}
                                         className="px-8 py-4 bg-sky-500/10 text-sky-400 border border-sky-500/20 font-bold rounded-xl hover:bg-sky-500/20 transition-colors flex items-center gap-2"
                                     >
                                         Add to Telegram
