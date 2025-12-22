@@ -1,0 +1,58 @@
+
+Memo Protocol is built on a single, immutable ledger, but it serves two distinct markets with fundamentally different requirements. To maximize our execution speed without compromising security, we have decoupled our roadmap into two parallel streams:
+Memo Enterprise (The "Stability" Track): Focused on legal adherence, rigid security standards, and B2B utility. This track operates on a methodical release cadence to ensure zero-failure compliance for high-stakes business data.
+Memo Social (The "Velocity" Track): Focused on consumer engagement, virality, and community management. This track operates on a high-velocity, iterative cycle (shipping daily/weekly) to rapidly adapt to user feedback and market trends.
+Product Roadmap: Memo Enterprise
+Mission: To provide the first immutable, legally compliant communication layer for high-stakes business and regulatory environments.
+Phase 1: The Compliance Core (Solving the Privacy Paradox)
+Objective: Resolve the conflict between Blockchain Immutability and GDPR (Right to Erasure).
+Feature: The GDPR Compliance Module (Cryptographic Erasure)
+Concept: "The Stone Tablet & The Glass Key."
+Mechanism: The encrypted data remains on-chain permanently (for audit), but the decryption key is governed by a smart contract with a time-to-live (TTL).
+Execution: Automatic, zero-knowledge destruction of the key after the set period (e.g., 5 years), rendering the data mathematically irretrievable and satisfying deletion laws.
+Feature: Identity & Admissibility
+Built-in Digital Signature Certification: Attaching verified DID (Decentralized Identity) references to transactions to ensure court admissibility.
+Service of Process Mode: A specialized message type offering cryptographic proof of delivery, timestamp, and read status for serving legal notices.
+Phase 2: Business Utility & Workflow
+Objective: Replace email/DocuSign for high-value agreements.
+Feature: Immutable Contract Negotiation
+Structured Proposals: "Accept/Reject" logic embedded in the message thread.
+Negotiation Threads: Dedicated views that filter out informal chatter, displaying only the history of terms and agreements.
+Certified PDF Export: One-click generation of a signed PDF containing the entire negotiation history and cryptographic proofs (hashes) for external legal use.
+Feature: Secure Attachments (IPFS/Arweave)
+Immutable Storage: Integration with decentralized storage to record document hashes alongside the message. This proves a specific version of a document existed at a specific time and has not been altered.
+Phase 3: Enterprise Infrastructure
+Objective: Scale and Interoperability.
+Feature: Cross-Chain Verification: Relaying Memo’s "Proof of Existence" to EVM chains (Ethereum/Base) so businesses can verify Solana-based records on their native infrastructure.
+Feature: Immutable Group Protocol: Auditable, permanent chat logs for Boards of Directors and DAO Governance committees.
+
+Product Roadmap: Memo Social
+Mission: To become the native communication hub for the Solana ecosystem, turning holders into active communities.
+Phase 1: Velocity & User Experience (Daily/Weekly Ships)
+Objective: Make Web3 messaging feel as smooth as Web2.
+Feature: Frictionless Onboarding
+Smart Wallet Connection: Optimizing the Phantom/Solflare funnel to minimize drop-off.
+Human-Readable Fees: Displaying costs in USD/CAD rather than Lamports.
+Feature: Interface Polish
+Markdown Support: Rich text formatting (Bold, Italic, Links) within messages.
+Rich Media: Compressed Voice Memos and enhanced Image previews.
+Phase 2: Community & Engagement Tools
+Objective: Empower projects to manage and monetize their communities.
+Feature: Token-Gated Access
+Holder Chats: Automatically created channels that require holding a specific NFT or SPL token amount to enter.
+Whale Channels: Exclusive VIP groups for top % holders.
+Feature: Project Broadcasts
+Official Announcements: A "One-to-Many" mode where only the project wallet can post.
+Governance Integration: Automated notifications for Realms governance proposals.
+Feature: Social Identity Layer
+SNS Resolution: Full integration of .sol domains for user lookup.
+Financial Signals: "Proof of Funds" verification in chat.
+Phase 3: Growth & Retention
+Objective: Deep ecosystem integration.
+Feature: Native Phantom Integration (Blinks & Actions)
+Context: Leveraging Solana Actions to make Memo interactive outside our app.
+Utility: Users can preview, read, and reply to Memos directly within the Phantom Wallet interface or via "Blinks" on Twitter/X, without ever opening the Memo app. This removes the friction of switching contexts.
+Feature: Client-Side Read Receipts
+Utility: Privacy-preserving "Opened" status updates (off-chain) to keep conversations flowing.
+Feature: Push Notification Relay
+Utility: Integrating with wallet standards (Dialect) to push alerts to the user's phone lock screen.

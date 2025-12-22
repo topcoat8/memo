@@ -1,61 +1,116 @@
-# Memo Protocol Telegram Bot
+# 📘 Memo Protocol Bot User Manual
 
-This bot bridges Memo Protocol communities to Telegram groups. It fetches rules from the Solana blockchain and enforces them in your Telegram chat (e.g., deleting messages with banned words, enforcing token gating).
+The **Memo Verification Bot** serves as the bridge between Telegram communities and the Solana blockchain. It enforces token-gating rules defined on the Memo Protocol, ensuring that every member in your group holds the required assets.
 
-## Setup
+---
 
-1.  **Create a Bot**:
-    *   Open Telegram and search for **@BotFather**.
-    *   Send the command `/newbot`.
-    *   Follow the prompts to name your bot.
-    *   Copy the **HTTP API Token** provided.
+## 👥 For Group Members
 
-2.  **Configuration**:
-    *   Create a `.env` file in this directory:
-        ```bash
-        cp .env.example .env
-        ```
-    *   Add your token and public URL:
-        ```
-        BOT_TOKEN=your_token_from_botfather
-        RPC_URL=https://api.mainnet-beta.solana.com
-        PUBLIC_URL=http://your-server-domain.com # Or ngrok URL for dev
-        ```
+### 🚀 Getting Started (How to Join)
+If you are trying to join a Memo-gated group, follow this flow:
+1.  **Request to Join**: Click the group's invite link.
+2.  **Check DMs**: The bot will send you a private message saying "Access Denied" with a verification link.
+3.  **Click the Link**: This starts a secure session with the bot.
+4.  **Verify**: Follow the bot's instructions to send a "Magic Transaction" on Solana.
+    *   *Note: This transaction proves you own the wallet without exposing your private keys.*
 
-3.  **Install Dependencies**:
-    ```bash
-    npm install
-    ```
+### 💬 Member Commands
+Use these commands in the group chat or in a DM with the bot.
 
-4.  **Run the Bot**:
-    ```bash
-    npm start
-    ```
+#### `/mystatus`
+**Description:** Checks your current verification status. It will show:
+*   Your linked Wallet Address.
+*   Your current Token Balance for the group.
+*   Whether you meet the Minimum Balance requirements.
+*   *Use this if you think you were kicked by mistake!*
 
-## Usage
+#### `/verify`
+**Description:** Starts the verification process.
+*   Generates a unique "Magic Transaction" link for you.
+*   **Click to Verify**: Most users can simply click the link to verify via Solana Pay.
+*   **Manual**: Provides the **Community Address** to send **$MEMO** to (if manual verification is preferred).
+*   Tells you the **Memo ID** you **MUST** include in your transaction to prove ownership.
 
-1.  **Add the Bot to your Group**:
-    *   Go to your Telegram group settings.
-    *   Add the bot as a member.
-    *   **Promote the bot to Admin** (it needs "Delete Messages" permission to enforce rules).
+#### `/sent`
+**Description:** Tells the bot to look for your transaction on the blockchain.
+*   Run this AFTER you have sent the "Magic Transaction".
+*   If successful, the bot will verify you and instantly approve your request to join the group.
 
-2.  **Link to Memo Community**:
-    *   In the group chat, run:
-        ```
-        /link <SOLANA_COMMUNITY_ADDRESS>
-        ```
-    *   Example:
-        ```
-        /link 9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin
-        ```
+#### `/rules`
+**Description:** Displays the current on-chain rules for this group.
+*   Shows the required Token Mint.
+*   Shows the Minimum Holding needed (% of Supply).
 
-3.  **Client Verification**:
-    *   If the community has `minTokenBalance` rules, users will trigger a "Verify Wallet" warning when they try to speak.
-    *   They click the link, connect their wallet (Phantom), and sign a message.
-    *   Once verified, the bot allows them to chat if they hold enough tokens.
+#### `/leaderboard`
+**Description:** Shows the Top 50 holders in the current chat.
 
-## Troubleshooting
+#### `/supply`
+**Description:** Shows the total token holdings of the group and the percentage of the total supply owned.
 
-*   **Verification Link Broken?** Ensure `PUBLIC_URL` is accessible from the user's browser (use ngrok if running locally).
-*   **Bot not deleting messages?** Make sure it is an Admin.
-*   **Rules not updating?** Wait ~1 minute for the cache to expire after a new on-chain transaction.
+---
+
+## 👑 For Group Admins
+
+### 🛠 Setup & Management
+
+#### 1. Add Bot to Group
+*   Add **@memo_verification_bot** to your Telegram Group.
+*   **Promote to Admin**: The bot requires **"Ban Users"** and **"Invite Users via Link"** permissions to function.
+
+#### 2. Configure "Request Admin Approval"
+*   Go to **Group Settings** -> **Group Type**.
+*   **Create a New Invite Link** (or edit existing).
+*   Toggle **ON**: "Request Admin Approval".
+*   *Why?* This allows the bot to intercept join requests and check wallets *before* the user enters the chat.
+
+#### `/link <address>`
+**Usage:** `/link 7Xw...`
+**Description:** Links the current Telegram group to a Memo Protocol Community Address.
+*   **Permissions Required:** Admin or Creator.
+*   **Effect:** The bot begins enforcing the rules found on-chain for that address.
+
+#### `/create`
+**Usage:** `/create` (DM Only)
+**Description:** Launches the **Community Creation Wizard**.
+*   **Requirement:** *You must hold at least 50,000 $MEMO to create a community.*
+*   The bot will interview you to set up rules:
+    *   **Token Mint**: The token you want to gate access with.
+    *   **Min Holding**: The **% of Total Supply** a user must hold (e.g., 1%).
+*   **Activation**: Requires sending **1 $MEMO** to the new community address to publish the rules on-chain.
+
+
+### 📊 Monitoring & Moderation
+
+#### `/audit`
+**Usage:** `/audit`
+**Description:** Scans the group for non-compliant members.
+*   Lists users who do not have a verified wallet.
+*   Lists users who have insufficient balance based on current rules.
+*   *Does not kick users, only reports them.*
+
+#### `/kick`
+**Usage:** `/kick`
+**Description:** Manually triggers a **Full Compliance Sweep & Cleanup**.
+*   **Permissions Required:** Admin Only.
+*   **Effect:** The bot scans every tracked user. If they no longer meet requirements (e.g., sold tokens), they are **removed from the group**.
+*   *Use this periodically to ensure your group remains exclusive.*
+
+#### `/check` (Reply)
+**Usage:** Reply to a user's message with `/check`
+**Description:** Checks a specific user's status.
+*   Shows their Wallet Address.
+*   Shows their current Balance.
+*   Tells you if they are currently passing/failing the rules.
+
+---
+
+## ❓ Troubleshooting
+
+**"I sent the transaction but it says 'Could not find transaction'."**
+*   **Wait:** Solana can take 30-60 seconds to confirm. Wait a minute and try `/sent` again.
+*   **Check Memo:** Did you include your Telegram ID in the memo field? This is crucial!
+*   **Check Token:** Did you send *tokens* or just SOL? Read the `/verify` instructions carefully.
+
+**"The bot isn't letting legitimate users in."**
+*   **Admin Check:** Ensure the bot is an Admin with "Ban Users" and "Invite Users" permissions.
+*   **Invite Link:** Ensure users are joining via a link with **"Request Admin Approval"** enabled. The bot cannot intercept open joins.

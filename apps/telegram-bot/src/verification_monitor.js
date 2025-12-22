@@ -1,5 +1,6 @@
 
 import { PublicKey } from '@solana/web3.js';
+import { getAssociatedTokenAddressSync, executeWithRetry } from './solana.js';
 
 /**
  * Checks recent transactions on the community address for a memo containing the userId.
@@ -18,112 +19,194 @@ const MEMO_MINT = '8ZQme2xv6prRKkKNA4PTn5DSXUTdY6yeoc5yDkm7pump';
  * @param {Connection} connection 
  * @param {string} communityAddress 
  * @param {string} userId 
+ * @param {string | null} [findingWallet=null] - Optional wallet address to search transactions for instead of the community address.
+ * @param {string | null} [expectedAmount=null] - The exact amount of MEMO expected in the self-transfer.
  * @returns {Promise<{walletAddress: string, signature: string}|null>}
  */
-export async function checkVerification(connection, communityAddress, userId) {
+export async function checkVerification(connection, communityAddress, userId, findingWallet = null, expectedAmount = null) {
     try {
-        const pubkey = new PublicKey(communityAddress);
-        const mintPubkey = new PublicKey(MEMO_MINT);
+        let targetPubkey;
 
-        // 1. Get Signatures for Main Wallet
-        const mainSignatures = await connection.getSignaturesForAddress(
-            pubkey,
-            { limit: 50 },
-            'confirmed'
-        );
-
-        // 2. Get Signatures for Token Account (if exists)
-        let tokenSignatures = [];
-        try {
-            const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-                pubkey,
-                { mint: mintPubkey }
-            );
-
-            if (tokenAccounts.value.length > 0) {
-                const tokenAccountAddress = tokenAccounts.value[0].pubkey;
-                tokenSignatures = await connection.getSignaturesForAddress(
-                    tokenAccountAddress,
-                    { limit: 50 },
-                    'confirmed'
-                );
+        if (findingWallet) {
+            console.log(`[DEBUG] Searching txs for User Wallet: ${findingWallet} -> Community: ${communityAddress}`);
+            try {
+                targetPubkey = new PublicKey(findingWallet);
+            } catch (e) {
+                console.error("Invalid findingWallet provided");
+                return null;
             }
-        } catch (e) {
-            console.warn("Could not fetch token account history:", e);
+        } else {
+            console.log(`[DEBUG] Searching txs for Community Wallet: ${communityAddress}`);
+            targetPubkey = new PublicKey(communityAddress);
         }
 
-        // 3. Merge & Deduplicate
-        const allSignatures = [...mainSignatures, ...tokenSignatures];
-        const uniqueSignatures = Array.from(new Map(allSignatures.map(item => [item.signature, item])).values());
+        // 1. Get Signatures
+        // 1. Get Signatures
+        const signatures = await executeWithRetry(() => connection.getSignaturesForAddress(
+            targetPubkey,
+            { limit: 50 },
+            'confirmed'
+        ));
 
-        // Sort by time (descending) just in case, though usually already sorted
-        uniqueSignatures.sort((a, b) => (b.blockTime || 0) - (a.blockTime || 0));
+        // 4. Process Transactions in Parallel Batches (Limit concurrency to avoid 429s)
+        const BATCH_SIZE = 5;
+        const DELAY_MS = 200;
 
-        // 4. Process Transactions
-        for (const sigInfo of uniqueSignatures) {
-            try {
-                const tx = await connection.getParsedTransaction(sigInfo.signature, {
-                    maxSupportedTransactionVersion: 0,
-                });
+        for (let i = 0; i < signatures.length; i += BATCH_SIZE) {
+            const batch = signatures.slice(i, i + BATCH_SIZE);
+            const promises = batch.map(async (sigInfo) => {
+                try {
+                    const tx = await executeWithRetry(() => connection.getParsedTransaction(sigInfo.signature, {
+                        maxSupportedTransactionVersion: 0,
+                    }));
+                    return { sigInfo, tx };
+                } catch (e) {
+                    console.warn(`Failed to fetch tx ${sigInfo.signature}`, e.message);
+                    return { sigInfo, tx: null };
+                }
+            });
 
+            const results = await Promise.all(promises);
+
+            // Process results
+            for (const { sigInfo, tx } of results) {
                 if (!tx || !tx.meta || tx.meta.err) continue;
 
-                // 1. Check for MEMO Token Transfer
-                // We look at token balance changes. We need to see that *someone* (the community address) received MEMO tokens, 
-                // OR just that a MEMO token transfer occurred involving the community address.
+                const checkAmountInstruction = (ix, amt) => {
+                    const expectedVal = parseFloat(amt);
+                    if (isNaN(expectedVal)) return false;
 
-                // Let's filter for relevant balance changes
-                const preBalances = tx.meta.preTokenBalances || [];
-                const postBalances = tx.meta.postTokenBalances || [];
+                    // CHECK 1: SPL Token Transfer
+                    if (ix.program === 'spl-token' || ix.programId.toString() === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' || ix.programId.toString() === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb') {
+                        if (ix.parsed && (ix.parsed.type === 'transfer' || ix.parsed.type === 'transferChecked')) {
+                            const info = ix.parsed.info;
+                            let detectedAmt = 0;
+                            if (info.tokenAmount && info.tokenAmount.uiAmount !== undefined) {
+                                detectedAmt = info.tokenAmount.uiAmount;
+                            } else if (info.amount) {
+                                // Fallback for raw amount (MEMO has 6 decimals)
+                                detectedAmt = parseFloat(info.amount) / 1000000;
+                            }
 
-                // We want to verify that the transaction INVOLVED the MEMO mint
-                const involvesMemoMint = postBalances.some(b => b.mint === MEMO_MINT);
+                            // 1. Check Amount (Epsilon match)
+                            if (Math.abs(detectedAmt - expectedVal) > 0.000001) return false;
 
-                if (!involvesMemoMint) continue;
+                            // 2. Check Token Mint (Security)
+                            const MEMO_MINT = '8ZQme2xv6prRKkKNA4PTn5DSXUTdY6yeoc5yDkm7pump';
+                            const TOKEN_2022_PROGRAM_ID = new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb');
 
-                // 2. Look for Memo instruction with User ID
-                const memoInstructions = tx.transaction.message.instructions.filter(ix =>
-                    ix.program === 'spl-memo' ||
-                    ix.programId.toString() === 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcQb' ||
-                    ix.programId.toString() === 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'
-                );
+                            // If transferChecked, Mint is explicit
+                            if (info.mint && info.mint !== MEMO_MINT) return false;
 
-                let foundUserId = false;
+                            // If transfer (no mint field), check if Source/Dest matches User's MEMO ATA
+                            if (!info.mint && findingWallet) {
+                                try {
+                                    const userATA = getAssociatedTokenAddressSync(new PublicKey(findingWallet), new PublicKey(MEMO_MINT)).toString();
+                                    const userATA2022 = getAssociatedTokenAddressSync(new PublicKey(findingWallet), new PublicKey(MEMO_MINT), TOKEN_2022_PROGRAM_ID).toString();
+                                    const isSourceMemo = info.source === userATA || info.source === userATA2022;
+                                    const isDestMemo = info.destination === userATA || info.destination === userATA2022;
 
-                for (const ix of memoInstructions) {
-                    let memoText = null;
-                    if (ix.parsed) {
-                        memoText = ix.parsed;
-                    } else if (ix.data) {
-                        memoText = Buffer.from(ix.data, 'base64').toString('utf-8');
+                                    if (!isSourceMemo && !isDestMemo) return false;
+                                } catch (e) { return false; }
+                            }
+                            return true;
+                        }
                     }
 
-                    if (memoText && memoText.includes(userId.toString())) {
-                        foundUserId = true;
-                        break;
+                    // CHECK 2: System Program Transfer (SOL)
+                    if (ix.program === 'system' || ix.programId.toString() === '11111111111111111111111111111111') {
+                        if (ix.parsed && ix.parsed.type === 'transfer') {
+                            const info = ix.parsed.info;
+                            // info.lamports is the amount in lamports (1 SOL = 1e9 lamports)
+                            if (info.lamports) {
+                                const detectedSol = info.lamports / 1000000000;
+                                // Check Amount (Epsilon match)
+                                // We verify 9 decimal places for SOL
+                                if (Math.abs(detectedSol - expectedVal) < 0.00000001) return true;
+                            }
+                        }
+                    }
+
+                    return false;
+                };
+
+                // Helper to check instruction for Memo ID
+                const checkMemoInstruction = (ix) => {
+                    let memoText = "";
+                    if (ix.parsed) {
+                        if (typeof ix.parsed === 'string') memoText = ix.parsed;
+                        else try { memoText = JSON.stringify(ix.parsed); } catch (e) { }
+                    } else if (ix.data) {
+                        try { memoText = Buffer.from(ix.data, 'base64').toString('utf-8'); } catch (e) { }
+                    }
+                    return memoText && memoText.includes(userId.toString());
+                };
+
+                const instructions = tx.transaction.message.instructions;
+                let foundMatch = false;
+
+                // Loop Instructions
+                for (const ix of instructions) {
+                    if (expectedAmount) {
+                        // MODE: Amount Verification
+                        if (checkAmountInstruction(ix, expectedAmount)) {
+                            foundMatch = true;
+                            break;
+                        }
+                    } else {
+                        // MODE: Memo Verification
+                        if (checkMemoInstruction(ix)) {
+                            foundMatch = true;
+                            break;
+                        }
                     }
                 }
 
-                if (foundUserId) {
-                    // Found the transaction!
+                // Also check inner instructions if not found
+                if (!foundMatch && tx.meta && tx.meta.innerInstructions) {
+                    for (const inner of tx.meta.innerInstructions) {
+                        for (const ix of inner.instructions) {
+                            if (expectedAmount) {
+                                if (checkAmountInstruction(ix, expectedAmount)) { foundMatch = true; break; }
+                            } else {
+                                if (checkMemoInstruction(ix)) { foundMatch = true; break; }
+                            }
+                        }
+                        if (foundMatch) break;
+                    }
+                }
 
-                    // Identify sender. In Solana, the fee payer or first signer is usually the initiator.
+                if (foundMatch) {
                     const accountKeys = tx.transaction.message.accountKeys;
                     const signer = accountKeys.find(acc => acc.signer);
 
-                    if (signer) {
-                        return {
-                            walletAddress: signer.pubkey.toString(),
-                            signature: sigInfo.signature
-                        };
+                    if (findingWallet) {
+                        // Strict Check: Signer must match the wallet we are verifying
+                        if (signer && signer.pubkey.toString() === findingWallet) {
+                            return {
+                                walletAddress: findingWallet,
+                                signature: sigInfo.signature
+                            };
+                        }
+                    } else {
+                        if (signer) {
+                            return {
+                                walletAddress: signer.pubkey.toString(),
+                                signature: sigInfo.signature
+                            };
+                        }
                     }
                 }
-            } catch (err) {
-                console.warn(`Error parsing tx ${sigInfo.signature}:`, err);
+            }
+
+            // Check if we found it in this batch (Actually the loop up top returns, so we are good)
+            // Wait before next batch
+            if (i + BATCH_SIZE < signatures.length) {
+                await new Promise(r => setTimeout(r, DELAY_MS));
             }
         }
-    } catch (e) {
-        console.error("Error checking verification:", e);
+    } catch (err) {
+        console.warn(`Error processing txs for ${targetPubkey.toString()}:`, err);
     }
     return null;
 }

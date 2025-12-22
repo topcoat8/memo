@@ -1,168 +1,711 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="overflow-x-hidden">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Wallet - Memo Bot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Memo Protocol - Social On-Chain Bridge</title>
+    <link rel="icon" type="image/jpeg" href="assets/pfp.jpg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            cyan: '#00f3ff',
+                            purple: '#bc13fe',
+                            dark: '#030305'
+                        }
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f2f5;
-            color: #333;
+            background-color: #030305;
+            color: #e2e8f0;
+            overflow-x: hidden;
         }
-        .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
+
+        .glass-nav {
+            background-color: rgba(3, 3, 5, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
-        h1 { margin-bottom: 1.5rem; font-size: 1.5rem; }
-        p { margin-bottom: 1.5rem; color: #666; }
-        button {
-            background-color: #0088cc;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            width: 100%;
-            margin-bottom: 10px;
+
+        .glass-card {
+            background-color: rgba(20, 20, 25, 0.6);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
         }
-        button:hover { background-color: #0077b5; }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
-        #status { margin-top: 1rem; font-weight: 500; }
-        .error { color: #dc3545; }
-        .success { color: #28a745; }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px -10px rgba(188, 19, 254, 0.1);
+        }
+
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(to right, #22d3ee, #818cf8, #c084fc);
+        }
+
+        .hero-glow {
+            background: radial-gradient(circle at center, rgba(188, 19, 254, 0.15) 0%, transparent 70%);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #030305;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
     </style>
-    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 </head>
-<body>
-    <div class="container">
-        <h1>Verify Wallet</h1>
-        <p>Connect your Solana wallet to verify ownership for the Telegram group.</p>
-        
-        <div id="step1">
-            <button id="connectBtn">Connect Wallet</button>
-        </div>
 
-        <div id="step2" style="display: none;">
-            <p id="walletAddress" style="font-family: monospace; font-size: 0.9em;"></p>
-            <button id="verifyBtn">Sign & Verify</button>
-        </div>
+<body class="selection:bg-brand-purple/30 selection:text-white">
 
-        <div id="status"></div>
+    <!-- Background Ambience -->
+    <div class="fixed inset-0 pointer-events-none z-0">
+        <div
+            class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-brand-purple/20 rounded-full blur-[120px] mix-blend-screen animate-blob">
+        </div>
+        <div
+            class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-brand-cyan/10 rounded-full blur-[120px] mix-blend-screen animate-blob animation-delay-2000">
+        </div>
     </div>
 
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 glass-nav">
+        <div class="container mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div
+                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-cyan to-brand-purple flex items-center justify-center">
+                    <i data-lucide="shield-check" class="text-white w-5 h-5"></i>
+                </div>
+                <span class="font-bold text-white tracking-tight">Memo Protocol</span>
+            </div>
+
+            <!-- Desktop Nav Links -->
+            <div class="hidden md:flex items-center gap-8">
+                <a href="#faq" class="text-sm font-medium text-slate-400 hover:text-white transition-colors">FAQ</a>
+                <a href="#airdrop"
+                    class="text-sm font-medium text-slate-400 hover:text-white transition-colors flex items-center gap-2">
+                    Airdrop
+                    <span
+                        class="px-1.5 py-0.5 rounded bg-brand-cyan/10 text-brand-cyan text-[10px] font-bold uppercase tracking-wider">Soon</span>
+                </a>
+            </div>
+
+            <a href="https://t.me/memo_verification_bot" target="_blank"
+                class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors hidden md:block">
+                Launch Bot
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="relative pt-32 pb-20 md:pt-48 md:pb-32 container mx-auto px-4 text-center z-10">
+        <div
+            class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-cyan/30 bg-brand-cyan/5 text-brand-cyan text-xs font-medium mb-8">
+            <span class="relative flex h-2 w-2">
+                <span
+                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-cyan opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-cyan"></span>
+            </span>
+            Live on Solana
+        </div>
+
+        <h1 class="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter text-white mb-6 leading-tight">
+            The Secure Bridge <br />
+            <span class="gradient-text">Socials & On-Chain</span>
+        </h1>
+
+        <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+            Create zero-trust, non-custodial, token-gated communities on Telegram.
+            Verify ownership without ever connecting a wallet.
+        </p>
+
+        <div class="flex flex-col md:flex-row items-center justify-center gap-4">
+            <a href="https://t.me/memo_verification_bot" target="_blank"
+                class="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-white text-black rounded-xl font-bold text-lg hover:bg-slate-200 transition-all active:scale-95 w-full md:w-auto">
+                <span>Launch Memo Bot</span>
+                <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
+                <div class="absolute inset-0 rounded-xl ring-2 ring-white/50 group-hover:ring-4 transition-all"></div>
+            </a>
+
+            <button onclick="document.getElementById('features').scrollIntoView({behavior: 'smooth'})"
+                class="px-8 py-4 bg-white/5 text-white rounded-xl font-medium hover:bg-white/10 transition-colors w-full md:w-auto">
+                Learn More
+            </button>
+        </div>
+
+        <!-- CA Address -->
+        <div class="mt-12 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-slate-400 text-xs md:text-sm font-mono cursor-pointer hover:bg-white/5 transition-all group max-w-full mx-auto"
+            onclick="navigator.clipboard.writeText('8ZQme2xv6prRKkKNA4PTn5DSXUTdY6yeoc5yDkm7pump'); const original = this.innerHTML; this.innerHTML = '<span class=\'text-brand-cyan font-bold\'>Copied!</span>'; setTimeout(() => this.innerHTML = original, 2000); lucide.createIcons();">
+            <span class="text-white/40 select-none hidden sm:inline">CA:</span>
+            <span
+                class="group-hover:text-white transition-colors break-all text-center">8ZQme2xv6prRKkKNA4PTn5DSXUTdY6yeoc5yDkm7pump</span>
+            <i data-lucide="copy" class="w-3 h-3 ml-2 group-hover:text-white transition-colors shrink-0"></i>
+        </div>
+    </header>
+
+    <!-- Core Pillars Grid -->
+    <section id="features" class="py-20 container mx-auto px-4 z-10 relative">
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- The Bridge -->
+            <div class="glass-card p-6 rounded-2xl">
+                <div class="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center mb-4 text-blue-400">
+                    <i data-lucide="link" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-white font-bold text-lg mb-2">The Bridge</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">
+                    The secure link connecting your Telegram identity to your Solana wallet.
+                </p>
+            </div>
+
+            <!-- The Bouncer -->
+            <div class="glass-card p-6 rounded-2xl">
+                <div class="w-12 h-12 bg-red-500/10 rounded-lg flex items-center justify-center mb-4 text-red-400">
+                    <i data-lucide="shield-alert" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-white font-bold text-lg mb-2">The Bouncer</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">
+                    A rigorous gatekeeper ensuring every active member is a verified holder.
+                </p>
+            </div>
+
+            <!-- The Growth Tool -->
+            <div class="glass-card p-6 rounded-2xl">
+                <div class="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center mb-4 text-green-400">
+                    <i data-lucide="trending-up" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-white font-bold text-lg mb-2">Growth Tool</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">
+                    Incentivizes holding by restricting access, reducing sell pressure.
+                </p>
+            </div>
+
+            <!-- Non-Custodial -->
+            <div class="glass-card p-6 rounded-2xl">
+                <div
+                    class="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center mb-4 text-purple-400">
+                    <i data-lucide="lock" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-white font-bold text-lg mb-2">Non-Custodial</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">
+                    Zero permissions asked. We verify by watching the chain, not touching keys.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Deep Dive Features -->
+    <section class="py-20 container mx-auto px-4 space-y-24 z-10 relative">
+
+        <!-- Zero Trust -->
+        <div class="flex flex-col md:flex-row items-center gap-12">
+            <div class="flex-1 space-y-6">
+                <div class="inline-block text-brand-cyan font-mono text-sm tracking-wider uppercase">Zero-Trust
+                    Verification</div>
+                <h2 class="text-4xl md:text-5xl font-bold text-white">Don't Trust. Verify.</h2>
+                <p class="text-slate-400 text-lg leading-relaxed">
+                    Traditional bots ask for risky permissions. Memo uses a novel <strong>Self-Transfer</strong>
+                    mechanism.
+                    Users send 1 $MEMO to <em>themselves</em> to prove ownership. It's completely permissionless and
+                    secure.
+                </p>
+            </div>
+            <div
+                class="flex-1 glass-card p-8 rounded-3xl border-t border-brand-cyan/20 bg-gradient-to-b from-brand-cyan/5 to-transparent">
+                <div class="font-mono text-xs text-brand-cyan mb-4">Verification Flow</div>
+                <div class="space-y-4">
+                    <div class="flex items-center gap-4 p-4 bg-black/40 rounded-xl border border-white/5">
+                        <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">1</div>
+                        <div class="text-sm text-slate-300">User gets unique code</div>
+                    </div>
+                    <div class="flex items-center gap-4 p-4 bg-black/40 rounded-xl border border-white/5">
+                        <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">2</div>
+                        <div class="text-sm text-slate-300">Sends <strong>Self-Transfer</strong> with code</div>
+                    </div>
+                    <div class="flex items-center gap-4 p-4 bg-brand-cyan/20 rounded-xl border border-brand-cyan/30">
+                        <div
+                            class="w-8 h-8 rounded-full bg-brand-cyan text-black flex items-center justify-center font-bold">
+                            3</div>
+                        <div class="text-sm text-white">Bot confirms on-chain & opens gate</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dual Mode -->
+        <div class="flex flex-col md:flex-row-reverse items-center gap-12">
+            <div class="flex-1 space-y-6">
+                <div class="inline-block text-brand-purple font-mono text-sm tracking-wider uppercase">Robust Access
+                </div>
+                <h2 class="text-4xl md:text-5xl font-bold text-white">For Every Wallet.</h2>
+                <p class="text-slate-400 text-lg leading-relaxed">
+                    We support sophisticated users with multiple wallets and diverse strategies.
+                </p>
+                <ul class="space-y-4">
+                    <li class="flex items-start gap-3">
+                        <i data-lucide="check-circle" class="w-6 h-6 text-brand-purple shrink-0"></i>
+                        <div>
+                            <strong class="text-white block">Multi-Wallet Support</strong>
+                            <span class="text-slate-500 text-sm">Link unlimited wallets. We verify your total aggregated
+                                balance.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i data-lucide="check-circle" class="w-6 h-6 text-brand-purple shrink-0"></i>
+                        <div>
+                            <strong class="text-white block">100% Non-Custodial</strong>
+                            <span class="text-slate-500 text-sm">We never ask for your seed phrase or private
+                                keys.</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div
+                class="flex-1 glass-card p-8 rounded-3xl border-t border-brand-purple/20 bg-gradient-to-b from-brand-purple/5 to-transparent flex items-center justify-center">
+                <div class="text-center">
+                    <div class="text-6xl font-black text-white mb-2">∞</div>
+                    <div class="text-brand-purple font-mono uppercase tracking-widest">Wallets Per User</div>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- Command Suite -->
+    <section class="py-20 bg-black/20 z-10 relative">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Command Suite</h2>
+                <p class="text-slate-400">Powerful tools for both admins and community members.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+
+                <!-- Admin Commands -->
+                <div class="glass-card p-8 rounded-3xl">
+                    <div class="flex items-center gap-3 mb-8 pb-4 border-b border-white/10">
+                        <i data-lucide="terminal" class="text-amber-500"></i>
+                        <h3 class="text-xl font-bold text-white">Admin Control</h3>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="group">
+                            <div class="flex items-center gap-3 mb-1">
+                                <code
+                                    class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 font-mono text-sm">/create</code>
+                                <span class="text-white font-medium">Launch Community</span>
+                            </div>
+                            <p class="text-sm text-slate-500 pl-4 border-l border-white/5">Starts the setup wizard in
+                                DMs to create a new gate.</p>
+                        </div>
+                        <div class="group">
+                            <div class="flex items-center gap-3 mb-1">
+                                <code
+                                    class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 font-mono text-sm">/link</code>
+                                <span class="text-white font-medium">Link Group</span>
+                            </div>
+                            <p class="text-sm text-slate-500 pl-4 border-l border-white/5">Connects the current Telegram
+                                chat to your on-chain rules.</p>
+                        </div>
+                        <div class="group">
+                            <div class="flex items-center gap-3 mb-1">
+                                <code
+                                    class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 font-mono text-sm">/audit</code>
+                                <span class="text-white font-medium">Compliance Sweep</span>
+                            </div>
+                            <p class="text-sm text-slate-500 pl-4 border-l border-white/5">Checks all members against
+                                current holding requirements.</p>
+                        </div>
+                        <div class="group">
+                            <div class="flex items-center gap-3 mb-1">
+                                <code
+                                    class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 font-mono text-sm">/kick</code>
+                                <span class="text-white font-medium">Enforce Rules</span>
+                            </div>
+                            <p class="text-sm text-slate-500 pl-4 border-l border-white/5">Removes any members who
+                                failed the audit.</p>
+                        </div>
+                        <div class="group">
+                            <div class="flex items-center gap-3 mb-1">
+                                <code
+                                    class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 font-mono text-sm">/export</code>
+                                <span class="text-white font-medium">Export Data</span>
+                            </div>
+                            <p class="text-sm text-slate-500 pl-4 border-l border-white/5">Download a CSV of all
+                                verified members and balances.</p>
+                        </div>
+                        <div class="group">
+                            <div class="flex items-center gap-3 mb-1">
+                                <code
+                                    class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 font-mono text-sm">/addlocked</code>
+                                <span class="text-white font-medium">Track Funds</span>
+                            </div>
+                            <p class="text-sm text-slate-500 pl-4 border-l border-white/5">Add a locked/vesting
+                                contract to the community display.</p>
+                        </div>
+                        <div class="group">
+                            <div class="flex items-center gap-3 mb-1">
+                                <code
+                                    class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 font-mono text-sm">/poll</code>
+                                <span class="text-white font-medium">Create Poll</span>
+                            </div>
+                            <p class="text-sm text-slate-500 pl-4 border-l border-white/5">Create a token-weighted poll.
+                            </p>
+                        </div>
+                        <div class="group">
+                            <div class="flex items-center gap-3 mb-1">
+                                <code
+                                    class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 font-mono text-sm">/tally</code>
+                                <span class="text-white font-medium">Count Votes</span>
+                            </div>
+                            <p class="text-sm text-slate-500 pl-4 border-l border-white/5">Calculate weighted results by
+                                replying to a poll.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Commands -->
+                <div class="glass-card p-8 rounded-3xl">
+                    <div class="flex items-center gap-3 mb-8 pb-4 border-b border-white/10">
+                        <i data-lucide="user" class="text-blue-500"></i>
+                        <h3 class="text-xl font-bold text-white">Member Tools</h3>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="group">
+                            <div class="flex items-center gap-3 mb-1">
+                                <code
+                                    class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-mono text-sm">/verify</code>
+                                <span class="text-white font-medium">Link Wallet</span>
+                            </div>
+                            <p class="text-sm text-slate-500 pl-4 border-l border-white/5">Starts the safe verification
+                                process to join groups.</p>
+                        </div>
+                        <div class="group">
+                            <div class="flex items-center gap-3 mb-1">
+                                <code
+                                    class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-mono text-sm">/mystatus</code>
+                                <span class="text-white font-medium">Check Status</span>
+                            </div>
+                            <p class="text-sm text-slate-500 pl-4 border-l border-white/5">See your current holding %
+                                and if you qualify for badges.</p>
+                        </div>
+                        <div class="group">
+                            <div class="flex items-center gap-3 mb-1">
+                                <code
+                                    class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-mono text-sm">/leaderboard</code>
+                                <span class="text-white font-medium">Top Holders</span>
+                            </div>
+                            <p class="text-sm text-slate-500 pl-4 border-l border-white/5">View the biggest whales in
+                                the current chat.</p>
+                        </div>
+                        <div class="group">
+                            <div class="flex items-center gap-3 mb-1">
+                                <code
+                                    class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-mono text-sm">/locked</code>
+                                <span class="text-white font-medium">Community Treasury</span>
+                            </div>
+                            <p class="text-sm text-slate-500 pl-4 border-l border-white/5">View verified locked/vested
+                                allocations.</p>
+                        </div>
+                        <div class="group">
+                            <div class="flex items-center gap-3 mb-1">
+                                <code
+                                    class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-mono text-sm">/supply</code>
+                                <span class="text-white font-medium">Community Supply</span>
+                            </div>
+                            <p class="text-sm text-slate-500 pl-4 border-l border-white/5">View total group holdings and
+                                % owned.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="py-20 container mx-auto px-4 z-10 relative">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Frequently Asked Questions</h2>
+            <p class="text-slate-400">Everything you need to know about Memo Protocol.</p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <!-- Q1 -->
+            <div class="glass-card p-6 rounded-2xl">
+                <h3 class="text-white font-bold text-lg mb-3 flex items-start gap-3">
+                    <i data-lucide="help-circle" class="w-5 h-5 text-brand-cyan shrink-0 mt-1"></i>
+                    How does verification work?
+                </h3>
+                <p class="text-slate-400 text-sm leading-relaxed pl-8">
+                    Memo uses a "Self-Transfer" mechanism. Instead of connecting your wallet to a website, you send 1
+                    $MEMO
+                    (or 0.000001 SOL) to <em>yourself</em>. Our bot watches the blockchain for this specific transaction
+                    to
+                    verify you own the wallet.
+                </p>
+            </div>
+
+            <!-- Q2 -->
+            <div class="glass-card p-6 rounded-2xl">
+                <h3 class="text-white font-bold text-lg mb-3 flex items-start gap-3">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-brand-purple shrink-0 mt-1"></i>
+                    Is it safe?
+                </h3>
+                <p class="text-slate-400 text-sm leading-relaxed pl-8">
+                    Yes, 100%. We are <strong>non-custodial</strong>. We never ask for your private keys or seed phrase.
+                    Since you are sending tokens to your own address, your funds never leave your control.
+                </p>
+            </div>
+
+            <!-- Q3 -->
+            <div class="glass-card p-6 rounded-2xl">
+                <h3 class="text-white font-bold text-lg mb-3 flex items-start gap-3">
+                    <i data-lucide="wallet" class="w-5 h-5 text-blue-500 shrink-0 mt-1"></i>
+                    Can I use multiple wallets?
+                </h3>
+                <p class="text-slate-400 text-sm leading-relaxed pl-8">
+                    Absolutely. You can link as many wallets as you want to your Telegram account. The bot will sum up
+                    your
+                    balances from all linked wallets to determine your access level.
+                </p>
+            </div>
+
+            <!-- Q4 -->
+            <div class="glass-card p-6 rounded-2xl">
+                <h3 class="text-white font-bold text-lg mb-3 flex items-start gap-3">
+                    <i data-lucide="zap" class="w-5 h-5 text-yellow-500 shrink-0 mt-1"></i>
+                    What is the "Self-Transfer"?
+                </h3>
+                <p class="text-slate-400 text-sm leading-relaxed pl-8">
+                    It's a transaction where the sender and receiver are the same address. It costs a tiny fraction of a
+                    cent
+                    in gas fees but cryptographically proves you control that wallet address.
+                </p>
+            </div>
+
+            <!-- Q5 -->
+            <div class="glass-card p-6 rounded-2xl md:col-span-2">
+                <h3 class="text-white font-bold text-lg mb-3 flex items-start gap-3">
+                    <i data-lucide="link" class="w-5 h-5 text-brand-cyan shrink-0 mt-1"></i>
+                    How does wallet linking work?
+                </h3>
+                <p class="text-slate-400 text-sm leading-relaxed pl-8">
+                    It works by sending on-chain messages. To link two wallets, you simply send a transaction from one
+                    to the other.
+                    This "Memo" creates an undeniable cryptographic link on the blockchain, proving you control both
+                    wallets.
+                    That is the core of the Memo Protocol: using the chain itself to verify your identity graph.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Airdrop Section -->
+    <section id="airdrop" class="py-24 container mx-auto px-4 z-10 relative">
+        <div class="max-w-4xl mx-auto relative group">
+
+            <div class="glass-card p-12 rounded-3xl border border-brand-purple/20 relative overflow-hidden">
+                <!-- Ambient Glow -->
+                <div
+                    class="absolute top-0 right-0 w-64 h-64 bg-brand-purple/10 rounded-full blur-3xl pointer-events-none">
+                </div>
+
+                <div class="flex flex-col md:flex-row items-start gap-12 relative z-10">
+
+                    <!-- Icon Box -->
+                    <div
+                        class="w-20 h-20 bg-gradient-to-br from-brand-purple to-brand-cyan rounded-2xl flex items-center justify-center border border-white/20 shadow-lg shadow-brand-purple/20 shrink-0">
+                        <i data-lucide="gift" class="w-10 h-10 text-white"></i>
+                    </div>
+
+                    <div class="flex-1 w-full">
+                        <h2 class="text-3xl font-bold text-white mb-6">Eligibility Rules</h2>
+
+                        <div class="space-y-4">
+                            <!-- Rule 1: Revealed -->
+                            <div
+                                class="p-6 rounded-xl bg-white/5 border border-brand-cyan/30 flex items-center gap-4 transition-all hover:bg-white/10">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-brand-cyan/20 text-brand-cyan flex items-center justify-center font-bold text-sm border border-brand-cyan/50">
+                                    1</div>
+                                <div>
+                                    <h4 class="text-white font-bold text-lg">Start a Community</h4>
+                                    <p class="text-slate-400 text-sm">Create a token-gated group on Telegram using
+                                        $MEMO.</p>
+                                </div>
+                                <i data-lucide="check-circle-2" class="ml-auto w-6 h-6 text-brand-cyan"></i>
+                            </div>
+
+                            <!-- Rule 2: Locked -->
+                            <div
+                                class="p-6 rounded-xl bg-black/40 border border-white/5 flex items-center gap-4 relative overflow-hidden group/locked">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-slate-800 text-slate-500 flex items-center justify-center font-bold text-sm">
+                                    2</div>
+                                <div class="blur-sm select-none opacity-50">
+                                    <h4 class="text-slate-500 font-bold text-lg">Hold 100k MEMO Tokens</h4>
+                                    <p class="text-slate-600 text-sm">Maintain balance for at least 30 days snapshot.
+                                    </p>
+                                </div>
+                                <div
+                                    class="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
+                                    <div
+                                        class="flex items-center gap-2 px-4 py-2 rounded-full bg-black/60 border border-white/10 text-xs font-mono text-slate-300">
+                                        <i data-lucide="lock" class="w-3 h-3"></i>
+                                        REVEALING SOON
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Rule 3: Locked -->
+                            <div
+                                class="p-6 rounded-xl bg-black/40 border border-white/5 flex items-center gap-4 relative overflow-hidden group/locked">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-slate-800 text-slate-500 flex items-center justify-center font-bold text-sm">
+                                    3</div>
+                                <div class="blur-sm select-none opacity-50">
+                                    <h4 class="text-slate-500 font-bold text-lg">Refer 5 Friends</h4>
+                                    <p class="text-slate-600 text-sm">Get 5 authentic users to verify in your group.</p>
+                                </div>
+                                <div
+                                    class="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
+                                    <div
+                                        class="flex items-center gap-2 px-4 py-2 rounded-full bg-black/60 border border-white/10 text-xs font-mono text-slate-300">
+                                        <i data-lucide="lock" class="w-3 h-3"></i>
+                                        REVEALING SOON
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- Roadmap -->
+    <section class="py-20 container mx-auto px-4 z-10 relative">
+        <h2 class="text-3xl font-bold text-white mb-12 text-center">Future Roadmap</h2>
+        <div class="grid md:grid-cols-4 gap-6">
+            <div
+                class="p-6 rounded-2xl bg-white/5 border border-white/5 hover:border-brand-purple/50 transition-colors">
+                <i data-lucide="crown" class="w-8 h-8 text-yellow-500 mb-4"></i>
+                <h4 class="font-bold text-white mb-2">Multi-Tier Roles</h4>
+                <p class="text-sm text-slate-500">Whale & Dolphin badges automatically assigned based on holdings.</p>
+            </div>
+            <div
+                class="p-6 rounded-2xl bg-white/5 border border-white/5 hover:border-brand-purple/50 transition-colors">
+                <i data-lucide="vote" class="w-8 h-8 text-purple-500 mb-4"></i>
+                <h4 class="font-bold text-white mb-2">DAO Integration</h4>
+                <p class="text-sm text-slate-500">In-chat voting weighted by real on-chain holding power.</p>
+            </div>
+            <div
+                class="p-6 rounded-2xl bg-white/5 border border-white/5 hover:border-brand-purple/50 transition-colors">
+                <i data-lucide="globe" class="w-8 h-8 text-blue-500 mb-4"></i>
+                <h4 class="font-bold text-white mb-2">Cross-Chain</h4>
+                <p class="text-sm text-slate-500">Bringing "Self-Transfer" verification to EVM and other chains.</p>
+            </div>
+            <div
+                class="p-6 rounded-2xl bg-white/5 border border-white/5 hover:border-brand-purple/50 transition-colors">
+                <i data-lucide="monitor" class="w-8 h-8 text-green-500 mb-4"></i>
+                <h4 class="font-bold text-white mb-2">Web Dashboard</h4>
+                <p class="text-sm text-slate-500">Command center for managing multiple large communities.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="py-24 text-center z-10 relative">
+        <div class="container mx-auto px-4">
+            <h2 class="text-4xl md:text-5xl font-bold text-white mb-8">Ready to secure your community?</h2>
+            <a href="https://t.me/memo_verification_bot" target="_blank"
+                class="inline-flex items-center justify-center gap-3 px-8 py-4 bg-brand-cyan text-black rounded-xl font-bold text-lg hover:bg-cyan-400 transition-all shadow-lg shadow-brand-cyan/25 active:scale-95">
+                <i data-lucide="zap" class="w-5 h-5 fill-black"></i>
+                <span>Start Now</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/40 pt-16 pb-8 z-10 relative">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-8 mb-12">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                        <i data-lucide="shield-check" class="text-white w-5 h-5"></i>
+                    </div>
+                    <span class="font-bold text-white tracking-tight">Memo Protocol</span>
+                </div>
+                <div class="flex gap-6">
+                    <a href="https://x.com/MemoOnSol" target="_blank"
+                        class="text-slate-400 hover:text-white transition-colors">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" class="w-6 h-6 fill-current">
+                            <path
+                                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                        </svg>
+                    </a>
+                    <a href="https://coinmun.com/coins/memo-protocol" target="_blank"
+                        class="text-slate-400 hover:text-amber-500 transition-colors font-bold">
+                        CoinMun
+                    </a>
+                </div>
+            </div>
+
+            <div class="text-center text-slate-600 text-sm">
+                &copy; 2025 Memo Protocol. All rights reserved. Built on Solana.
+            </div>
+        </div>
+    </footer>
+
     <script>
-        const connectBtn = document.getElementById('connectBtn');
-        const verifyBtn = document.getElementById('verifyBtn');
-        const statusDiv = document.getElementById('status');
-        const step1Div = document.getElementById('step1');
-        const step2Div = document.getElementById('step2');
-        const walletAddressP = document.getElementById('walletAddress');
-
-        // Parse query params
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('userId');
-        const chatId = urlParams.get('chatId');
-
-        if (!userId) {
-            statusDiv.textContent = "Error: Missing User ID. Please open from the Telegram link.";
-            statusDiv.className = "error";
-            connectBtn.disabled = true;
-        }
-
-        let provider = null;
-
-        function getProvider() {
-            if ('phantom' in window && window.phantom.solana.isPhantom) { // Prioritize Phantom
-                 return window.phantom.solana;
-            } else if ('solana' in window) {
-                return window.solana;
-            }
-            return null;
-        }
-
-        connectBtn.addEventListener('click', async () => {
-             provider = getProvider();
-            if (!provider) {
-                statusDiv.textContent = "Solana wallet not found. Please install Phantom.";
-                statusDiv.className = "error";
-                return;
-            }
-
-            try {
-                const resp = await provider.connect();
-                const publicKey = resp.publicKey.toString();
-                walletAddressP.textContent = publicKey.slice(0, 4) + '...' + publicKey.slice(-4);
-                
-                step1Div.style.display = 'none';
-                step2Div.style.display = 'block';
-                statusDiv.textContent = "";
-            } catch (err) {
-                console.error(err);
-                statusDiv.textContent = "Connection failed: " + err.message;
-                statusDiv.className = "error";
-            }
-        });
-
-        verifyBtn.addEventListener('click', async () => {
-            if (!provider) return;
-
-            try {
-                statusDiv.textContent = "Requesting signature...";
-                statusDiv.className = "";
-                
-                const timestamp = Date.now();
-                const messageText = `Sign in to Memo Bot as ${userId}\nTimestamp: ${timestamp}`;
-                const message = new TextEncoder().encode(messageText);
-                
-                const { signature } = await provider.signMessage(message); // Standard wallet adapter format usually returns object, Phantom returns { signature, publicKey? }
-                
-                // Convert signature to base64/bs58 for transport. 
-                // We'll use base58 if possible, but simplest is usually just sending the raw bytes or array.
-                // TextEncoding signature for transport:
-                const signatureArray = Array.from(signature); // Convert Uint8Array to normal array
-
-                const response = await fetch('/api/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId,
-                        publicKey: provider.publicKey.toString(),
-                        signature: signatureArray, // Send as array of numbers
-                        timestamp
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    statusDiv.textContent = "Verification successful! You can now close this window.";
-                    statusDiv.className = "success";
-                    verifyBtn.disabled = true;
-                } else {
-                    statusDiv.textContent = "Verification failed: " + result.error;
-                    statusDiv.className = "error";
-                }
-
-            } catch (err) {
-                console.error(err);
-                statusDiv.textContent = "Verification error: " + err.message;
-                statusDiv.className = "error";
-            }
-        });
+        lucide.createIcons();
     </script>
 </body>
+
 </html>
