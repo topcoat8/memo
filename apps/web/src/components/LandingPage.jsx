@@ -56,28 +56,7 @@ export default function LandingPage() {
                     </div>
                 </section>
 
-                {/* Core Value Props (Security & Immutability) */}
-                <section className="py-24 px-6 border-y border-white/5 bg-white/[0.02]">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="grid md:grid-cols-3 gap-12">
-                            <Feature
-                                icon={<Lock className="w-6 h-6 text-emerald-400" />}
-                                title="End-to-End Encrypted"
-                                description="Uses the same encryption standards as Apple and Signal (TweetNaCl). Only you and the recipient hold the keys to decrypt messages."
-                            />
-                            <Feature
-                                icon={<Globe className="w-6 h-6 text-blue-400" />}
-                                title="Immutable Layer"
-                                description="Your communications are secured by the Solana blockchain, ensuring absolute data permanence and integrity. No central server can alter your history."
-                            />
-                            <Feature
-                                icon={<Zap className="w-6 h-6 text-amber-400" />}
-                                title="Lightning Fast"
-                                description="Leveraging Solana's high throughput for instant message delivery and real-time community interactions."
-                            />
-                        </div>
-                    </div>
-                </section>
+
 
                 {/* Ecosystem: Telegram Bot (The Killer Feature) */}
                 <section id="ecosystem" className="py-32 px-6">
@@ -164,6 +143,27 @@ export default function LandingPage() {
                                     className="w-full h-full object-contain drop-shadow-2xl rounded-2xl hover:scale-[1.02] transition-transform duration-500"
                                 />
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Web App Features */}
+                    <div className="max-w-7xl mx-auto mt-24">
+                        <div className="grid md:grid-cols-3 gap-12">
+                            <Feature
+                                icon={<Lock className="w-6 h-6 text-emerald-400" />}
+                                title="End-to-End Encrypted"
+                                description="Uses the same encryption standards as Apple and Signal (TweetNaCl). Only you and the recipient hold the keys to decrypt messages."
+                            />
+                            <Feature
+                                icon={<Globe className="w-6 h-6 text-blue-400" />}
+                                title="Immutable Layer"
+                                description="Your communications are secured by the Solana blockchain, ensuring absolute data permanence and integrity. No central server can alter your history."
+                            />
+                            <Feature
+                                icon={<Zap className="w-6 h-6 text-amber-400" />}
+                                title="Lightning Fast"
+                                description="Leveraging Solana's high throughput for instant message delivery and real-time community interactions."
+                            />
                         </div>
                     </div>
                 </section>

@@ -126,39 +126,24 @@ export default function TelegramBotPage() {
                     <div className="max-w-7xl mx-auto">
                         <div className="text-center mb-16">
                             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Command Center Suite</h2>
-                            <p className="text-slate-400">Built for high-performance communities.</p>
+                            <p className="text-slate-400">The essential tools for high-performance communities.</p>
                         </div>
 
-                        <div className="grid md:grid-cols-3 gap-6">
-                            <FeatureCard
-                                icon={<Activity className="w-6 h-6 text-emerald-400" />}
-                                title="Community Audit"
-                                desc="Run /audit to instantly verify your group's health. Checks admin permissions, token gates, and bot connectivity."
+                        <div className="grid md:grid-cols-3 gap-12">
+                            <Feature
+                                icon={<Shield className="w-6 h-6 text-emerald-400" />}
+                                title="Automated Access"
+                                description="Automatically manage invite links and kick users who sell below the threshold. 100% hands-free gating."
                             />
-                            <FeatureCard
-                                icon={<Users className="w-6 h-6 text-sky-400" />}
-                                title="Holder Leaderboards"
-                                desc="Gamify your community with /leaderboard. Display top token holders and foster healthy competition."
-                            />
-                            <FeatureCard
+                            <Feature
                                 icon={<Terminal className="w-6 h-6 text-purple-400" />}
                                 title="Token-Gated Polls"
-                                desc="Create sybil-resistant polls with /poll. Only verified token holders can vote."
+                                description="Create sybil-resistant polls where only verified token holders can vote. Your tokens = Your voice."
                             />
-                            <FeatureCard
-                                icon={<Lock className="w-6 h-6 text-amber-400" />}
-                                title="Locked Staking Gates"
-                                desc="Reward long-term alignment. Use /locked to grant special access to users who lock their tokens."
-                            />
-                            <FeatureCard
-                                icon={<Zap className="w-6 h-6 text-indigo-400" />}
-                                title="Automated Access"
-                                desc="The bot automatically approves join requests for verified hodlers and kicks those who sell below the threshold."
-                            />
-                            <FeatureCard
-                                icon={<Globe className="w-6 h-6 text-slate-400" />}
-                                title="Supply Tracking"
-                                desc="Monitor your token's deflationary mechanics and circulating supply with /supply."
+                            <Feature
+                                icon={<Activity className="w-6 h-6 text-sky-400" />}
+                                title="Holder Leaderboards"
+                                description="Gamify your community with real-time rankings of top holders to foster healthy competition."
                             />
                         </div>
                     </div>
@@ -208,12 +193,14 @@ function ComparisonRow({ label, bad, desc }) {
     );
 }
 
-function FeatureCard({ icon, title, desc }) {
+function Feature({ icon, title, description }) {
     return (
-        <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.05] transition-colors">
-            <div className="mb-4">{icon}</div>
-            <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
-            <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
+        <div className="space-y-4">
+            <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center border border-white/5">
+                {icon}
+            </div>
+            <h3 className="text-xl font-bold text-white">{title}</h3>
+            <p className="text-slate-400 leading-relaxed">{description}</p>
         </div>
     );
 }
