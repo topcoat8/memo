@@ -146,6 +146,7 @@ export default function LandingPage() {
                                     <CheckItem title="Encrypted DMs" description="Send private, encrypted messages to any Solana wallet address." />
                                     <CheckItem title="Group Chats" description="Join token-gated communities and participate in governance discussions." />
                                     <CheckItem title="Rich User Interface" description="A modern, responsive experience designed for the professional web3 user." />
+                                    <CheckItem title="Wallet Connection Required" description="Your wallet is required to sign transactions and decrypt messages. Keys never stick around." />
                                 </div>
 
                                 <button

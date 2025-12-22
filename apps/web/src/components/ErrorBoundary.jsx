@@ -13,24 +13,11 @@ class ErrorBoundary extends React.Component {
     }
 
     componentDidMount() {
-        window.addEventListener('error', this.handleGlobalError);
-        window.addEventListener('unhandledrejection', this.handlePromiseRejection);
+        // We rely on main.jsx for global error logging. 
+        // We only want to show the fallback UI if a React component fails to render.
     }
 
     componentWillUnmount() {
-        window.removeEventListener('error', this.handleGlobalError);
-        window.removeEventListener('unhandledrejection', this.handlePromiseRejection);
-    }
-
-    handleGlobalError = (event) => {
-        // Prevent default browser error handling if desired, but usually we just want to show UI
-        // event.preventDefault(); 
-        const error = event.error || new Error(event.message || 'Unknown Error');
-        this.setState({ hasError: true, error });
-    }
-
-    handlePromiseRejection = (event) => {
-        this.setState({ hasError: true, error: event.reason });
     }
 
     componentDidCatch(error, errorInfo) {

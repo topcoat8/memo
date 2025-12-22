@@ -19,41 +19,11 @@ window.onunhandledrejection = (event) => {
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './Memo.jsx';
-
-// Solana wallet adapter providers
-import {
-  ConnectionProvider,
-  WalletProvider,
-} from '@solana/wallet-adapter-react';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import '@solana/wallet-adapter-react-ui/styles.css';
-
-import { SolanaMobileWalletAdapter } from '@solana-mobile/wallet-adapter-mobile';
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
-
-const wallets = [
-  new SolanaMobileWalletAdapter({
-    appIdentity: {
-      name: 'Memo',
-      uri: 'https://memo.app',
-      icon: '/pfp.jpg',
-    },
-    authorizationResultCache: localStorage,
-  }),
-  new PhantomWalletAdapter(),
-];
-
 import ErrorBoundary from './src/components/ErrorBoundary';
 
 const root = createRoot(document.getElementById('root'));
 root.render(
-  <ConnectionProvider endpoint={import.meta.env.VITE_SOLANA_RPC || 'https://api.mainnet-beta.solana.com'}>
-    <WalletProvider wallets={wallets} autoConnect={false}>
-      <WalletModalProvider>
-        <ErrorBoundary>
-          <App />
-        </ErrorBoundary>
-      </WalletModalProvider>
-    </WalletProvider>
-  </ConnectionProvider>
+  <ErrorBoundary>
+    <App />
+  </ErrorBoundary>
 );

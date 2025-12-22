@@ -151,27 +151,63 @@ function AppLayout() {
   );
 }
 
-// Routes Definition
-function MemoRouter() {
+// Solana wallet adapter providers
+import {
+  ConnectionProvider,
+  WalletProvider,
+} from '@solana/wallet-adapter-react';
+import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
+import '@solana/wallet-adapter-react-ui/styles.css';
+
+import { SolanaMobileWalletAdapter } from '@solana-mobile/wallet-adapter-mobile';
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
+
+const wallets = [
+  new SolanaMobileWalletAdapter({
+    appIdentity: {
+      name: 'Memo',
+      uri: 'https://memo.app',
+      icon: '/pfp.jpg',
+    },
+    authorizationResultCache: localStorage,
+  }),
+  new PhantomWalletAdapter(),
+];
+
+// Wrapper for authenticated/app routes that need wallet connection
+function WalletContextWrapper({ children }) {
+  return (
+    <ConnectionProvider endpoint={import.meta.env.VITE_SOLANA_RPC || 'https://api.mainnet-beta.solana.com'}>
+      <WalletProvider wallets={wallets} autoConnect={false}>
+        <WalletModalProvider>
+          <MemoProvider network={network} tokenMint={tokenMint}>
+            {children}
+          </MemoProvider>
+        </WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
+  );
+}
+
+export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/whitepaper" element={<WhitepaperPage onBack={() => window.history.back()} />} />
         <Route path="/telegram-bot-details" element={<TelegramBotPage />} />
-        <Route path="/app/*" element={<AppLayout />} />
+
+        {/* Protected App Routes */}
+        <Route path="/app/*" element={
+          <WalletContextWrapper>
+            <AppLayout />
+          </WalletContextWrapper>
+        } />
+
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
-  );
-}
-
-export default function App() {
-  return (
-    <MemoProvider network={network} tokenMint={tokenMint}>
-      <MemoRouter />
-    </MemoProvider>
   );
 }
 
