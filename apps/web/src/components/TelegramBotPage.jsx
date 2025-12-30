@@ -121,6 +121,83 @@ export default function TelegramBotPage() {
                     </div>
                 </section>
 
+                {/* How to Create a Community Guide */}
+                <section className="py-24 px-6 bg-[#0a0a0c] border-y border-white/5">
+                    <div className="max-w-4xl mx-auto">
+                        <h2 className="text-3xl font-bold text-white mb-12 text-center">How to Create a Community</h2>
+
+                        <div className="space-y-12">
+                            {/* Step 1 */}
+                            <div className="flex gap-6 items-start">
+                                <div className="w-12 h-12 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 font-bold shrink-0">1</div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white mb-2">Meet the Requirements</h3>
+                                    <p className="text-slate-400">
+                                        To stop spam, creators must hold at least <strong>5,000 $MEMO</strong>.
+                                        Ensure your wallet is linked (<code className="bg-white/10 px-2 py-0.5 rounded text-sky-300 text-sm">/verify</code>) before starting.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Step 2 */}
+                            <div className="flex gap-6 items-start">
+                                <div className="w-12 h-12 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 font-bold shrink-0">2</div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white mb-2">Start the Wizard</h3>
+                                    <p className="text-slate-400 mb-4">
+                                        DM the bot and type <code className="bg-white/10 px-2 py-1 rounded text-sky-300">/create</code>.
+                                    </p>
+                                    <div className="text-slate-400 text-sm bg-white/5 p-4 rounded-lg border border-white/5">
+                                        The bot will ask for:
+                                        <ul className="list-disc pl-5 mt-2 space-y-1">
+                                            <li><strong>Community Name</strong></li>
+                                            <li><strong>Token Mint Address</strong> (the token you want to gate with)</li>
+                                            <li><strong>Minimum Balance Requirement</strong></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Step 3 */}
+                            <div className="flex gap-6 items-start">
+                                <div className="w-12 h-12 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 font-bold shrink-0">3</div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white mb-2">Activate On-Chain</h3>
+                                    <p className="text-slate-400 mb-4">
+                                        The bot will generate a <strong>Rule Data (JSON)</strong> and a <strong>Community Address</strong>.
+                                    </p>
+                                    <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-lg">
+                                        <p className="text-amber-200 text-sm font-semibold mb-1 flex items-center gap-2">
+                                            <AlertTriangle className="w-4 h-4" />
+                                            Critical Step
+                                        </p>
+                                        <p className="text-amber-200/80 text-sm leading-relaxed">
+                                            You must send <strong>1 $MEMO</strong> to the Community Address with the Rule Data pasted in the <strong>Memo Field</strong>. This permanently saves your rules on Solana.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Step 4 */}
+                            <div className="flex gap-6 items-start">
+                                <div className="w-12 h-12 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 font-bold shrink-0">4</div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white mb-2">Link Your Group</h3>
+                                    <div className="text-slate-400 space-y-2">
+                                        <p>1. Go to your Telegram Group.</p>
+                                        <p>2. Add the bot as an <strong>Admin</strong>.</p>
+                                        <p>3. Type <code className="bg-white/10 px-2 py-1 rounded text-sky-300">/link &lt;Community Address&gt;</code></p>
+                                    </div>
+                                    <p className="text-emerald-400 mt-4 font-semibold flex items-center gap-2">
+                                        <CheckCircle className="w-4 h-4" />
+                                        Done! Your community is now gated.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 {/* Feature Suite */}
                 <section className="py-24 px-6">
                     <div className="max-w-7xl mx-auto">

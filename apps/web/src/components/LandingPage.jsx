@@ -1,4 +1,4 @@
-import { Shield, Zap, Lock, Globe, MessageSquare, ArrowRight, CheckCircle, Smartphone } from 'lucide-react';
+import { Shield, Zap, Lock, Globe, MessageSquare, ArrowRight, CheckCircle, Users, Building2, Smartphone, Bot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import coinmunIcon from '../../assets/coinmun.svg';
 import orcaIcon from '../../assets/Orca_Logo.webp';
@@ -39,7 +39,7 @@ export default function LandingPage() {
 
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                                 <button
-                                    onClick={() => document.getElementById('ecosystem').scrollIntoView({ behavior: 'smooth' })}
+                                    onClick={() => document.getElementById('social').scrollIntoView({ behavior: 'smooth' })}
                                     className="px-8 py-4 bg-white text-black font-bold rounded-xl hover:bg-slate-200 transition-colors flex items-center gap-2"
                                 >
                                     Explore Ecosystem
@@ -58,14 +58,14 @@ export default function LandingPage() {
 
 
 
-                {/* Ecosystem: Telegram Bot (The Killer Feature) */}
-                <section id="ecosystem" className="py-32 px-6">
+                {/* MEMO SOCIAL (Telegram Bot) */}
+                <section id="social" className="py-32 px-6">
                     <div className="max-w-7xl mx-auto mb-24">
                         <div className="flex flex-col md:flex-row items-center gap-12">
                             <div className="flex-1 space-y-8">
                                 <div className="inline-flex items-center gap-2 text-sky-400 font-semibold uppercase tracking-wider text-sm">
-                                    <MessageSquare className="w-4 h-4" />
-                                    <span>Memo Utilities</span>
+                                    <Users className="w-4 h-4" />
+                                    <span>Memo Social</span>
                                 </div>
                                 <h2 className="text-4xl md:text-5xl font-bold text-white">
                                     The Telegram Bot
@@ -75,7 +75,7 @@ export default function LandingPage() {
                                 </p>
 
                                 <div className="space-y-4">
-                                    <CheckItem title="Token-Gating without Wallet Connection" description="Users verify assets via a safe, non-invasive 'Magic Transaction' (self-transfer) on the public ledger. No risk to hot wallets." />
+                                    <CheckItem title="Zero Wallet Connect" description="Users verify assets via a safe, non-invasive 'Magic Transaction' (self-transfer) on the public ledger. No risk to hot wallets." />
                                     <CheckItem title="Volume Tracking" description="Monitor community trading volume and engagement in real-time." />
                                     <CheckItem title="Private Group Access" description="Automatically manage invite links based on token holdings." />
                                 </div>
@@ -106,25 +106,25 @@ export default function LandingPage() {
                         </div>
                     </div>
 
-                    {/* Ecosystem: Web App (Product Showcase) */}
+                    {/* MEMO ENTERPRISE (Web App) */}
                     <div className="max-w-7xl mx-auto">
                         <div className="flex flex-col md:flex-row-reverse items-center gap-12">
                             <div className="flex-1 space-y-8">
                                 <div className="inline-flex items-center gap-2 text-indigo-400 font-semibold uppercase tracking-wider text-sm">
-                                    <Globe className="w-4 h-4" />
-                                    <span>Flagship Client</span>
+                                    <Building2 className="w-4 h-4" />
+                                    <span>Memo Enterprise</span>
                                 </div>
                                 <h2 className="text-4xl md:text-5xl font-bold text-white">
-                                    The Memo Web App
+                                    The Web App
                                 </h2>
                                 <p className="text-xl text-slate-400 leading-relaxed">
                                     A full-featured decentralized messaging suite. Manage your on-chain identity and communicate securely.
                                 </p>
 
                                 <div className="space-y-4">
-                                    <CheckItem title="Encrypted DMs" description="Send private, encrypted messages to any Solana wallet address." />
-                                    <CheckItem title="Group Chats" description="Join token-gated communities and participate in governance discussions." />
-                                    <CheckItem title="Rich User Interface" description="A modern, responsive experience designed for the professional web3 user." />
+                                    <CheckItem title="End-to-End Encryption" description="Send private, encrypted messages using TweetNaCl. Only you and the recipient hold the keys." />
+                                    <CheckItem title="Immutable History" description="Your communications are secured by Solana, ensuring absolute data permanence and integrity." />
+                                    <CheckItem title="Professional UI" description="A modern, responsive experience designed for the professional web3 user." />
                                     <CheckItem title="Wallet Connection Required" description="Your wallet is required to sign transactions and decrypt messages. Keys never stick around." />
                                 </div>
 
@@ -132,7 +132,7 @@ export default function LandingPage() {
                                     onClick={() => navigate('/app')}
                                     className="px-8 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-500 transition-colors flex items-center gap-2 shadow-lg shadow-indigo-500/20"
                                 >
-                                    Launch App
+                                    Launch Enterprise App
                                     <ArrowRight className="w-4 h-4" />
                                 </button>
                             </div>
@@ -145,31 +145,88 @@ export default function LandingPage() {
                             </div>
                         </div>
                     </div>
+                </section>
 
-                    {/* Web App Features */}
-                    <div className="max-w-7xl mx-auto mt-24">
-                        <div className="grid md:grid-cols-3 gap-12">
-                            <Feature
-                                icon={<Lock className="w-6 h-6 text-emerald-400" />}
-                                title="End-to-End Encrypted"
-                                description="Uses the same encryption standards as Apple and Signal (TweetNaCl). Only you and the recipient hold the keys to decrypt messages."
-                            />
-                            <Feature
-                                icon={<Globe className="w-6 h-6 text-blue-400" />}
-                                title="Immutable Layer"
-                                description="Your communications are secured by the Solana blockchain, ensuring absolute data permanence and integrity. No central server can alter your history."
-                            />
-                            <Feature
-                                icon={<Zap className="w-6 h-6 text-amber-400" />}
-                                title="Lightning Fast"
-                                description="Leveraging Solana's high throughput for instant message delivery and real-time community interactions."
-                            />
+                {/* COMPARISON: Choose Your Stream */}
+                <section className="py-24 px-6 bg-white/[0.02] border-y border-white/5">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="text-center mb-16">
+                            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Choose Your Stream</h2>
+                            <p className="text-slate-400">Two powerful interfaces, one immutable protocol.</p>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-8">
+                            {/* Social Card */}
+                            <div className="p-8 rounded-3xl bg-[#0A0A0B] border border-white/5 hover:border-sky-500/30 transition-colors group">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-12 h-12 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform">
+                                        <Users className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-white">Memo Social</h3>
+                                        <div className="text-sky-400 text-sm font-medium">Community & Growth</div>
+                                    </div>
+                                </div>
+                                <ul className="space-y-4 mb-8">
+                                    <li className="flex items-start gap-3 text-slate-400">
+                                        <Bot className="w-5 h-5 text-sky-500 shrink-0" />
+                                        <span>Automated Telegram Management</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-slate-400">
+                                        <Shield className="w-5 h-5 text-sky-500 shrink-0" />
+                                        <span>Token-Gating without Wallet Connect</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-slate-400">
+                                        <Users className="w-5 h-5 text-sky-500 shrink-0" />
+                                        <span>Mass Adoption & Onboarding</span>
+                                    </li>
+                                </ul>
+                                <button
+                                    onClick={() => window.open('https://t.me/memo_verification_bot', '_blank')}
+                                    className="w-full py-3 bg-sky-500/10 text-sky-400 border border-sky-500/20 font-bold rounded-xl hover:bg-sky-500/20 transition-colors"
+                                >
+                                    Start Building Community
+                                </button>
+                            </div>
+
+                            {/* Enterprise Card */}
+                            <div className="p-8 rounded-3xl bg-[#0A0A0B] border border-white/5 hover:border-indigo-500/30 transition-colors group">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                                        <Building2 className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-white">Memo Enterprise</h3>
+                                        <div className="text-indigo-400 text-sm font-medium">Security & Infrastructure</div>
+                                    </div>
+                                </div>
+                                <ul className="space-y-4 mb-8">
+                                    <li className="flex items-start gap-3 text-slate-400">
+                                        <Lock className="w-5 h-5 text-indigo-500 shrink-0" />
+                                        <span>Full End-to-End Encryption</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-slate-400">
+                                        <Zap className="w-5 h-5 text-indigo-500 shrink-0" />
+                                        <span>Identity & Wallet Management</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-slate-400">
+                                        <MessageSquare className="w-5 h-5 text-indigo-500 shrink-0" />
+                                        <span>Client-Side Message Signing</span>
+                                    </li>
+                                </ul>
+                                <button
+                                    onClick={() => navigate('/app')}
+                                    className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-500 transition-colors"
+                                >
+                                    Access Enterprise Suite
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </section>
 
                 {/* How it Works */}
-                <section className="py-24 px-6 border-t border-white/5 bg-white/[0.02]">
+                <section className="py-24 px-6 border-t border-white/5">
                     <div className="max-w-7xl mx-auto">
                         <div className="text-center mb-16">
                             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">How it Works</h2>
@@ -255,5 +312,3 @@ function SocialLink({ href, label }) {
         </a>
     );
 }
-
-

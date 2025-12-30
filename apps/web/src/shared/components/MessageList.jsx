@@ -128,7 +128,91 @@ export default function MessageList({ messages, userId, decryptMessage, allowIma
             );
         }
 
-        // Hide signature messages from the main flow
+        // Burn Upon Read Logic
+        if (data && data.type === 'burn_on_read') {
+            const burnedKey = `burned_${data.timestamp}_${data.content.length}`; // Simple unique key
+            const isBurned = localStorage.getItem(burnedKey);
+            const [isViewing, setIsViewing] = React.useState(false);
+            const [timeLeft, setTimeLeft] = React.useState(60);
+
+            React.useEffect(() => {
+                let timer;
+                if (isViewing && timeLeft > 0) {
+                    timer = setInterval(() => {
+                        setTimeLeft((prev) => prev - 1);
+                    }, 1000);
+                } else if (timeLeft === 0) {
+                    localStorage.setItem(burnedKey, 'true');
+                    setIsViewing(false);
+                }
+                return () => clearInterval(timer);
+            }, [isViewing, timeLeft, burnedKey]);
+
+            if (isBurned) {
+                return (
+                    <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-800 flex items-center gap-2 italic text-slate-600 select-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM6.75 9.25a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" clipRule="evenodd" />
+                        </svg>
+                        <span>Message burned</span>
+                    </div>
+                );
+            }
+
+            if (!isViewing) {
+                return (
+                    <button
+                        onClick={() => setIsViewing(true)}
+                        className="bg-orange-950/30 p-4 rounded-xl border border-orange-500/30 w-full max-w-sm flex items-center justify-between gap-4 group hover:bg-orange-950/50 transition-all cursor-pointer"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-orange-500/10 rounded-lg text-orange-500 group-hover:text-orange-400 group-hover:scale-110 transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                                    <path fillRule="evenodd" d="M13.5 4.938a7 7 0 11-9.006 1.737c.202-.257.59-.218.793.039.031.04.07.105.112.186.208.399.552 1.07.953 1.838a6.38 6.38 0 011.082 3.132c0 .54-.251 1.05-.689 1.407a.75.75 0 00.416 1.346c.79-.115 1.776-.328 2.508-1.298.502-.665.688-1.488.665-2.275a20.142 20.142 0 01-.004-.159c.004-.711.23-1.405.626-1.983.333-.486.276-1.353-.199-2.072-.255-.386-.484-.798-.676-1.229a.75.75 0 00-1.294 0c-.57.962-.733 2.086-.347 3.016.142.341.013.682-.365.682-.245 0-.488-.046-.716-.13-.762-.284-1.742-1.258-1.638-2.613zM6.92 5.066a5.501 5.501 0 018.667-2.67c.365.25.756.544 1.13 1.05.513.696.58 1.564.12 2.261-.433.656-.632 1.543-.628 2.39a18.648 18.648 0 00.005.176c.033 1.127-.245 2.155-.838 2.94-.962 1.275-2.27 1.724-3.486 1.996a2.25 2.25 0 01-1.39-4.223 5.38 5.38 0 00-.547-2.296c-.464-.954-.91-1.782-1.164-2.278-.292-.572-.738-1.225-1.127-1.72-.178-.226-.339-.408-.475-.544a.75.75 0 01-.267-.082z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div className="text-left">
+                                <div className="text-sm font-bold text-orange-400">Hidden Message</div>
+                                <div className="text-xs text-orange-500/60">Tap to view (Burns in 60s)</div>
+                            </div>
+                        </div>
+                        <div className="text-orange-500/40">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                                <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+                                <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+                    </button>
+                );
+            }
+
+            // Viewing State
+            return (
+                <div className="bg-orange-950/20 border border-orange-500/30 rounded-xl overflow-hidden min-w-[200px] max-w-md animate-in fade-in zoom-in-95 duration-200">
+                    <div className="bg-orange-900/40 p-2 flex items-center justify-between border-b border-orange-500/20">
+                        <div className="flex items-center gap-2 text-xs font-bold text-orange-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 animate-pulse">
+                                <path fillRule="evenodd" d="M13.5 4.938a7 7 0 11-9.006 1.737c.202-.257.59-.218.793.039.031.04.07.105.112.186.208.399.552 1.07.953 1.838a6.38 6.38 0 011.082 3.132c0 .54-.251 1.05-.689 1.407a.75.75 0 00.416 1.346c.79-.115 1.776-.328 2.508-1.298.502-.665.688-1.488.665-2.275a20.142 20.142 0 01-.004-.159c.004-.711.23-1.405.626-1.983.333-.486.276-1.353-.199-2.072-.255-.386-.484-.798-.676-1.229a.75.75 0 00-1.294 0c-.57.962-.733 2.086-.347 3.016.142.341.013.682-.365.682-.245 0-.488-.046-.716-.13-.762-.284-1.742-1.258-1.638-2.613zM6.92 5.066a5.501 5.501 0 018.667-2.67c.365.25.756.544 1.13 1.05.513.696.58 1.564.12 2.261-.433.656-.632 1.543-.628 2.39a18.648 18.648 0 00.005.176c.033 1.127-.245 2.155-.838 2.94-.962 1.275-2.27 1.724-3.486 1.996a2.25 2.25 0 01-1.39-4.223 5.38 5.38 0 00-.547-2.296c-.464-.954-.91-1.782-1.164-2.278-.292-.572-.738-1.225-1.127-1.72-.178-.226-.339-.408-.475-.544a.75.75 0 01-.267-.082z" clipRule="evenodd" />
+                            </svg>
+                            Self-Destructing
+                        </div>
+                        <div className="text-xs font-mono text-orange-300 font-bold tabular-nums">
+                            {timeLeft}s
+                        </div>
+                    </div>
+                    <div className="p-4 bg-black/20 text-slate-200">
+                        {data.content}
+                    </div>
+                    <div className="h-1 bg-orange-950 w-full">
+                        <div
+                            className="h-full bg-orange-500 transition-all duration-1000 ease-linear"
+                            style={{ width: `${(timeLeft / 60) * 100}%` }}
+                        />
+                    </div>
+                </div>
+            );
+        }
+
         if (data && data.type === 'contract_signature') {
             return null;
         }

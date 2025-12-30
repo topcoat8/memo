@@ -9,3 +9,4 @@ package-lock.json
 .DS_Store
 docs/
 marketing/
+LLM_CONTEXT.md

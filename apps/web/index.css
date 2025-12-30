@@ -8,33 +8,36 @@
     body {
         @apply bg-[#030305] text-slate-200 font-sans selection:bg-cyan-500/30;
         font-family: 'Inter', sans-serif;
-        background-image:
-            radial-gradient(circle at 50% 0%, rgba(0, 243, 255, 0.03) 0%, transparent 50%),
-            radial-gradient(circle at 0% 50%, rgba(188, 19, 254, 0.03) 0%, transparent 50%),
-            radial-gradient(circle at 100% 50%, rgba(0, 243, 255, 0.03) 0%, transparent 50%);
+        /* Enterprise Subtle Grid Background */
+        background-color: #030305;
+        background-image: 
+            linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+            radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.03) 0%, transparent 60%);
+        background-size: 50px 50px, 50px 50px, 100% 100%;
         background-attachment: fixed;
     }
 }
 
 @layer utilities {
     .glass {
-        @apply bg-[#0a0a0f]/60 backdrop-blur-2xl border border-white/5 shadow-2xl;
+        @apply bg-[#0A0A12]/80 backdrop-blur-xl border border-white/5 shadow-2xl;
     }
 
     .glass-card {
-        @apply bg-[#0a0a0f]/80 backdrop-blur-2xl border border-white/5 shadow-2xl;
+        @apply bg-[#0F0F1A]/60 backdrop-blur-2xl border border-white/5 shadow-xl;
     }
 
     .glass-panel {
-        @apply bg-[#0a0a0f]/40 backdrop-blur-xl border-r border-white/5;
+        @apply bg-[#05050A]/90 backdrop-blur-2xl border-r border-white/5;
     }
 
     .neon-text {
-        @apply text-cyan-400 drop-shadow-[0_0_5px_rgba(6,182,212,0.5)];
+        @apply text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.4)];
     }
 
     .neon-border {
-        @apply border-cyan-500/50 shadow-[0_0_10px_rgba(6,182,212,0.2)];
+        @apply border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.15)];
     }
 
     .gradient-text {
@@ -44,8 +47,8 @@
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -53,5 +56,5 @@
 }
 
 ::-webkit-scrollbar-thumb {
-    @apply bg-slate-800/50 rounded-full hover:bg-cyan-500/30 transition-colors;
+    @apply bg-slate-800/40 rounded-full hover:bg-slate-700/60 transition-colors;
 }

@@ -12,6 +12,7 @@ export default function MessageInput({
     readOnly = false,
 }) {
     const [isContractMode, setIsContractMode] = useState(false);
+    const [isBurnMode, setIsBurnMode] = useState(false);
     const [contractTitle, setContractTitle] = useState("");
     const [showImageInput, setShowImageInput] = useState(false);
     const [imageUrl, setImageUrl] = useState("");
@@ -49,6 +50,14 @@ export default function MessageInput({
         if (isContractMode) {
             setIsContractMode(false);
             setContractTitle("");
+        }
+        if (isBurnMode) {
+            finalPayload = JSON.stringify({
+                type: 'burn_on_read',
+                content: message.trim(),
+                timestamp: Date.now()
+            });
+            setIsBurnMode(false);
         }
         setMessage("");
     };
@@ -194,7 +203,21 @@ export default function MessageInput({
             <div className="flex gap-3">
                 <button
                     onClick={() => {
+                        setIsBurnMode(!isBurnMode);
+                        setIsContractMode(false);
+                    }}
+                    className={`p-2 rounded-lg transition-colors ${isBurnMode ? 'bg-orange-500/20 text-orange-400 ring-1 ring-orange-500/50' : 'bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}
+                    title="Burn Upon Read"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                        <path fillRule="evenodd" d="M13.5 4.938a7 7 0 11-9.006 1.737c.202-.257.59-.218.793.039.031.04.07.105.112.186.208.399.552 1.07.953 1.838a6.38 6.38 0 011.082 3.132c0 .54-.251 1.05-.689 1.407a.75.75 0 00.416 1.346c.79-.115 1.776-.328 2.508-1.298.502-.665.688-1.488.665-2.275a20.142 20.142 0 01-.004-.159c.004-.711.23-1.405.626-1.983.333-.486.276-1.353-.199-2.072-.255-.386-.484-.798-.676-1.229a.75.75 0 00-1.294 0c-.57.962-.733 2.086-.347 3.016.142.341.013.682-.365.682-.245 0-.488-.046-.716-.13-.762-.284-1.742-1.258-1.638-2.613zM6.92 5.066a5.501 5.501 0 018.667-2.67c.365.25.756.544 1.13 1.05.513.696.58 1.564.12 2.261-.433.656-.632 1.543-.628 2.39a18.648 18.648 0 00.005.176c.033 1.127-.245 2.155-.838 2.94-.962 1.275-2.27 1.724-3.486 1.996a2.25 2.25 0 01-1.39-4.223 5.38 5.38 0 00-.547-2.296c-.464-.954-.91-1.782-1.164-2.278-.292-.572-.738-1.225-1.127-1.72-.178-.226-.339-.408-.475-.544a.75.75 0 01-.267-.082z" clipRule="evenodd" />
+                    </svg>
+                </button>
+
+                <button
+                    onClick={() => {
                         setIsContractMode(!isContractMode);
+                        setIsBurnMode(false);
                         setShowImageInput(false);
                     }}
                     className={`p-2 rounded-lg transition-colors ${isContractMode ? 'bg-indigo-500/20 text-indigo-400 ring-1 ring-indigo-500/50' : 'bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}
@@ -225,16 +248,16 @@ export default function MessageInput({
                             handleSendClick();
                         }
                     }}
-                    placeholder={!disabled ? (isContractMode ? "Enter contract details..." : "Type a message...") : (readOnly ? "Connect wallet to send messages" : "Select a contact first")}
+                    placeholder={!disabled ? (isContractMode ? "Enter contract details..." : (isBurnMode ? "Enter self-destructing message..." : "Type a message...")) : (readOnly ? "Connect wallet to send messages" : "Select a contact first")}
                     disabled={disabled || isLoading}
-                    className={`flex-1 bg-slate-900 border text-slate-200 p-3 text-sm focus:ring-1 outline-none resize-none h-12 disabled:opacity-50 rounded-lg transition-all ${isContractMode ? 'border-indigo-500/50 focus:border-indigo-500 focus:ring-indigo-500' : 'border-slate-700 focus:border-indigo-500 focus:ring-indigo-500'}`}
+                    className={`flex-1 bg-slate-900 border text-slate-200 p-3 text-sm focus:ring-1 outline-none resize-none h-12 disabled:opacity-50 rounded-lg transition-all ${isContractMode ? 'border-indigo-500/50 focus:border-indigo-500' : (isBurnMode ? 'border-orange-500/50 focus:border-orange-500 focus:ring-orange-500' : 'border-slate-700 focus:border-indigo-500 focus:ring-indigo-500')}`}
                 />
                 <button
                     onClick={handleSendClick}
-                    disabled={disabled || isLoading || (!message.trim() && !imageUrl.trim() && !isContractMode)}
-                    className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 md:px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-lg text-sm shadow-lg shadow-indigo-500/20"
+                    disabled={disabled || isLoading || (!message.trim() && !imageUrl.trim() && !isContractMode && !isBurnMode)}
+                    className={`font-medium px-4 md:px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-lg text-sm shadow-lg ${isBurnMode ? 'bg-orange-600 hover:bg-orange-500 shadow-orange-500/20 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'}`}
                 >
-                    {isLoading ? '...' : (isContractMode ? 'Sign' : 'Send')}
+                    {isLoading ? '...' : (isContractMode ? 'Sign' : (isBurnMode ? 'Burn Send' : 'Send'))}
                 </button>
             </div>
             <div className="mt-2 text-[10px] text-slate-600 flex justify-between px-1">
