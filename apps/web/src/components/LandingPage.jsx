@@ -60,11 +60,13 @@ export default function LandingPage() {
                                 <span>Powered by Solana</span>
                             </div>
 
-                            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-white mb-8">
-                                <span className="block">The First Immutable</span>
-                                <span className="block relative min-h-[2.4em] md:min-h-0">
-                                    <span className="block text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-sky-400 to-indigo-400 pb-2">
-                                        <CyclingText />
+                            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-white mb-8">
+                                <span className="block text-4xl sm:text-5xl md:text-7xl lg:text-8xl">The First Immutable</span>
+                                <span className="block relative h-[1.2em]">
+                                    <span className="absolute inset-x-0 top-0 flex justify-center text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-sky-400 to-indigo-400 pb-2">
+                                        <span className="whitespace-nowrap text-3xl sm:text-5xl md:text-7xl lg:text-8xl">
+                                            <CyclingText />
+                                        </span>
                                     </span>
                                 </span>
                             </h1>
