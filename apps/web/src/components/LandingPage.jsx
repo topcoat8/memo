@@ -62,7 +62,7 @@ export default function LandingPage() {
 
                             <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-white mb-8">
                                 <span className="block">The First Immutable</span>
-                                <span className="block h-[1.2em] relative overflow-hidden">
+                                <span className="block relative">
                                     <span className="block text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-sky-400 to-indigo-400 pb-2">
                                         <CyclingText />
                                     </span>
@@ -84,12 +84,12 @@ export default function LandingPage() {
 
 
                         {/* STREAMS TOGGLE SECTION */}
-                        <div className="flex flex-col items-center mb-16">
+                        <div className="flex flex-col items-center mb-10">
                             <StreamToggle activeStream={activeStream} onToggle={setActiveStream} />
                         </div>
 
                         {/* DYNAMIC STREAM CONTENT */}
-                        <div className="min-h-[800px]">
+                        <div className="min-h-[400px]">
                             <AnimatePresence mode="wait">
                                 {activeStream === 'enterprise' ? (
                                     <motion.div
@@ -101,7 +101,7 @@ export default function LandingPage() {
                                     >
                                         <div className="animate-fade-in">
                                             {/* MEMO ENTERPRISE CONTENT */}
-                                            <div className="text-center mb-20">
+                                            <div className="text-center mb-12">
                                                 <div className="inline-flex items-center gap-2 text-indigo-400 font-bold uppercase tracking-widest text-sm mb-6">
                                                     <Building2 className="w-4 h-4" />
                                                     <span>Memo Enterprise</span>
@@ -115,7 +115,7 @@ export default function LandingPage() {
                                             </div>
 
                                             {/* The Problem/Solution Grid */}
-                                            <div className="grid md:grid-cols-2 gap-4 mb-24 max-w-6xl mx-auto">
+                                            <div className="grid md:grid-cols-2 gap-4 mb-16 max-w-6xl mx-auto">
                                                 {[
                                                     {
                                                         title: "Disputable Delivery",
@@ -172,10 +172,10 @@ export default function LandingPage() {
                                             </div>
 
                                             {/* The Solution Section */}
-                                            <div className="relative mb-32">
+                                            <div className="relative mb-20">
                                                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[100px] -z-10" />
 
-                                                <div className="text-center mb-16">
+                                                <div className="text-center mb-10">
                                                     <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
                                                         Memo Protocol Resolves This
                                                     </h2>
@@ -226,7 +226,7 @@ export default function LandingPage() {
                                     >
                                         <div className="animate-fade-in">
                                             {/* MEMO SOCIAL CONTENT */}
-                                            <div className="flex flex-col items-center gap-16 mb-24">
+                                            <div className="flex flex-col items-center gap-10 mb-16">
                                                 <div className="space-y-8 text-center max-w-4xl mx-auto">
                                                     <div className="inline-flex items-center gap-2 text-sky-400 font-bold uppercase tracking-widest text-sm justify-center">
                                                         <Users className="w-4 h-4" />
@@ -254,7 +254,7 @@ export default function LandingPage() {
                                                         />
                                                     </div>
 
-                                                    <div className="flex flex-col items-center pt-8 mb-20">
+                                                    <div className="flex flex-col items-center pt-8 mb-12">
                                                         <button
                                                             onClick={() => window.open('https://t.me/memo_verification_bot', '_blank')}
                                                             className="px-10 py-5 bg-sky-600 text-white font-bold rounded-2xl hover:bg-sky-500 transition-colors flex items-center gap-3 shadow-lg shadow-sky-500/20 mb-3"
@@ -418,12 +418,12 @@ export default function LandingPage() {
                 </section>
 
                 {/* ROADMAP */}
-                <section className="py-24 px-6 border-t border-white/5 relative overflow-hidden">
+                <section className="py-16 px-6 border-t border-white/5 relative overflow-hidden">
                     {/* Background Accent */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-indigo-500/5 via-transparent to-sky-500/5 rounded-full blur-[100px] -z-10" />
 
                     <div className="max-w-7xl mx-auto">
-                        <div className="text-center mb-16">
+                        <div className="text-center mb-10">
                             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-400 text-xs font-bold uppercase tracking-widest mb-6">
                                 <Zap className="w-3 h-3" />
                                 <span>Development Roadmap</span>
