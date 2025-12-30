@@ -923,10 +923,10 @@ function EnterpriseRoadmap() {
             progress: 35,
             items: [
                 { name: "Solana Blinks & Actions", desc: "Execute on-chain actions directly inside conversations", isNew: false },
-                { name: "Decentralized Voice/Video", desc: "Encrypted P2P calls with zero intermediaries", isNew: false },
-                { name: "ZK Compression", desc: "Next-gen privacy at a fraction of the cost", isNew: false },
-                { name: "Multi-Sig Channels", desc: "Enterprise-grade shared wallets with team approvals", isNew: true },
-                { name: "Transaction Attestations", desc: "Undeniable proof of every deal, timestamped forever", isNew: true },
+                { name: "Contact Nicknames & Labels", desc: "Tag wallets with names, notes, and categories for easy reference", isNew: true },
+                { name: "Scheduled & Recurring Memos", desc: "Pre-compose messages that send automatically at future times", isNew: true },
+                { name: "Message Templates", desc: "Save and reuse common formats for invoices, agreements, and more", isNew: true },
+                { name: "Multi-Wallet Support", desc: "Connect multiple wallets and switch between them seamlessly", isNew: true },
             ]
         },
         ecosystem: {
@@ -935,11 +935,11 @@ function EnterpriseRoadmap() {
             status: "upcoming",
             progress: 0,
             items: [
-                { name: "Cross-Chain Identity", desc: "One identity across Ethereum, Cosmos, and beyond" },
-                { name: "Enterprise Integrations", desc: "Connect Salesforce, DocuSign, Slack directly to Memo" },
-                { name: "Staked Node Network", desc: "Decentralized delivery nodes earn $MEMO for securing the network" },
+                { name: "Public Key Directory", desc: "On-chain registry for discovering contacts by wallet address" },
+                { name: "Webhook Notifications", desc: "Get HTTP callbacks when you receive a memo—integrate anywhere" },
                 { name: "Enterprise API & SDK", desc: "Let any application embed verifiable, encrypted messaging" },
-                { name: "Compliance Plugins", desc: "One-click integrations for SOC2, GDPR, and regulatory frameworks" },
+                { name: "Memo Domains", desc: "Human-readable names (e.g., acme.memo) mapped to wallets" },
+                { name: "Audit Log Dashboard", desc: "Visual interface to browse all historical memos with powerful filters" },
             ]
         }
     };
