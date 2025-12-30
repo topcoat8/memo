@@ -60,9 +60,9 @@ export default function LandingPage() {
                                 <span>Powered by Solana</span>
                             </div>
 
-                            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-white mb-8">
+                            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-white mb-8">
                                 <span className="block">The First Immutable</span>
-                                <span className="block relative">
+                                <span className="block relative min-h-[2.4em] md:min-h-0">
                                     <span className="block text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-sky-400 to-indigo-400 pb-2">
                                         <CyclingText />
                                     </span>
@@ -720,11 +720,11 @@ function SocialRoadmap() {
             title: "Expansion",
             subtitle: "Viral Growth Tools",
             status: "current",
-            progress: 45,
+            progress: 65,
             items: [
                 { name: "Discord Bot", desc: "Bring token-gating to the #1 crypto community platform", isNew: false },
                 { name: "Red Packets", desc: "Viral token distribution that spreads like wildfire", isNew: true },
-                { name: "Weighted Voting", desc: "Governance polls where token holdings = voting power", isNew: true },
+                { name: "Weighted Voting", desc: "Governance polls where token holdings = voting power", isNew: true, completed: true },
                 { name: "Community Wallets", desc: "Shared treasuries with transparent on-chain tracking", isNew: false },
                 { name: "Referral System", desc: "Reward members who grow your community", isNew: true },
             ]
@@ -858,12 +858,12 @@ function SocialRoadmap() {
                                 >
                                     <div className="flex items-start gap-4">
                                         <div className={`mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center
-                                            ${currentPhase.status === 'completed'
+                                            ${currentPhase.status === 'completed' || item.completed
                                                 ? 'bg-emerald-500/20 text-emerald-400'
                                                 : 'bg-sky-500/20 text-sky-400'
                                             }`}
                                         >
-                                            {currentPhase.status === 'completed' ? (
+                                            {currentPhase.status === 'completed' || item.completed ? (
                                                 <CheckCircle className="w-3 h-3" />
                                             ) : (
                                                 <div className="w-1.5 h-1.5 rounded-full bg-current" />
@@ -872,7 +872,7 @@ function SocialRoadmap() {
 
                                         <div className="flex-1 min-w-0">
                                             <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                <h4 className={`font-bold text-sm sm:text-base ${currentPhase.status === 'completed' ? 'text-slate-400' : 'text-white'
+                                                <h4 className={`font-bold text-sm sm:text-base ${currentPhase.status === 'completed' || item.completed ? 'text-slate-400' : 'text-white'
                                                     }`}>
                                                     {item.name}
                                                 </h4>
