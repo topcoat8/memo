@@ -4,6 +4,9 @@ import Sidebar from '../../shared/components/Sidebar';
 import EncryptionLock from '../../shared/components/EncryptionLock';
 import MessageList from '../../shared/components/MessageList';
 import MessageInput from '../../shared/components/MessageInput';
+import useAddressBook from '../../shared/hooks/useAddressBook';
+import ContactModal from '../../shared/components/ContactModal';
+import { Pencil } from 'lucide-react';
 
 export default function UnifiedApp({
     isAuthReady,
@@ -29,6 +32,10 @@ export default function UnifiedApp({
 
     // --- State: Direct Messages ---
     const [activeContact, setActiveContact] = useState(null);
+    const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+
+    // --- Hooks ---
+    const { entries: addressBook, updateEntry, getEntry } = useAddressBook(userId);
 
     // --- Derived State ---
     const contacts = useMemo(() => {
@@ -80,6 +87,10 @@ export default function UnifiedApp({
         await sendMemo(signaturePayload);
     };
 
+    const handleSaveContact = (address, data) => {
+        updateEntry(address, data);
+    };
+
     // --- Render ---
 
     // Lock Screen
@@ -125,6 +136,8 @@ export default function UnifiedApp({
                     handleContactSelect={handleContactSelect}
                     handleNewChat={handleNewChat}
                     publicKeyRegistry={publicKeyRegistry}
+                    // Address Book Props
+                    addressBook={addressBook}
 
                     appName="Memo"
                     appSubtitle="Enterprise"
@@ -158,12 +171,28 @@ export default function UnifiedApp({
 
                             <div className="flex-1 min-w-0">
                                 {activeContact ? (
-                                    <div>
-                                        <div className="text-sm font-medium text-slate-200 flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-enterprise-success animate-pulse" />
-                                            <span className="text-slate-500 font-normal hidden sm:inline">SECURE CHANNEL:</span>
-                                            <span className="font-mono text-enterprise-accent tracking-wide text-xs">{activeContact}</span>
+                                    <div className="flex items-center gap-4">
+                                        <div>
+                                            <div className="text-sm font-medium text-slate-200 flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-enterprise-success animate-pulse" />
+                                                <span className="text-slate-500 font-normal hidden sm:inline">SECURE CHANNEL:</span>
+                                                <span className="font-mono text-enterprise-accent tracking-wide text-xs">
+                                                    {getEntry(activeContact)?.nickname || activeContact}
+                                                </span>
+                                            </div>
+                                            {getEntry(activeContact)?.nickname && (
+                                                <div className="text-[10px] text-slate-500 font-mono ml-4">
+                                                    {activeContact}
+                                                </div>
+                                            )}
                                         </div>
+                                        <button
+                                            onClick={() => setIsContactModalOpen(true)}
+                                            className="p-1.5 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                                            title="Edit Contact"
+                                        >
+                                            <Pencil className="w-3.5 h-3.5" />
+                                        </button>
                                     </div>
                                 ) : (
                                     <div className="text-slate-500 text-sm font-medium tracking-wide">SECURE CHANNELS OFFLINE</div>
@@ -259,6 +288,15 @@ export default function UnifiedApp({
                         </div>
                     )}
                 </div>
+
+                {/* Contact Edit Modal */}
+                <ContactModal
+                    isOpen={isContactModalOpen}
+                    onClose={() => setIsContactModalOpen(false)}
+                    onSave={handleSaveContact}
+                    address={activeContact}
+                    initialData={getEntry(activeContact)}
+                />
             </div>
         </div>
     );

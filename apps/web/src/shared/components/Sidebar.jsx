@@ -1,6 +1,6 @@
 import React from 'react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { Plus, Users, Shield, LogOut, Key } from 'lucide-react';
+import { Plus, Users, Shield, LogOut, Key, Tag } from 'lucide-react';
 
 export default function Sidebar({
     isAuthReady,
@@ -15,6 +15,7 @@ export default function Sidebar({
     handleContactSelect,
     activeContact,
     publicKeyRegistry,
+    addressBook = {}, // New prop
 }) {
     return (
         <div className="flex flex-col h-full w-full glass-panel">
@@ -110,44 +111,58 @@ export default function Sidebar({
                     </div>
 
                     {contacts && contacts.length > 0 ? (
-                        contacts.map(contact => (
-                            <button
-                                key={contact}
-                                onClick={() => handleContactSelect(contact)}
-                                className={`w-full text-left p-3 rounded-xl transition-all flex items-center gap-3 group relative overflow-hidden ${activeContact === contact
-                                    ? 'bg-purple-500/10 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.1)]'
-                                    : 'hover:bg-white/5 border border-transparent hover:border-white/5'
-                                    }`}
-                            >
-                                {activeContact === contact && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent pointer-events-none" />
-                                )}
+                        contacts.map(contact => {
+                            const entry = addressBook[contact];
+                            const nickname = entry?.nickname;
+                            const displayName = nickname || `${contact.slice(0, 6)}...${contact.slice(-4)}`;
 
-                                <div className={`w-10 h-10 rounded-full overflow-hidden shrink-0 border-2 transition-colors flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 ${activeContact === contact ? 'border-purple-500 shadow-lg shadow-purple-500/20' : 'border-white/5 group-hover:border-white/10'
-                                    }`}>
-                                    <span className="text-xs font-mono text-slate-300 font-bold">{contact.slice(0, 2)}</span>
-                                </div>
+                            return (
+                                <button
+                                    key={contact}
+                                    onClick={() => handleContactSelect(contact)}
+                                    className={`w-full text-left p-3 rounded-xl transition-all flex items-center gap-3 group relative overflow-hidden ${activeContact === contact
+                                        ? 'bg-purple-500/10 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.1)]'
+                                        : 'hover:bg-white/5 border border-transparent hover:border-white/5'
+                                        }`}
+                                >
+                                    {activeContact === contact && (
+                                        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent pointer-events-none" />
+                                    )}
 
-                                <div className="min-w-0 relative z-10 flex-1">
-                                    <div className="flex justify-between items-baseline">
-                                        <div className={`font-medium truncate transition-colors ${activeContact === contact ? 'text-white' : 'text-slate-300 group-hover:text-white'
-                                            }`}>
-                                            {contact.slice(0, 6)}...{contact.slice(-4)}
+                                    <div className={`w-10 h-10 rounded-full overflow-hidden shrink-0 border-2 transition-colors flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 ${activeContact === contact ? 'border-purple-500 shadow-lg shadow-purple-500/20' : 'border-white/5 group-hover:border-white/10'
+                                        }`}>
+                                        <span className="text-xs font-mono text-slate-300 font-bold">
+                                            {nickname ? nickname.slice(0, 2).toUpperCase() : contact.slice(0, 2)}
+                                        </span>
+                                    </div>
+
+                                    <div className="min-w-0 relative z-10 flex-1">
+                                        <div className="flex justify-between items-baseline box-border w-full"> {/* Added w-full and box-border */}
+                                            <div className={`font-medium truncate transition-colors min-w-0 flex-1 ${activeContact === contact ? 'text-white' : 'text-slate-300 group-hover:text-white' // Added min-w-0 and flex-1
+                                                }`}>
+                                                {displayName}
+                                            </div>
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 truncate font-mono flex items-center gap-1.5">
+                                            {publicKeyRegistry && publicKeyRegistry[contact] ? (
+                                                <>
+                                                    <Shield className="w-2.5 h-2.5 text-emerald-500 shrink-0" />
+                                                    <span className="text-emerald-500/80">Verified</span>
+                                                </>
+                                            ) : (
+                                                <span>{nickname ? `${contact.slice(0, 4)}...${contact.slice(-4)}` : 'Unknown'}</span>
+                                            )}
                                         </div>
                                     </div>
-                                    <div className="text-[10px] text-slate-500 truncate font-mono flex items-center gap-1">
-                                        {publicKeyRegistry && publicKeyRegistry[contact] ? (
-                                            <>
-                                                <Shield className="w-2.5 h-2.5 text-emerald-500" />
-                                                <span className="text-emerald-500/80">Verified</span>
-                                            </>
-                                        ) : (
-                                            <span>Unknown</span>
-                                        )}
-                                    </div>
-                                </div>
-                            </button>
-                        ))
+
+                                    {entry?.labels && entry.labels.length > 0 && (
+                                        <div className="absolute top-3 right-3 flex gap-1">
+                                            <div className={`w-2 h-2 rounded-full ${activeContact === contact ? 'bg-purple-400' : 'bg-slate-600'} `} />
+                                        </div>
+                                    )}
+                                </button>
+                            );
+                        })
                     ) : (
                         <div className="flex flex-col items-center justify-center py-6 text-slate-500 space-y-2 border border-dashed border-slate-800 rounded-xl bg-slate-900/30">
                             <div className="w-8 h-8 rounded-full bg-slate-800/50 flex items-center justify-center">
