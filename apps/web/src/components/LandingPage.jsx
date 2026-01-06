@@ -252,7 +252,7 @@ export default function LandingPage() {
                                                         />
                                                         <FeaturePoint
                                                             title="Zero-Connect Verification"
-                                                            description="Users verify via 'Magic Transactions' (0 MEMO transfers). No wallet connection to a website is ever required."
+                                                            description="Users verify instantly via a small self-transfer of SOL to their own wallet. It is super simple, takes no time, and no wallet connection is ever required."
                                                         />
                                                     </div>
 
@@ -712,7 +712,7 @@ function SocialRoadmap() {
             progress: 100,
             items: [
                 { name: "Telegram Bot Launch", desc: "The first token-gating bot powered by on-chain verification" },
-                { name: "Magic Transactions", desc: "Zero-wallet-connect verification via 0 MEMO transfers" },
+                { name: "Magic Transactions", desc: "Zero-wallet-connect verification via SOL self-transfer" },
                 { name: "Universal Token Gating", desc: "Gate communities with ANY SPL token or NFT collection" },
                 { name: "Admin Command Suite", desc: "Full control: /audit, /kick, /export, /poll and more" },
                 { name: "Leaderboards & Stats", desc: "Real-time holder rankings and community analytics" },
