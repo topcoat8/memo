@@ -224,9 +224,9 @@ export default function LandingPage() {
                                                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-black text-2xl mx-auto mb-4 shadow-lg shadow-indigo-500/20">
                                                     1
                                                 </div>
-                                                <h4 className="text-lg font-bold text-white mb-2">Add Bot to Group</h4>
+                                                <h4 className="text-lg font-bold text-white mb-2">Create Community</h4>
                                                 <p className="text-slate-400 text-sm">
-                                                    Add <span className="text-white font-medium">@memo_verification_bot</span> to your Telegram group and promote it to Admin.
+                                                    DM the bot privately and run <code className="px-1.5 py-0.5 bg-white/10 rounded text-indigo-400 font-mono text-xs">/create</code> to register your new community on-chain.
                                                 </p>
                                             </div>
 
@@ -244,9 +244,9 @@ export default function LandingPage() {
                                                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-black text-2xl mx-auto mb-4 shadow-lg shadow-indigo-500/20">
                                                     3
                                                 </div>
-                                                <h4 className="text-lg font-bold text-white mb-2">Set Rules</h4>
+                                                <h4 className="text-lg font-bold text-white mb-2">Link Group</h4>
                                                 <p className="text-slate-400 text-sm">
-                                                    Run <code className="px-1.5 py-0.5 bg-white/10 rounded text-indigo-400 font-mono text-xs">/create</code> then <code className="px-1.5 py-0.5 bg-white/10 rounded text-indigo-400 font-mono text-xs">/link &lt;CA&gt;</code> to instantly token-gate your group.
+                                                    Add bot to your group as Admin, then run <code className="px-1.5 py-0.5 bg-white/10 rounded text-indigo-400 font-mono text-xs">/link &lt;CA&gt;</code> to enable gating.
                                                 </p>
                                             </div>
                                         </motion.div>
