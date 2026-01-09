@@ -167,7 +167,7 @@ const wallets = [
     appIdentity: {
       name: 'Memo',
       uri: 'https://memo.app',
-      icon: '/pfp.jpg',
+      icon: '/pfp.png',
     },
     authorizationResultCache: localStorage,
   }),

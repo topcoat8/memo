@@ -1,22 +1,18 @@
-import { Shield, Zap, Lock, Globe, MessageSquare, ArrowRight, CheckCircle, Users, Building2, Smartphone, Bot, FileCheck, Database, Link as LinkIcon, Scale } from 'lucide-react';
+import { Shield, Zap, Lock, ArrowRight, CheckCircle, Users, Bot, Database } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import coinmunIcon from '../../assets/coinmun.svg';
-import orcaIcon from '../../assets/Orca_Logo.webp';
-import tgPreview from '../assets/tg.png';
-import webPreview from '../assets/web.png';
 
 export default function LandingPage() {
     const navigate = useNavigate();
-    const [activeStream, setActiveStream] = useState('enterprise');
+    const [activeTab, setActiveTab] = useState('user');
 
     return (
         <div className="min-h-screen w-full bg-[#030305] text-slate-200 selection:bg-indigo-500/30 overflow-x-hidden font-sans">
             {/* Background Gradients */}
             <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[120px]" />
-                <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-sky-600/10 rounded-full blur-[120px]" />
+                <div className="absolute top-1/2 left-1/4 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px]" />
+                <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[120px]" />
             </div>
 
             <main className="relative z-10">
@@ -25,45 +21,27 @@ export default function LandingPage() {
                     <div className="max-w-7xl mx-auto text-center relative">
                         {/* Top Left Status */}
                         <div className="absolute top-0 left-0 hidden md:flex items-center gap-4">
-                            <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm flex items-center gap-4 shadow-lg shadow-black/20">
-                                <div className="flex items-center gap-2">
-                                    <div className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                    </div>
-                                    <span className="text-xs font-bold text-slate-300 tracking-wide">ENTERPRISE: <span className="text-emerald-400">ONLINE</span></span>
+                            <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm flex items-center gap-2 shadow-lg shadow-black/20">
+                                <div className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                                 </div>
-                                <div className="w-px h-3 bg-white/10" />
-                                <div className="flex items-center gap-2">
-                                    <div className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                    </div>
-                                    <span className="text-xs font-bold text-slate-300 tracking-wide">BOT: <span className="text-emerald-400">ONLINE</span></span>
-                                </div>
+                                <span className="text-xs font-bold text-slate-300 tracking-wide">TELEGRAM BOT: <span className="text-emerald-400">ONLINE</span></span>
                             </div>
                         </div>
 
-                        {/* Top Right Actions */}
-                        <div className="absolute top-0 right-0 hidden md:block">
-                            <button
-                                onClick={() => navigate('/whitepaper')}
-                                className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-sm font-bold text-white transition-colors border border-white/10 backdrop-blur-sm"
-                            >
-                                Whitepaper
-                            </button>
-                        </div>
+
 
                         <div className="animate-fade-in-up">
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-widest mb-8">
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-bold uppercase tracking-widest mb-8">
                                 <Zap className="w-3 h-3" />
                                 <span>Powered by Solana</span>
                             </div>
 
-                            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-white mb-8">
-                                <span className="block text-4xl sm:text-5xl md:text-7xl lg:text-8xl">The First Immutable</span>
+                            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-white mb-4">
+                                <span className="block text-4xl sm:text-5xl md:text-7xl lg:text-8xl">Token-Gate Your</span>
                                 <span className="block relative h-[1.2em]">
-                                    <span className="absolute inset-x-0 top-0 flex justify-center text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-sky-400 to-indigo-400 pb-2">
+                                    <span className="absolute inset-x-0 top-0 flex justify-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-cyan-400 to-purple-400 pb-2">
                                         <span className="whitespace-nowrap text-3xl sm:text-5xl md:text-7xl lg:text-8xl">
                                             <CyclingText />
                                         </span>
@@ -71,255 +49,297 @@ export default function LandingPage() {
                                 </span>
                             </h1>
 
-                            <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed mb-12">
-                                Memo Protocol is the decentralized infrastructure for secure communication and community governance. Two powerful streams, one immutable ledger.
-                            </p>
+
+
+                            {/* CA COPY BLOCK */}
+                            <div className="flex justify-center mb-12">
+                                <div
+                                    onClick={() => {
+                                        navigator.clipboard.writeText('8ZQme2xv6prRKkKNA4PTn5DSXUTdY6yeoc5yDkm7pump');
+                                        // Optional: Add toast here
+                                    }}
+                                    className="group flex items-center gap-3 px-4 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
+                                >
+                                    <span className="text-slate-400 font-mono text-sm">CA: 8ZQme...pump</span>
+                                    <div className="p-1.5 rounded-md bg-white/5 text-slate-400 group-hover:text-white transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
+                                    </div>
+                                </div>
+                            </div>
 
 
                         </div>
                     </div>
                 </section>
 
-                {/* THE TWO STREAMS */}
-                <section id="streams" className="py-10 pb-20 px-6">
+                {/* MAIN FEATURES SECTION - CONSUMER ONLY */}
+                <section id="features" className="py-10 pb-20 px-6">
                     <div className="max-w-7xl mx-auto">
+                        {/* Main Intro */}
+                        <div className="flex flex-col items-center gap-10 mb-16">
+                            <div className="space-y-8 text-center max-w-4xl mx-auto">
 
+                                <h2 className="text-5xl md:text-7xl font-black text-white">
+                                    Where Communities Build
+                                </h2>
+                                <p className="text-xl text-slate-400 leading-relaxed max-w-2xl mx-auto">
+                                    Verify token holders on Telegram with zero wallet connections. Community governance powered by on-chain rules and blockchain verification.
+                                </p>
 
-                        {/* STREAMS TOGGLE SECTION */}
-                        <div className="flex flex-col items-center mb-10">
-                            <StreamToggle activeStream={activeStream} onToggle={setActiveStream} />
+                                <div className="flex flex-col items-center pt-8 mb-12">
+                                    <button
+                                        onClick={() => window.open('https://t.me/memo_verification_bot', '_blank')}
+                                        className="px-10 py-5 bg-gradient-to-r from-purple-600 to-cyan-600 text-white font-bold rounded-2xl hover:from-purple-500 hover:to-cyan-500 transition-all flex items-center gap-3 shadow-lg shadow-purple-500/30 mb-3 gold-glow"
+                                    >
+                                        Launch Telegram Bot
+                                        <ArrowRight className="w-5 h-5" />
+                                    </button>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                                        Supports all SPL Tokens & NFTs
+                                    </span>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* DYNAMIC STREAM CONTENT */}
-                        <div className="min-h-[400px]">
-                            <AnimatePresence mode="wait">
-                                {activeStream === 'enterprise' ? (
-                                    <motion.div
-                                        key="enterprise"
-                                        initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
-                                        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                                        exit={{ opacity: 0, y: -20, filter: 'blur(10px)' }}
-                                        transition={{ duration: 0.4, ease: "easeInOut" }}
-                                    >
-                                        <div className="animate-fade-in">
-                                            {/* MEMO ENTERPRISE CONTENT */}
-                                            <div className="text-center mb-12">
-                                                <div className="inline-flex items-center gap-2 text-indigo-400 font-bold uppercase tracking-widest text-sm mb-6">
-                                                    <Building2 className="w-4 h-4" />
-                                                    <span>Memo Enterprise</span>
+                        {/* Core Features Grid */}
+                        <div className="grid md:grid-cols-3 gap-6 mb-20 max-w-5xl mx-auto">
+                            <div className="p-6 rounded-2xl bg-white/5 border border-purple-500/20 hover:border-purple-500/40 transition-colors">
+                                <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 mb-4">
+                                    <Shield className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Zero-Connect Verification</h3>
+                                <p className="text-slate-400 text-sm leading-relaxed">
+                                    Users verify with a <strong>Magic Memo</strong> (0 SOL self-transfer). No wallet connection, no private keys shared. Just cryptographic proof.
+                                </p>
+                            </div>
+
+                            <div className="p-6 rounded-2xl bg-white/5 border border-cyan-500/20 hover:border-cyan-500/40 transition-colors">
+                                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 mb-4">
+                                    <Database className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">On-Chain Rules</h3>
+                                <p className="text-slate-400 text-sm leading-relaxed">
+                                    Community rules stored immutably on Solana. Transparent, censorship-resistant, and verifiable by anyone.
+                                </p>
+                            </div>
+
+                            <div className="p-6 rounded-2xl bg-white/5 border border-purple-500/20 hover:border-purple-500/40 transition-colors">
+                                <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 mb-4">
+                                    <Zap className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Universal Token Gating</h3>
+                                <p className="text-slate-400 text-sm leading-relaxed">
+                                    Gate with ANY SPL token or NFT collection. Admins hold $MEMO, but communities can use any token on Solana.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* How It Works */}
+                        <div className="mb-20">
+                            <div className="text-center mb-12">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">
+                                    <CheckCircle className="w-3 h-3" />
+                                    Get Started
+                                </div>
+                                <h3 className="text-4xl font-bold text-white mb-8">
+                                    How It Works
+                                </h3>
+
+                                {/* Toggle */}
+                                <div className="flex justify-center mb-8">
+                                    <div className="p-1 rounded-xl bg-white/5 border border-white/10 flex relative">
+                                        <div
+                                            className={`absolute inset-y-1 rounded-lg transition-all duration-300 ease-out shadow-lg bg-indigo-600
+                                            ${activeTab === 'user' ? 'left-1 w-[160px]' : 'left-[164px] w-[160px]'}`}
+                                        />
+                                        <button
+                                            onClick={() => setActiveTab('user')}
+                                            className={`w-[160px] py-2.5 rounded-lg text-sm font-bold transition-colors duration-300 relative z-10
+                                            ${activeTab === 'user' ? 'text-white' : 'text-slate-400 hover:text-white'}`}
+                                        >
+                                            Join a Community
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('admin')}
+                                            className={`w-[160px] py-2.5 rounded-lg text-sm font-bold transition-colors duration-300 relative z-10
+                                            ${activeTab === 'admin' ? 'text-white' : 'text-slate-400 hover:text-white'}`}
+                                        >
+                                            Create a Community
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto relative min-h-[250px]">
+                                <AnimatePresence mode="wait">
+                                    {activeTab === 'user' ? (
+                                        <motion.div
+                                            key="user"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="contents"
+                                        >
+                                            <div className="text-center">
+                                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-white font-black text-2xl mx-auto mb-4 shadow-lg shadow-purple-500/20">
+                                                    1
                                                 </div>
-                                                <h2 className="text-5xl md:text-7xl font-black text-white mb-8 tracking-tight">
-                                                    The Transparency Paradox
-                                                </h2>
-                                                <p className="text-xl md:text-3xl text-slate-400 max-w-4xl mx-auto leading-relaxed font-light">
-                                                    Blockchain transparency is a feature until <span className="text-white font-medium">you need to do business</span>.
+                                                <h4 className="text-lg font-bold text-white mb-2">Request to Join</h4>
+                                                <p className="text-slate-400 text-sm">
+                                                    Click the group invite link. You'll see "Request to Join" and receive a DM from the bot with instructions.
                                                 </p>
                                             </div>
 
-                                            {/* The Problem/Solution Grid */}
-                                            <div className="grid md:grid-cols-2 gap-4 mb-16 max-w-6xl mx-auto">
-                                                {[
-                                                    {
-                                                        title: "Disputable Delivery",
-                                                        prob: "I never received that contract.",
-                                                        sol: "Cryptographic proof of delivery that holds up in court.",
-                                                        icon: <FileCheck className="w-5 h-5" />
-                                                    },
-                                                    {
-                                                        title: "Impermanent History",
-                                                        prob: "Centralized platforms delete logs or go offline.",
-                                                        sol: "An immutable audit trail that lasts forever.",
-                                                        icon: <Database className="w-5 h-5" />
-                                                    },
-                                                    {
-                                                        title: "Broken Context",
-                                                        prob: "Payments separated from data cause accounting nightmares.",
-                                                        sol: "Value and data sent in one atomic transaction.",
-                                                        icon: <LinkIcon className="w-5 h-5" />
-                                                    },
-                                                    {
-                                                        title: "Counterparty Trust",
-                                                        prob: "Trusting a third party to verify the deal happened.",
-                                                        sol: "The blockchain itself is the unbribable witness.",
-                                                        icon: <Scale className="w-5 h-5" />
-                                                    }
-                                                ].map((item, i) => (
-                                                    <div key={i} className="flex flex-col md:flex-row items-stretch rounded-2xl overflow-hidden border border-white/5 bg-[#0A0A0B]">
-                                                        {/* Problem Side */}
-                                                        <div className="flex-1 p-6 border-b md:border-b-0 md:border-r border-white/5 bg-red-500/[0.02]">
-                                                            <div className="flex items-center gap-2 mb-2 text-red-400/80 text-xs font-bold uppercase tracking-wider">
-                                                                <Shield className="w-3 h-3" />
-                                                                The Risk
-                                                            </div>
-                                                            <p className="text-slate-400 text-sm leading-relaxed">
-                                                                "{item.prob}"
-                                                            </p>
-                                                        </div>
-
-                                                        {/* Solution Side */}
-                                                        <div className="flex-1 p-6 bg-indigo-500/[0.05] relative overflow-hidden group">
-                                                            <div className="absolute inset-0 bg-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                                            <div className="relative z-10">
-                                                                <div className="flex items-center gap-2 mb-2 text-indigo-400 text-xs font-bold uppercase tracking-wider">
-                                                                    {item.icon}
-                                                                    Memo's Answer
-                                                                </div>
-                                                                <p className="text-slate-200 font-medium text-sm leading-relaxed">
-                                                                    {item.sol}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                            <div className="text-center">
+                                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-white font-black text-2xl mx-auto mb-4 shadow-lg shadow-purple-500/20">
+                                                    2
+                                                </div>
+                                                <h4 className="text-lg font-bold text-white mb-2">Verify Ownership</h4>
+                                                <p className="text-slate-400 text-sm">
+                                                    Send a <strong>Magic Memo</strong> (0 SOL self-transfer) from your wallet to itself. Run <code className="px-1.5 py-0.5 bg-white/10 rounded text-cyan-400 font-mono text-xs">/sent</code>
+                                                </p>
                                             </div>
 
-                                            {/* The Solution Section */}
-                                            <div className="relative mb-20">
-                                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[100px] -z-10" />
-
-                                                <div className="text-center mb-10">
-                                                    <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-                                                        Memo Protocol Resolves This
-                                                    </h2>
-                                                    <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
-                                                        For the first time, you can have <strong className="text-indigo-400">cryptographically verifiable private communication</strong> tied directly to wallet identities.
-                                                    </p>
+                                            <div className="text-center">
+                                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-white font-black text-2xl mx-auto mb-4 shadow-lg shadow-purple-500/20">
+                                                    3
                                                 </div>
-
-                                                <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                                                    <FeatureCard
-                                                        icon={<MessageSquare className="w-5 h-5" />}
-                                                        title="Encrypted Context"
-                                                        desc="Attach private data to public transactions."
-                                                    />
-                                                    <FeatureCard
-                                                        icon={<Shield className="w-5 h-5" />}
-                                                        title="Verifiable Identity"
-                                                        desc="Your wallet is your only login."
-                                                    />
-                                                    <FeatureCard
-                                                        icon={<Zap className="w-5 h-5" />}
-                                                        title="Permanent Storage"
-                                                        desc="History that lasts as long as the chain."
-                                                    />
+                                                <h4 className="text-lg font-bold text-white mb-2">Auto-Approved!</h4>
+                                                <p className="text-slate-400 text-sm">
+                                                    Bot verifies your token holdings on-chain and approves your join request automatically. Welcome in!
+                                                </p>
+                                            </div>
+                                        </motion.div>
+                                    ) : (
+                                        <motion.div
+                                            key="admin"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="contents"
+                                        >
+                                            <div className="text-center">
+                                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-black text-2xl mx-auto mb-4 shadow-lg shadow-indigo-500/20">
+                                                    1
                                                 </div>
-
-                                                <div className="mt-12 flex justify-center">
-                                                    <button
-                                                        onClick={() => navigate('/app')}
-                                                        className="px-10 py-5 bg-white text-black font-bold rounded-2xl hover:bg-slate-200 transition-colors flex items-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)]"
-                                                    >
-                                                        Launch Enterprise App
-                                                        <ArrowRight className="w-5 h-5" />
-                                                    </button>
-                                                </div>
+                                                <h4 className="text-lg font-bold text-white mb-2">Add Bot to Group</h4>
+                                                <p className="text-slate-400 text-sm">
+                                                    Add <span className="text-white font-medium">@memo_verification_bot</span> to your Telegram group and promote it to Admin.
+                                                </p>
                                             </div>
 
-
-                                        </div>
-                                    </motion.div>
-                                ) : (
-                                    <motion.div
-                                        key="social"
-                                        initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
-                                        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                                        exit={{ opacity: 0, y: -20, filter: 'blur(10px)' }}
-                                        transition={{ duration: 0.4, ease: "easeInOut" }}
-                                    >
-                                        <div className="animate-fade-in">
-                                            {/* MEMO SOCIAL CONTENT */}
-                                            <div className="flex flex-col items-center gap-10 mb-16">
-                                                <div className="space-y-8 text-center max-w-4xl mx-auto">
-                                                    <div className="inline-flex items-center gap-2 text-sky-400 font-bold uppercase tracking-widest text-sm justify-center">
-                                                        <Users className="w-4 h-4" />
-                                                        <span>Memo Social</span>
-                                                    </div>
-                                                    <h2 className="text-5xl md:text-7xl font-black text-white">
-                                                        Where Communities Build
-                                                    </h2>
-                                                    <p className="text-xl text-slate-400 leading-relaxed max-w-2xl mx-auto">
-                                                        The social stream manages governance and access. Token-gate your community with <strong>with Solana token</strong> (SPL) or NFT collection.
-                                                    </p>
-
-                                                    <div className="grid md:grid-cols-3 gap-6 pt-12 text-left">
-                                                        <FeaturePoint
-                                                            title="On-Chain Rules"
-                                                            description="Community rules and permissions are stored on-chain in a Memo. They are immutable and transparent."
-                                                        />
-                                                        <FeaturePoint
-                                                            title="Universal Gating"
-                                                            description="Admins hold $MEMO to unlock the bot, but can gate their communities with ANY token on Solana."
-                                                        />
-                                                        <FeaturePoint
-                                                            title="Zero-Connect Verification"
-                                                            description="Users verify instantly via a small self-transfer of SOL to their own wallet. It is super simple, takes no time, and no wallet connection is ever required."
-                                                        />
-                                                    </div>
-
-                                                    <div className="flex flex-col items-center pt-8 mb-12">
-                                                        <button
-                                                            onClick={() => window.open('https://t.me/memo_verification_bot', '_blank')}
-                                                            className="px-10 py-5 bg-sky-600 text-white font-bold rounded-2xl hover:bg-sky-500 transition-colors flex items-center gap-3 shadow-lg shadow-sky-500/20 mb-3"
-                                                        >
-                                                            Use Telegram Bot
-                                                            <ArrowRight className="w-5 h-5" />
-                                                        </button>
-                                                        <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                                                            Supports all SPL Tokens
-                                                        </span>
-                                                    </div>
-
-                                                    {/* Command Reference */}
-                                                    <div className="max-w-5xl mx-auto w-full text-left">
-                                                        <div className="text-center mb-12">
-                                                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">
-                                                                <Bot className="w-3 h-3" />
-                                                                Command Reference
-                                                            </div>
-                                                            <h3 className="text-3xl font-bold text-white">
-                                                                Powerful Tools at Your Fingertips
-                                                            </h3>
-                                                        </div>
-
-                                                        <div className="grid md:grid-cols-2 gap-8">
-                                                            <CommandList
-                                                                title="User Commands"
-                                                                icon={<Users className="w-4 h-4" />}
-                                                                color="sky"
-                                                                commands={[
-                                                                    { cmd: "/verify", desc: "Link your wallet to your account" },
-                                                                    { cmd: "/mystatus", desc: "Check your current verification status" },
-                                                                    { cmd: "/leaderboard", desc: "View top token holders in this group" },
-                                                                    { cmd: "/locked", desc: "View any locked community funds" },
-                                                                    { cmd: "/supply", desc: "View total token supply of the community" },
-                                                                    { cmd: '/poll "Q" "O1" "O2"', desc: "Create a poll" }
-                                                                ]}
-                                                            />
-                                                            <CommandList
-                                                                title="Admin Commands"
-                                                                icon={<Shield className="w-4 h-4" />}
-                                                                color="purple"
-                                                                commands={[
-                                                                    { cmd: "/create", desc: "Launch a new Token Gated community" },
-                                                                    { cmd: "/link <address>", desc: "Connect this group to your community" },
-                                                                    { cmd: "/rules", desc: "View current community rules" },
-                                                                    { cmd: "/audit", desc: "Check all members for compliance" },
-                                                                    { cmd: "/kick", desc: "Remove users who no longer hold tokens" },
-                                                                    { cmd: "/check", desc: "Check a specific user's status (Reply)" },
-                                                                    { cmd: "/tally", desc: "Tally poll weights (Reply to poll)" },
-                                                                    { cmd: "/addlocked", desc: "Register locked funds" },
-                                                                    { cmd: "/export", desc: "Export member list as CSV" }
-                                                                ]}
-                                                            />
-                                                        </div>
-                                                    </div>
+                                            <div className="text-center">
+                                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-black text-2xl mx-auto mb-4 shadow-lg shadow-indigo-500/20">
+                                                    2
                                                 </div>
-
+                                                <h4 className="text-lg font-bold text-white mb-2">Get Governance</h4>
+                                                <p className="text-slate-400 text-sm">
+                                                    Hold 50,000 <span className="text-amber-400 font-bold">$MEMO</span> to unlock the Admin Suite and anti-spam governance tools.
+                                                </p>
                                             </div>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+
+                                            <div className="text-center">
+                                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-black text-2xl mx-auto mb-4 shadow-lg shadow-indigo-500/20">
+                                                    3
+                                                </div>
+                                                <h4 className="text-lg font-bold text-white mb-2">Set Rules</h4>
+                                                <p className="text-slate-400 text-sm">
+                                                    Run <code className="px-1.5 py-0.5 bg-white/10 rounded text-indigo-400 font-mono text-xs">/create</code> then <code className="px-1.5 py-0.5 bg-white/10 rounded text-indigo-400 font-mono text-xs">/link &lt;CA&gt;</code> to instantly token-gate your group.
+                                                </p>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </div>
+
+                        {/* Command Reference */}
+                        <div className="max-w-5xl mx-auto w-full text-left">
+                            <div className="text-center mb-12">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">
+                                    <Bot className="w-3 h-3" />
+                                    Command Reference
+                                </div>
+                                <h3 className="text-3xl font-bold text-white">
+                                    Powerful Tools at Your Fingertips
+                                </h3>
+                                <p className="text-slate-400 mt-4">
+                                    Memo bot comes packed with features for both users and admins
+                                </p>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-8">
+                                <CommandList
+                                    title="User Commands"
+                                    icon={<Users className="w-4 h-4" />}
+                                    color="cyan"
+                                    commands={[
+                                        { cmd: "/verify <address>", desc: "Link your Solana wallet to your Telegram account" },
+                                        { cmd: "/sent", desc: "Confirm verification transaction was sent" },
+                                        { cmd: "/mystatus", desc: "Check your wallet balance and verification status" },
+                                        { cmd: "/leaderboard", desc: "View top 50 token holders in the community" },
+                                        { cmd: "/whales", desc: "List users meeting whale threshold" },
+                                        { cmd: "/supply", desc: "See group holdings and % of total supply" },
+                                        { cmd: "/flex", desc: "Generate shareable holder card with stats" },
+                                        { cmd: "/referral", desc: "Get your unique referral link" }
+                                    ]}
+                                />
+                                <CommandList
+                                    title="Admin Commands"
+                                    icon={<Shield className="w-4 h-4" />}
+                                    color="purple"
+                                    commands={[
+                                        { cmd: "/create", desc: "Launch Community Creation Wizard (requires 50k $MEMO)" },
+                                        { cmd: "/link <address>", desc: "Connect this group to your token community" },
+                                        { cmd: "/audit", desc: "Scan members and report non-compliance without removing" },
+                                        { cmd: "/kick", desc: "Remove all non-compliant members from the group" },
+                                        { cmd: "/check", desc: "Check specific user status (reply to their message)" },
+                                        { cmd: "/export", desc: "Export member data to CSV (sent to your DM)" },
+                                        { cmd: "/poll \"Q\" \"A\" \"B\"", desc: "Create token-weighted governance poll" },
+                                        { cmd: "/tally", desc: "Calculate weighted poll results (reply to poll)" },
+                                        { cmd: "/top", desc: "View top 10 communities by market cap" }
+                                    ]}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Security Callout */}
+                        <div className="mt-20 max-w-4xl mx-auto">
+                            <div className="p-8 rounded-2xl bg-gradient-to-br from-purple-500/10 to-cyan-500/10 border border-purple-500/20">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
+                                        <Lock className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-white mb-2">
+                                            "Don't Trust, Verify" Security Model
+                                        </h3>
+                                        <p className="text-slate-300 leading-relaxed mb-4">
+                                            The Memo bot operates on zero-knowledge principles:
+                                        </p>
+                                        <ul className="space-y-2 text-slate-400">
+                                            <li className="flex items-start gap-2">
+                                                <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                                                <span>Never asks for private keys or wallet connections</span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                                <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                                                <span>Monitors public blockchain data only</span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                                <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                                                <span>Self-transfer proves ownership cryptographically</span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                                <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                                                <span>Community rules stored on-chain (censorship-resistant)</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -339,90 +359,51 @@ export default function LandingPage() {
                             </a>
                         </div>
 
-                        {activeStream === 'enterprise' ? (
-                            <div className="grid md:grid-cols-3 gap-4 animate-fade-in">
-                                <div className="p-5 rounded-2xl bg-[#0A0A0B] border border-white/5 flex flex-col hover:border-indigo-500/30 transition-colors group">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
-                                            <Zap className="w-4 h-4" />
-                                        </div>
-                                        <h3 className="text-lg font-bold text-white">Transmission</h3>
+                        <div className="grid md:grid-cols-3 gap-4 animate-fade-in">
+                            <div className="p-5 rounded-2xl bg-[#0A0A0B] border border-white/5 flex flex-col hover:border-purple-500/30 transition-colors group">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                                        <Shield className="w-4 h-4" />
                                     </div>
-                                    <p className="text-slate-400 text-sm leading-relaxed">
-                                        $MEMO acts as the carrier wave for value. Attach payments directly to encrypted messages for seamless settlement.
-                                    </p>
+                                    <h3 className="text-lg font-bold text-white">Governance</h3>
                                 </div>
-
-                                <div className="p-5 rounded-2xl bg-[#0A0A0B] border border-white/5 flex flex-col hover:border-indigo-500/30 transition-colors group">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
-                                            <Lock className="w-4 h-4" />
-                                        </div>
-                                        <h3 className="text-lg font-bold text-white">Utility</h3>
-                                    </div>
-                                    <p className="text-slate-400 text-sm leading-relaxed">
-                                        Pay for premium enterprise features, permanent storage, and high-bandwidth encrypted channels.
-                                    </p>
-                                </div>
-
-                                <div className="p-5 rounded-2xl bg-[#0A0A0B] border border-white/5 flex flex-col hover:border-indigo-500/30 transition-colors group">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
-                                            <Shield className="w-4 h-4" />
-                                        </div>
-                                        <h3 className="text-lg font-bold text-white">Security</h3>
-                                    </div>
-                                    <p className="text-slate-400 text-sm leading-relaxed">
-                                        Future update: Staked nodes will secure the decentralized delivery network and earn yield.
-                                    </p>
-                                </div>
+                                <p className="text-slate-400 text-sm leading-relaxed">
+                                    Admins must stake $MEMO to create communities. This prevents spam and aligns incentives.
+                                </p>
                             </div>
-                        ) : (
-                            <div className="grid md:grid-cols-3 gap-4 animate-fade-in">
-                                <div className="p-5 rounded-2xl bg-[#0A0A0B] border border-white/5 flex flex-col hover:border-sky-500/30 transition-colors group">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform">
-                                            <Shield className="w-4 h-4" />
-                                        </div>
-                                        <h3 className="text-lg font-bold text-white">Governance</h3>
-                                    </div>
-                                    <p className="text-slate-400 text-sm leading-relaxed">
-                                        Admins must stake $MEMO to create communities. This prevents spam and aligns incentives.
-                                    </p>
-                                </div>
 
-                                <div className="p-5 rounded-2xl bg-[#0A0A0B] border border-white/5 flex flex-col hover:border-sky-500/30 transition-colors group">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform">
-                                            <Lock className="w-4 h-4" />
-                                        </div>
-                                        <h3 className="text-lg font-bold text-white">Access</h3>
+                            <div className="p-5 rounded-2xl bg-[#0A0A0B] border border-white/5 flex flex-col hover:border-cyan-500/30 transition-colors group">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+                                        <Lock className="w-4 h-4" />
                                     </div>
-                                    <p className="text-slate-400 text-sm leading-relaxed">
-                                        Communities can verify $MEMO holdings for entry, creating exclusive, high-value groups.
-                                    </p>
+                                    <h3 className="text-lg font-bold text-white">Access</h3>
                                 </div>
-
-                                <div className="p-5 rounded-2xl bg-[#0A0A0B] border border-white/5 flex flex-col hover:border-sky-500/30 transition-colors group">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform">
-                                            <Zap className="w-4 h-4" />
-                                        </div>
-                                        <h3 className="text-lg font-bold text-white">Rewards</h3>
-                                    </div>
-                                    <p className="text-slate-400 text-sm leading-relaxed">
-                                        Participate in Red Packets and community events to earn $MEMO directly within the chat.
-                                    </p>
-                                </div>
+                                <p className="text-slate-400 text-sm leading-relaxed">
+                                    Communities can verify $MEMO holdings for entry, creating exclusive, high-value groups.
+                                </p>
                             </div>
-                        )}
+
+                            <div className="p-5 rounded-2xl bg-[#0A0A0B] border border-white/5 flex flex-col hover:border-purple-500/30 transition-colors group">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                                        <Zap className="w-4 h-4" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-white">Rewards</h3>
+                                </div>
+                                <p className="text-slate-400 text-sm leading-relaxed">
+                                    Participate in Red Packets and community events to earn $MEMO directly within the chat.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
+
                 {/* ROADMAP */}
-                <section className="py-16 px-6 border-t border-white/5 relative overflow-hidden">
+                <section className="py-20 px-6 border-t border-white/5 relative overflow-hidden">
                     {/* Background Accent */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-indigo-500/5 via-transparent to-sky-500/5 rounded-full blur-[100px] -z-10" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-purple-500/5 via-transparent to-cyan-500/5 rounded-full blur-[100px] -z-10" />
 
                     <div className="max-w-7xl mx-auto">
                         <div className="text-center mb-10">
@@ -439,15 +420,7 @@ export default function LandingPage() {
                         </div>
 
                         <div className="max-w-4xl mx-auto relative">
-                            {/* SOCIAL ROADMAP - Premium 3-Phase Design */}
-                            {activeStream === 'social' && (
-                                <SocialRoadmap />
-                            )}
-
-                            {/* ENTERPRISE ROADMAP - Premium 3-Phase Design */}
-                            {activeStream === 'enterprise' && (
-                                <EnterpriseRoadmap />
-                            )}
+                            <SocialRoadmap />
                         </div>
                     </div>
                 </section>
@@ -458,175 +431,65 @@ export default function LandingPage() {
                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gradient-to-t from-indigo-500/5 to-transparent blur-[80px] -z-10" />
 
                     <div className="max-w-7xl mx-auto">
-                        {/* Main Footer Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-                            {/* Brand Column */}
-                            <div className="md:col-span-2">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-sky-500 flex items-center justify-center">
-                                        <MessageSquare className="w-5 h-5 text-white" />
-                                    </div>
-                                    <span className="text-xl font-black text-white tracking-tight">MEMO</span>
-                                </div>
-                                <p className="text-slate-400 text-sm leading-relaxed max-w-sm mb-6">
-                                    The decentralized infrastructure for secure communication and community governance on Solana.
+                        <div className="grid md:grid-cols-4 gap-12 mb-16">
+                            <div className="col-span-2">
+                                <h1 className="text-2xl font-black text-white mb-6">Memo.</h1>
+                                <p className="text-slate-400 max-w-md leading-relaxed mb-8">
+                                    The decentralized communication layer for Solana. Built for communities, powered by encryption.
                                 </p>
-                                <div className="flex items-center gap-3">
-                                    <a
-                                        href="https://x.com/MemoOnSol"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all hover:scale-105"
-                                    >
-                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                                        </svg>
+                                <div className="flex gap-4">
+                                    <a href="https://twitter.com/memoprotocol" target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-colors text-slate-400 hover:text-white">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-12.7 12.5S.2 11.1 2 7c-2 3.4.6 9 5.8 8 2.8-1.5 5.5-2 5.5-2V4" /></svg>
                                     </a>
-                                    <a
-                                        href="https://t.me/memo_verification_bot"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all hover:scale-105"
-                                    >
-                                        <Bot className="w-4 h-4" />
+                                    <a href="https://t.me/memo_verification_bot" target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-colors text-slate-400 hover:text-white">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg>
+                                    </a>
+                                    <a href="https://github.com/memo-protocol" target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-colors text-slate-400 hover:text-white">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" /><path d="M9 18c-4.51 2-5-2-7-2" /></svg>
                                     </a>
                                 </div>
                             </div>
 
-                            {/* Quick Links */}
                             <div>
-                                <h4 className="text-white font-bold text-sm uppercase tracking-wider mb-4">Product</h4>
-                                <ul className="space-y-3">
-                                    <li>
-                                        <button onClick={() => navigate('/app')} className="text-slate-400 hover:text-white transition-colors text-sm">
-                                            Enterprise App
-                                        </button>
-                                    </li>
-                                    <li>
-                                        <a href="https://t.me/memo_verification_bot" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition-colors text-sm">
-                                            Telegram Bot
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <button onClick={() => navigate('/whitepaper')} className="text-slate-400 hover:text-white transition-colors text-sm">
-                                            Whitepaper
-                                        </button>
-                                    </li>
+                                <h3 className="font-bold text-white mb-6">Resources</h3>
+                                <ul className="space-y-4">
+                                    <li><a href="/whitepaper" className="text-slate-400 hover:text-white transition-colors">Whitepaper</a></li>
+                                    <li><a href="https://docs.memoprotocol.app" className="text-slate-400 hover:text-white transition-colors">Documentation</a></li>
+                                    <li><a href="https://github.com/memo-protocol" className="text-slate-400 hover:text-white transition-colors">GitHub</a></li>
                                 </ul>
                             </div>
 
-                            {/* Community */}
                             <div>
-                                <h4 className="text-white font-bold text-sm uppercase tracking-wider mb-4">Community</h4>
-                                <ul className="space-y-3">
-                                    <li>
-                                        <a href="https://x.com/MemoOnSol" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition-colors text-sm">
-                                            Twitter / X
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://coinmun.com/coins/memo-protocol" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition-colors text-sm">
-                                            CoinMun
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://dexscreener.com/solana/f8fgmfzyvv57bbkjrqv3f7cty34ictkoaw3gwaukvee1" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition-colors text-sm">
-                                            DexScreener
-                                        </a>
-                                    </li>
+                                <h3 className="font-bold text-white mb-6">Legal</h3>
+                                <ul className="space-y-4">
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition-colors">Terms of Service</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition-colors">Privacy Policy</a></li>
+                                    <li><button onClick={() => navigate('/app')} className="text-slate-500 hover:text-slate-300 transition-colors text-sm mt-4 text-left">Enterprise App Login</button></li>
                                 </ul>
                             </div>
                         </div>
 
-                        {/* Bottom Bar */}
-                        <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <div className="text-slate-500 text-sm">
-                                © 2025 Memo Protocol. All rights reserved.
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-slate-500 text-xs">Powered by</span>
-                                <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10">
-                                    <div className="w-3 h-3 rounded-full bg-gradient-to-r from-[#9945FF] to-[#14F195]" />
-                                    <span className="text-xs font-bold text-slate-300">Solana</span>
-                                </div>
+                        <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+                            <p className="text-slate-500 text-sm">
+                                © 2026 Memo Protocol. All rights reserved.
+                            </p>
+                            <div className="flex items-center gap-2 text-slate-600 text-sm">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                <span>All Systems Operational</span>
                             </div>
                         </div>
                     </div>
                 </footer>
             </main>
-        </div >
-    );
-}
-
-function FeaturePoint({ title, description }) {
-    return (
-        <div className="flex gap-4">
-            <div className="mt-1 w-2 h-2 rounded-full bg-indigo-500/50 shadow-[0_0_10px_rgba(99,102,241,0.5)] shrink-0" />
-            <div>
-                <h4 className="text-lg font-bold text-white mb-1">{title}</h4>
-                <p className="text-slate-400 leading-relaxed text-sm">{description}</p>
-            </div>
         </div>
-    );
-}
-
-function RoadmapItem({ phase, title, items, status, isSocial }) {
-    const isCompleted = status === 'completed';
-    const isCurrent = status === 'current';
-
-    // Theme colors based on stream type
-    const activeColorClass = isSocial ? 'text-sky-400' : 'text-indigo-400';
-    const activeBgClass = isSocial ? 'bg-sky-500/10 border-sky-500/50' : 'bg-indigo-500/10 border-indigo-500/50';
-    const glowClass = isSocial ? 'shadow-[0_0_50px_rgba(14,165,233,0.15)]' : 'shadow-[0_0_50px_rgba(99,102,241,0.15)]';
-
-    return (
-        <div className={`relative p-8 rounded-3xl border transition-all duration-300 backdrop-blur-sm bg-[#0A0A0B]/80 
-            ${isCurrent ? `${activeBgClass} ${glowClass} scale-105 border-opacity-100 ring-1 ring-white/10` : 'border-white/5 hover:border-white/10'}`}>
-
-            {/* Status Pill */}
-            <div className="flex justify-center mb-6">
-                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest border
-                    ${isCurrent
-                        ? (isSocial ? 'bg-sky-500/10 border-sky-500 text-sky-400' : 'bg-indigo-500/10 border-indigo-500 text-indigo-400')
-                        : 'bg-white/5 border-white/10 text-slate-500'}`}>
-                    {isCurrent && <div className={`w-1.5 h-1.5 rounded-full ${isSocial ? 'bg-sky-400' : 'bg-indigo-400'} animate-pulse`} />}
-                    {phase}
-                </div>
-            </div>
-
-            <div className="text-center mb-8">
-                <h3 className={`text-2xl font-bold mb-2 ${isCompleted ? 'text-slate-400' : 'text-white'}`}>{title}</h3>
-                {isCompleted && <div className="text-xs font-medium text-emerald-500 uppercase tracking-wider flex items-center justify-center gap-1">
-                    <CheckCircle className="w-3 h-3" />
-                    Completed
-                </div>}
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-x-8 gap-y-3 max-w-2xl mx-auto">
-                {items.map((item, i) => (
-                    <div key={i} className="flex items-start gap-3 text-left">
-                        <div className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${isCompleted ? 'bg-slate-700' : isCurrent ? (isSocial ? 'bg-sky-400' : 'bg-indigo-400') : 'bg-slate-700'}`} />
-                        <span className={`text-sm leading-relaxed ${isCompleted ? 'text-slate-500 line-through' : 'text-slate-300'}`}>{item}</span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-function SocialLink({ href, label }) {
-    return (
-        <a href={href} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-white transition-colors text-sm font-medium">
-            {label}
-        </a>
     );
 }
 
 const CHARS = "-_~`!@#$%^&*()+=[]{}|;:,.<>?/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 function CyclingText() {
-    const [text, setText] = useState("Social Graph");
-    const phrases = ["Social Graph", "Communication Layer", "Community Engine", "Identity Protocol"];
+    const [text, setText] = useState("Community");
+    const phrases = ["Community", "Telegram Groups", "Token Holders", "Web3 Social"];
 
     useEffect(() => {
         let currentIndex = 0;
@@ -663,44 +526,6 @@ function CyclingText() {
     return <span className="font-mono">{text}</span>;
 }
 
-
-function FeatureCard({ icon, title, desc }) {
-    return (
-        <div className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
-            <div className="text-indigo-400 shrink-0 mt-1">{icon}</div>
-            <div>
-                <h4 className="font-bold text-white text-base">{title}</h4>
-                <p className="text-slate-400 text-sm leading-snug">{desc}</p>
-            </div>
-        </div>
-    );
-}
-
-function StreamToggle({ activeStream, onToggle }) {
-    return (
-        <div className="p-1 rounded-full bg-white/5 border border-white/10 flex relative w-fit">
-            <div
-                className={`absolute inset-y-1 rounded-full transition-all duration-300 ease-out shadow-lg
-                ${activeStream === 'enterprise' ? 'left-1 w-[140px] bg-indigo-600' : 'left-[144px] w-[140px] bg-sky-600'}`}
-            />
-            <button
-                onClick={() => onToggle('enterprise')}
-                className={`w-[140px] py-3 rounded-full text-sm font-bold uppercase tracking-wider relative z-10 transition-colors duration-300
-                ${activeStream === 'enterprise' ? 'text-white' : 'text-slate-400 hover:text-white'}`}
-            >
-                Enterprise
-            </button>
-            <button
-                onClick={() => onToggle('social')}
-                className={`w-[140px] py-3 rounded-full text-sm font-bold uppercase tracking-wider relative z-10 transition-colors duration-300
-                ${activeStream === 'social' ? 'text-white' : 'text-slate-400 hover:text-white'}`}
-            >
-                Social
-            </button>
-        </div>
-    );
-}
-
 function SocialRoadmap() {
     const [activePhase, setActivePhase] = useState('expansion');
 
@@ -712,7 +537,7 @@ function SocialRoadmap() {
             progress: 100,
             items: [
                 { name: "Telegram Bot Launch", desc: "The first token-gating bot powered by on-chain verification" },
-                { name: "Magic Transactions", desc: "Zero-wallet-connect verification via SOL self-transfer" },
+                { name: "Magic Memos", desc: "Zero-wallet-connect verification via Magic Memos (SOL self-transfer)" },
                 { name: "Universal Token Gating", desc: "Gate communities with ANY SPL token or NFT collection" },
                 { name: "Admin Command Suite", desc: "Full control: /audit, /kick, /export, /poll and more" },
                 { name: "Leaderboards & Stats", desc: "Real-time holder rankings and community analytics" },
@@ -875,206 +700,6 @@ function SocialRoadmap() {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex flex-wrap items-center gap-2 mb-1">
                                                 <h4 className={`font-bold text-sm sm:text-base ${currentPhase.status === 'completed' || item.completed ? 'text-slate-400' : 'text-white'
-                                                    }`}>
-                                                    {item.name}
-                                                </h4>
-                                                {item.isNew && (
-                                                    <span className="text-[10px] font-bold bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full uppercase">
-                                                        New
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">
-                                                {item.desc}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </motion.div>
-            </AnimatePresence>
-        </div>
-    );
-}
-
-function EnterpriseRoadmap() {
-    const [activePhase, setActivePhase] = useState('expansion');
-
-    const phases = {
-        foundation: {
-            title: "Foundation",
-            subtitle: "Core Infrastructure",
-            status: "completed",
-            progress: 100,
-            items: [
-                { name: "Launch Memo Enterprise", desc: "The first immutable messaging protocol goes live on Solana" },
-                { name: "Rich Media & Formatting", desc: "More than text—communicate like professionals" },
-                { name: "Burn-Upon-Read", desc: "Self-destructing messages with cryptographic proof of delivery" },
-                { name: "PDF & Contract Exports", desc: "Court-ready documentation at the click of a button" },
-                { name: "Security Audits", desc: "Battle-tested and enterprise-hardened from day one" },
-            ]
-        },
-        expansion: {
-            title: "Expansion",
-            subtitle: "Supercharging Enterprise",
-            status: "current",
-            progress: 35,
-            items: [
-                { name: "Solana Blinks & Actions", desc: "Execute on-chain actions directly inside conversations", isNew: false },
-                { name: "Contact Nicknames & Labels", desc: "Tag wallets with names, notes, and categories for easy reference", isNew: true },
-                { name: "Scheduled & Recurring Memos", desc: "Pre-compose messages that send automatically at future times", isNew: true },
-                { name: "Message Templates", desc: "Save and reuse common formats for invoices, agreements, and more", isNew: true },
-                { name: "Multi-Wallet Support", desc: "Connect multiple wallets and switch between them seamlessly", isNew: true },
-            ]
-        },
-        ecosystem: {
-            title: "Ecosystem",
-            subtitle: "Global Communication Standard",
-            status: "upcoming",
-            progress: 0,
-            items: [
-                { name: "Public Key Directory", desc: "On-chain registry for discovering contacts by wallet address" },
-                { name: "Webhook Notifications", desc: "Get HTTP callbacks when you receive a memo—integrate anywhere" },
-                { name: "Enterprise API & SDK", desc: "Let any application embed verifiable, encrypted messaging" },
-                { name: "Memo Domains", desc: "Human-readable names (e.g., acme.memo) mapped to wallets" },
-                { name: "Audit Log Dashboard", desc: "Visual interface to browse all historical memos with powerful filters" },
-            ]
-        }
-    };
-
-    const currentPhase = phases[activePhase];
-
-    return (
-        <div className="w-full">
-            {/* Phase Selector - Horizontal on desktop, full-width on mobile */}
-            <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 mb-8">
-                {Object.entries(phases).map(([key, phase]) => {
-                    const isActive = activePhase === key;
-                    const isCompleted = phase.status === 'completed';
-                    const isCurrent = phase.status === 'current';
-
-                    return (
-                        <button
-                            key={key}
-                            onClick={() => setActivePhase(key)}
-                            className={`relative px-4 sm:px-6 py-3 sm:py-4 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all duration-300 flex items-center justify-center sm:justify-start gap-3 border
-                                ${isActive
-                                    ? 'bg-indigo-600/20 border-indigo-500/50 text-white shadow-lg shadow-indigo-500/20'
-                                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-white'
-                                }`}
-                        >
-                            {/* Status Indicator */}
-                            <div className={`w-2 h-2 rounded-full shrink-0 ${isCompleted ? 'bg-emerald-500' :
-                                isCurrent ? 'bg-indigo-400 animate-pulse' :
-                                    'bg-slate-600'
-                                }`} />
-
-                            <span>{phase.title}</span>
-
-                            {isCompleted && (
-                                <CheckCircle className="w-4 h-4 text-emerald-500" />
-                            )}
-                            {isCurrent && (
-                                <span className="text-[10px] font-bold bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded-full">
-                                    NOW
-                                </span>
-                            )}
-                        </button>
-                    );
-                })}
-            </div>
-
-            {/* Active Phase Card */}
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={activePhase}
-                    initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
-                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                    exit={{ opacity: 0, y: -20, filter: 'blur(8px)' }}
-                    transition={{ duration: 0.3 }}
-                    className={`relative rounded-3xl border backdrop-blur-sm overflow-hidden
-                        ${currentPhase.status === 'current'
-                            ? 'bg-indigo-500/5 border-indigo-500/30 shadow-[0_0_60px_rgba(99,102,241,0.1)]'
-                            : 'bg-[#0A0A0B]/80 border-white/10'
-                        }`}
-                >
-                    {/* Header */}
-                    <div className="px-6 sm:px-8 py-6 border-b border-white/5">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div>
-                                <div className="flex items-center gap-3 mb-2">
-                                    <h3 className="text-2xl sm:text-3xl font-bold text-white">{currentPhase.title}</h3>
-                                    {currentPhase.status === 'completed' && (
-                                        <span className="text-xs font-bold bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full flex items-center gap-1">
-                                            <CheckCircle className="w-3 h-3" />
-                                            COMPLETE
-                                        </span>
-                                    )}
-                                    {currentPhase.status === 'current' && (
-                                        <span className="text-xs font-bold bg-indigo-500/20 text-indigo-400 px-3 py-1 rounded-full flex items-center gap-1">
-                                            <Zap className="w-3 h-3" />
-                                            BUILDING
-                                        </span>
-                                    )}
-                                    {currentPhase.status === 'upcoming' && (
-                                        <span className="text-xs font-bold bg-slate-500/20 text-slate-400 px-3 py-1 rounded-full">
-                                            COMING SOON
-                                        </span>
-                                    )}
-                                </div>
-                                <p className="text-slate-400 text-sm sm:text-base">{currentPhase.subtitle}</p>
-                            </div>
-
-                            {/* Progress Bar - only for current/completed */}
-                            {(currentPhase.status === 'current' || currentPhase.status === 'completed') && (
-                                <div className="w-full sm:w-48">
-                                    <div className="flex justify-between text-xs mb-1">
-                                        <span className="text-slate-500">Progress</span>
-                                        <span className="text-indigo-400 font-bold">{currentPhase.progress}%</span>
-                                    </div>
-                                    <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                                        <div
-                                            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-sky-500 transition-all duration-500"
-                                            style={{ width: `${currentPhase.progress}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Features Grid */}
-                    <div className="p-4 sm:p-6">
-                        <div className="grid gap-3">
-                            {currentPhase.items.map((item, i) => (
-                                <div
-                                    key={i}
-                                    className={`group p-4 sm:p-5 rounded-2xl border transition-all duration-300 hover:scale-[1.01]
-                                        ${currentPhase.status === 'completed'
-                                            ? 'bg-white/[0.02] border-white/5'
-                                            : 'bg-white/[0.03] border-white/10 hover:border-indigo-500/30 hover:bg-indigo-500/5'
-                                        }`}
-                                >
-                                    <div className="flex items-start gap-4">
-                                        {/* Status Icon */}
-                                        <div className={`mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center
-                                            ${currentPhase.status === 'completed'
-                                                ? 'bg-emerald-500/20 text-emerald-400'
-                                                : 'bg-indigo-500/20 text-indigo-400'
-                                            }`}
-                                        >
-                                            {currentPhase.status === 'completed' ? (
-                                                <CheckCircle className="w-3 h-3" />
-                                            ) : (
-                                                <div className="w-1.5 h-1.5 rounded-full bg-current" />
-                                            )}
-                                        </div>
-
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                <h4 className={`font-bold text-sm sm:text-base ${currentPhase.status === 'completed' ? 'text-slate-400' : 'text-white'
                                                     }`}>
                                                     {item.name}
                                                 </h4>
